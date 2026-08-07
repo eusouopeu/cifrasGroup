@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { DB, Song, SongList } from '../store/db'
 import { uniqueChords, parseCifra } from '../cifra/parse'
+import { useToast } from './Toast'
 
 export function Library({ db, onOpen, onNew, onDeleteSong, onCreateList, onDeleteList, onRemoveFromList, onExport, onImport }: {
   db: DB
@@ -15,6 +16,7 @@ export function Library({ db, onOpen, onNew, onDeleteSong, onCreateList, onDelet
 }) {
   const [query, setQuery] = useState('')
   const [newList, setNewList] = useState('')
+  const showToast = useToast()
   const songs = useMemo(() => Object.values(db.songs).sort((a, b) => b.updatedAt - a.updatedAt), [db.songs])
   const filtered = songs.filter(
     (s) => !query || (s.title + ' ' + s.artist).toLowerCase().includes(query.toLowerCase()),
@@ -62,7 +64,9 @@ export function Library({ db, onOpen, onNew, onDeleteSong, onCreateList, onDelet
             if (!f) return
             const r = new FileReader()
             r.onload = () => onImport(String(r.result))
+            r.onerror = () => showToast(`Não consegui ler o arquivo "${f.name}".`)
             r.readAsText(f)
+            e.target.value = ''
           }} />
         </label>
       </footer>

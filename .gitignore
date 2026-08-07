@@ -3,3 +3,16 @@ dist/
 *.tsbuildinfo
 .DS_Store
 .vite/
+
+# Android (Capacitor)
+android/local.properties
+android/.gradle/
+android/build/
+android/app/build/
+android/capacitor-cordova-android-plugins/build/
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/*.keystore
+android/*.jks
+*.apk
+*.aab

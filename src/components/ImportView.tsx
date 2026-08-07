@@ -1,14 +1,19 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { parseCifra, uniqueChords } from '../cifra/parse'
+import { ImportCancelledError, importFromCifraClubUrl, isCifraClubUrl, nativeImportAvailable } from '../native/cifraClubImport'
+import { useToast } from './Toast'
 
-export function ImportView({ onImport, onCancel }: {
+export function ImportView({ onImport, onCancel, initialUrl }: {
   onImport: (data: { title: string; artist: string; source: string | null; raw: string }) => void
   onCancel: () => void
+  /** vem do compartilhamento do Android: preenche e dispara a importação sozinha */
+  initialUrl?: string | null
 }) {
   const [title, setTitle] = useState('')
   const [artist, setArtist] = useState('')
   const [source, setSource] = useState('')
   const [raw, setRaw] = useState('')
+  const showToast = useToast()
 
   const preview = useMemo(() => {
     if (!raw.trim()) return null
@@ -29,6 +34,49 @@ export function ImportView({ onImport, onCancel }: {
     if (lines.length >= 2 && !artist) setArtist(lines[1].slice(0, 60))
   }
 
+  const nativeOk = nativeImportAvailable()
+  const [linkUrl, setLinkUrl] = useState(initialUrl ?? '')
+  const [linkStatus, setLinkStatus] = useState<'idle' | 'loading' | 'error'>('idle')
+  const [linkError, setLinkError] = useState<string | null>(null)
+  const autoRan = useRef(false)
+  const abortRef = useRef<AbortController | null>(null)
+
+  const runImportFromLink = async (url: string) => {
+    if (!url.trim()) return
+    setLinkStatus('loading')
+    setLinkError(null)
+    const controller = new AbortController()
+    abortRef.current = controller
+    try {
+      const result = await importFromCifraClubUrl(url.trim(), 25000, controller.signal)
+      setTitle(result.title)
+      setArtist(result.artist)
+      setSource(result.sourceUrl)
+      setRaw(result.raw)
+      setLinkStatus('idle')
+    } catch (err) {
+      if (err instanceof ImportCancelledError) {
+        setLinkStatus('idle')
+        return
+      }
+      setLinkStatus('error')
+      setLinkError(err instanceof Error ? err.message : String(err))
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null
+    }
+  }
+
+  const cancelImport = () => abortRef.current?.abort()
+
+  // dispara sozinho quando o app é aberto por um compartilhamento
+  useEffect(() => {
+    if (initialUrl && !autoRan.current) {
+      autoRan.current = true
+      void runImportFromLink(initialUrl)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialUrl])
+
   return (
     <div className="importview">
       <header className="apphead">
@@ -36,8 +84,43 @@ export function ImportView({ onImport, onCancel }: {
         <h1>Importar cifra</h1>
       </header>
 
+      {nativeOk && (
+        <div className="importlink">
+          <strong>Importar por link do CifraClub</strong>
+          <p className="hint small">
+            Cole o link de uma música, ou use "Compartilhar" no Chrome / no app do CifraClub e escolha o cifrasGroup.
+            O app abre a página como se você a estivesse visitando e lê a cifra sozinho — não precisa copiar nada.
+          </p>
+          <div className="row tight">
+            <input
+              className="linkinput"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              placeholder="https://www.cifraclub.com.br/artista/musica/"
+              inputMode="url"
+              autoCapitalize="none"
+              autoCorrect="off"
+            />
+            <button
+              className="btn primary"
+              disabled={linkStatus === 'loading' || !isCifraClubUrl(linkUrl)}
+              onClick={() => void runImportFromLink(linkUrl)}
+            >
+              {linkStatus === 'loading' ? 'importando…' : 'buscar'}
+            </button>
+            {linkStatus === 'loading' && (
+              <button className="btn ghost" onClick={cancelImport}>cancelar</button>
+            )}
+          </div>
+          {linkStatus === 'error' && linkError && <p className="hint linkerror">{linkError}</p>}
+          {linkUrl && !isCifraClubUrl(linkUrl) && linkStatus !== 'loading' && (
+            <p className="hint small">Esse link não parece ser de uma música do CifraClub.</p>
+          )}
+        </div>
+      )}
+
       <div className="importhelp">
-        <strong>Como trazer do CifraClub</strong>
+        <strong>{nativeOk ? 'Ou copie e cole manualmente' : 'Como trazer do CifraClub'}</strong>
         <ol>
           <li>Abra a música no site ou no app.</li>
           <li>Selecione a cifra inteira e copie (o texto já vem com os acordes alinhados).</li>
@@ -78,7 +161,9 @@ export function ImportView({ onImport, onCancel }: {
               setRaw(text)
               if (!title) setTitle(f.name.replace(/\.[^.]+$/, ''))
             }
+            r.onerror = () => showToast(`Não consegui ler o arquivo "${f.name}".`)
             r.readAsText(f)
+            e.target.value = ''
           }} />
         </label>
       </div>

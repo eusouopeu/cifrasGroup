@@ -78,6 +78,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .appfoot { display: flex; gap: .5rem; margin-top: 2.5rem; }
 
 /* ---------- importação ---------- */
+.importlink { background: color-mix(in srgb, var(--accent) 10%, var(--bg2)); border: 1px solid var(--accent); border-radius: 10px; padding: .8rem 1rem; margin-bottom: 1rem; font-size: .85rem; }
+.importlink .row { margin: .5rem 0 .2rem; }
+.linkinput { flex: 1; min-width: 0; background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; color: var(--fg); padding: .55rem .7rem; font-size: .85rem; }
+.linkerror { color: var(--danger); }
 .importhelp { background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: .8rem 1rem; margin-bottom: 1rem; font-size: .85rem; }
 .importhelp ol { margin: .5rem 0; padding-left: 1.2rem; color: var(--dim); }
 .importform { display: flex; flex-direction: column; gap: .7rem; }
@@ -109,6 +113,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 .panel { padding: .8rem 1rem; border-bottom: 1px solid var(--line); background: var(--bg2); max-height: 55vh; overflow-y: auto; }
 .panel h3 { font-size: .95rem; }
+
+/* painéis de configuração viram uma folha sobreposta à cifra, não empurram o texto */
+.panel-sheet { position: relative; padding-top: 2.2rem; }
+.panel-sheet .panel { max-height: none; overflow: visible; border-bottom: none; padding: 0; }
+.panel-sheet .panel h3 { position: static; margin: 0 0 .5rem; padding: 0; background: none; }
+.panel-sheet-close { position: absolute; top: .3rem; right: .3rem; z-index: 1; }
 .row { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; margin: .5rem 0; }
 .row.tight { gap: .4rem; margin: .2rem 0; }
 .row input[type=range] { flex: 1; }
@@ -280,6 +290,20 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .suffixbtn:hover { border-color: var(--accent2); }
 .listpick { display: flex; flex-direction: column; }
 .empty { padding: 2rem; text-align: center; }
+
+/* ---------- toast ---------- */
+.toastwrap {
+  position: fixed; left: 0; right: 0; bottom: calc(1rem + env(safe-area-inset-bottom));
+  display: flex; justify-content: center; z-index: 30; padding: 0 .8rem; pointer-events: none;
+}
+.toast {
+  pointer-events: auto; display: flex; align-items: center; gap: .6rem;
+  background: var(--bg3); border: 1px solid var(--line); color: var(--fg);
+  border-radius: 10px; padding: .6rem .5rem .6rem .9rem; font-size: .85rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .3); max-width: 480px;
+}
+.toast-action { background: none; border: none; color: var(--accent); font-weight: 600; padding: .3rem .5rem; white-space: nowrap; }
+.toast-close { background: none; border: none; color: var(--dim); font-size: 1.1rem; padding: 0 .3rem; }
 
 /* ---------- ajustes de celular ---------- */
 @media (max-width: 620px) {

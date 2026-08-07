@@ -3,6 +3,8 @@ import { DEMO_RAW } from './data/demo'
 import { Library } from './components/Library'
 import { ImportView } from './components/ImportView'
 import { SongView } from './components/SongView'
+import { useToast } from './components/Toast'
+import { initShareTarget } from './native/shareTarget'
 import { DEFAULT_SETTINGS, exportDB, importDB, loadDB, newId, saveDB, type DB, type SongSettings } from './store/db'
 
 type Route = { view: 'library' } | { view: 'import' } | { view: 'song'; id: string }
@@ -27,8 +29,25 @@ export default function App() {
   })
   const [route, setRoute] = useState<Route>({ view: 'library' })
   const [picker, setPicker] = useState<string | null>(null)
+  const [sharedUrl, setSharedUrl] = useState<string | null>(null)
+  const showToast = useToast()
 
-  useEffect(() => { saveDB(db) }, [db])
+  useEffect(() => {
+    if (!saveDB(db)) {
+      showToast('Não foi possível salvar: armazenamento cheio. Exporte um backup e apague músicas antigas.', { duration: 8000 })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [db])
+
+  // link recebido via "Compartilhar" no Android (só existe no app nativo)
+  useEffect(
+    () =>
+      initShareTarget((url) => {
+        setSharedUrl(url)
+        setRoute({ view: 'import' })
+      }),
+    [],
+  )
 
   const patchSettings = (id: string, patch: Partial<SongSettings>) => {
     setDb((cur) => ({
@@ -43,13 +62,21 @@ export default function App() {
   if (route.view === 'import') {
     return (
       <ImportView
-        onCancel={() => setRoute({ view: 'library' })}
+        // troca de key força remontar quando chega um novo link compartilhado,
+        // mesmo se a tela de importação já estiver aberta
+        key={sharedUrl ?? 'manual'}
+        initialUrl={sharedUrl}
+        onCancel={() => {
+          setSharedUrl(null)
+          setRoute({ view: 'library' })
+        }}
         onImport={(data) => {
           const id = newId()
           setDb((cur) => ({
             ...cur,
             songs: { ...cur.songs, [id]: { id, ...data, createdAt: Date.now(), updatedAt: Date.now(), settings: { ...DEFAULT_SETTINGS } } },
           }))
+          setSharedUrl(null)
           setRoute({ view: 'song', id })
         }}
       />
@@ -97,17 +124,23 @@ export default function App() {
       onOpen={(id) => setRoute({ view: 'song', id })}
       onNew={() => setRoute({ view: 'import' })}
       onDeleteSong={(id) => {
-        if (!confirm('Apagar esta música e suas configurações?')) return
+        const prev = db
+        const song = db.songs[id]
+        if (!song) return
         setDb((cur) => {
           const songs = { ...cur.songs }
           delete songs[id]
           return { ...cur, songs, lists: cur.lists.map((l) => ({ ...l, songIds: l.songIds.filter((x) => x !== id) })) }
         })
+        showToast(`"${song.title}" apagada.`, { actionLabel: 'Desfazer', onAction: () => setDb(prev) })
       }}
       onCreateList={(name) => setDb((cur) => ({ ...cur, lists: [...cur.lists, { id: newId(), name, description: '', songIds: [], createdAt: Date.now() }] }))}
       onDeleteList={(id) => {
-        if (!confirm('Apagar esta lista? As músicas continuam salvas.')) return
+        const prev = db
+        const list = db.lists.find((l) => l.id === id)
+        if (!list) return
         setDb((cur) => ({ ...cur, lists: cur.lists.filter((l) => l.id !== id) }))
+        showToast(`Lista "${list.name}" apagada. As músicas continuam salvas.`, { actionLabel: 'Desfazer', onAction: () => setDb(prev) })
       }}
       onRemoveFromList={(listId, songId) =>
         setDb((cur) => ({ ...cur, lists: cur.lists.map((l) => (l.id === listId ? { ...l, songIds: l.songIds.filter((x) => x !== songId) } : l)) }))
@@ -122,8 +155,9 @@ export default function App() {
       }}
       onImport={(json) => {
         const next = importDB(json)
-        if (!next) { alert('Arquivo de backup inválido.'); return }
+        if (!next) { showToast('Arquivo de backup inválido.'); return }
         setDb(next)
+        showToast('Backup importado.')
       }}
     />
   )

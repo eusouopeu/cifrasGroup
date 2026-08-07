@@ -11,8 +11,11 @@ import { ChordCard, GuitarDiagram, PianoDiagram } from './ChordDiagram'
 import { CifraText } from './CifraText'
 import { RhythmCard, RhythmGrid } from './RhythmView'
 import { useMetronome } from '../audio/useMetronome'
+import { useToast } from './Toast'
 
 type Panel = null | 'tom' | 'simplificar' | 'cor' | 'ritmo' | 'acordes' | 'texto'
+
+const LAST_SCROLL_SPEED_KEY = 'cifrasgroup:lastScrollSpeed'
 
 export function SongView({ song, onChange, onBack, onSaveToList }: {
   song: Song
@@ -24,6 +27,27 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
   const [panel, setPanel] = useState<Panel>(null)
   const [inspect, setInspect] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const showToast = useToast()
+
+  /** Muda o tom avisando o usuário quando isso desliga o nível 2 de simplificação. */
+  const changeTranspose = (patch: Partial<SongSettings>) => {
+    if (s.simplifyLevel === 2) {
+      onChange({ ...patch, simplifyLevel: 1 })
+      showToast('Nível 2 (acordes + tom) desligado: você mudou o tom manualmente.')
+    } else {
+      onChange(patch)
+    }
+  }
+
+  const toggleScroll = () => {
+    if (s.scrollSpeed > 0) {
+      localStorage.setItem(LAST_SCROLL_SPEED_KEY, String(s.scrollSpeed))
+      onChange({ scrollSpeed: 0 })
+    } else {
+      const last = Number(localStorage.getItem(LAST_SCROLL_SPEED_KEY))
+      onChange({ scrollSpeed: last > 0 ? last : 6 })
+    }
+  }
 
   const view = useMemo(() => buildView(song.raw, s), [song.raw, s])
   const rhythm = rhythmById(s.rhythmId)
@@ -37,7 +61,9 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
     let acc = 0
     const tick = (now: number) => {
       const el = scrollRef.current
-      const dt = (now - last) / 1000
+      // volta de background pode acumular vários segundos de diferença de
+      // uma vez; sem isso a tela pula um trecho inteiro da letra
+      const dt = Math.min((now - last) / 1000, 0.1)
       last = now
       if (el) {
         acc += s.scrollSpeed * 8 * dt
@@ -83,14 +109,18 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
         <ToolButton active={panel === 'texto'} onClick={() => togglePanel('texto')} label="Texto" value={`${s.fontSize}px`} />
       </nav>
 
+      {panel && (
+      <div className="sheet-backdrop panel-backdrop" onClick={() => setPanel(null)}>
+      <div className="sheet panel-sheet" onClick={(e) => e.stopPropagation()}>
+      <button className="icon panel-sheet-close" onClick={() => setPanel(null)} aria-label="Fechar painel">×</button>
       {panel === 'tom' && (
         <Panel title="Tom e capotraste">
           <div className="row">
-            <button className="btn" onClick={() => onChange({ transpose: s.transpose - 1, simplifyLevel: s.simplifyLevel === 2 ? 1 : s.simplifyLevel })}>−1 semitom</button>
+            <button className="btn" onClick={() => changeTranspose({ transpose: s.transpose - 1 })}>−1 semitom</button>
             <div className="keydisplay">
               {view.displayedChords[0] ? <span className="mono">{view.displayedChords.slice(0, 4).map((c) => c.symbol).join('  ')}</span> : '—'}
             </div>
-            <button className="btn" onClick={() => onChange({ transpose: s.transpose + 1, simplifyLevel: s.simplifyLevel === 2 ? 1 : s.simplifyLevel })}>+1 semitom</button>
+            <button className="btn" onClick={() => changeTranspose({ transpose: s.transpose + 1 })}>+1 semitom</button>
           </div>
           <div className="row">
             <label className="field">
@@ -112,7 +142,7 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
               <button
                 key={k.semitones}
                 className={`keyrow${k.semitones === (((view.effectiveTranspose % 12) + 12) % 12) ? ' current' : ''}`}
-                onClick={() => onChange({ transpose: k.semitones, simplifyLevel: s.simplifyLevel === 2 ? 1 : s.simplifyLevel, capo: k.capo })}
+                onClick={() => changeTranspose({ transpose: k.semitones, capo: k.capo })}
               >
                 <span className="keyrow-shift">{k.semitones === 0 ? 'original' : `${k.semitones > 0 ? '+' : ''}${k.semitones}`}</span>
                 <span className="bar"><i style={{ width: `${k.ease}%` }} /></span>
@@ -277,6 +307,9 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
           </label>
         </Panel>
       )}
+      </div>
+      </div>
+      )}
 
       {s.capo > 0 && <div className="capobar">Capotraste na {s.capo}ª casa</div>}
 
@@ -311,7 +344,7 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
         </div>
         <button
           className={`transport-scroll${s.scrollSpeed > 0 ? ' on' : ''}`}
-          onClick={() => onChange({ scrollSpeed: s.scrollSpeed > 0 ? 0 : 6 })}
+          onClick={toggleScroll}
           aria-label="Rolagem automática"
         >
           {s.scrollSpeed > 0 ? '⏸' : '⇩'}
@@ -452,7 +485,7 @@ function ChordSheet({ symbol, instrument, threshold, onPick, onReset, onClose }:
         )}
 
         <h4>Trocar manualmente</h4>
-        <ManualPicker current={symbol} onPick={onPick} />
+        <ManualPicker key={symbol} current={symbol} onPick={onPick} />
         <button className="btn ghost wide" onClick={onReset}>desfazer troca manual deste acorde</button>
       </div>
     </div>

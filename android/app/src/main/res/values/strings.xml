@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">cifrasGroup</string>
+    <string name="title_activity_main">cifrasGroup</string>
+    <string name="package_name">br.com.eusouopeu.cifrasgroup</string>
+    <string name="custom_url_scheme">br.com.eusouopeu.cifrasgroup</string>
+</resources>

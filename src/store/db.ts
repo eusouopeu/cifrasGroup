@@ -86,8 +86,14 @@ export function loadDB(): DB {
   }
 }
 
-export function saveDB(db: DB): void {
-  localStorage.setItem(KEY, JSON.stringify(db))
+/** Retorna true se salvou; false se o navegador recusou (ex.: cota do localStorage estourada). */
+export function saveDB(db: DB): boolean {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(db))
+    return true
+  } catch {
+    return false
+  }
 }
 
 export function newId(): string {
