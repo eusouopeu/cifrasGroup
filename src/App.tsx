@@ -134,6 +134,17 @@ export default function App() {
         })
         showToast(`"${song.title}" apagada.`, { actionLabel: 'Desfazer', onAction: () => setDb(prev) })
       }}
+      onDuplicateSong={(id) => {
+        const song = db.songs[id]
+        if (!song) return
+        const copyId = newId()
+        const now = Date.now()
+        setDb((cur) => ({
+          ...cur,
+          songs: { ...cur.songs, [copyId]: { ...song, id: copyId, title: `${song.title} (cópia)`, createdAt: now, updatedAt: now } },
+        }))
+        showToast(`"${song.title} (cópia)" criada.`)
+      }}
       onCreateList={(name) => setDb((cur) => ({ ...cur, lists: [...cur.lists, { id: newId(), name, description: '', songIds: [], createdAt: Date.now() }] }))}
       onDeleteList={(id) => {
         const prev = db

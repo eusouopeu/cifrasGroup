@@ -31,6 +31,8 @@ export function BatidaGrid({ rhythm, activeStep = -1 }: { rhythm: Rhythm; active
   )
 }
 
+const FINGER_NAME: Record<string, string> = { p: 'polegar', i: 'indicador', m: 'médio', a: 'anelar' }
+
 /** Grade de dedilhado: passos "cordas:dedos". */
 export function DedilhadoGrid({ rhythm, activeStep = -1 }: { rhythm: Rhythm; activeStep?: number }) {
   const steps = rhythm.pattern.split(/\s+/).filter(Boolean)
@@ -38,8 +40,9 @@ export function DedilhadoGrid({ rhythm, activeStep = -1 }: { rhythm: Rhythm; act
     <div className="dedilhado">
       {steps.map((step, i) => {
         const [strings, fingers] = step.split(':')
+        const title = fingers.split('').map((f) => FINGER_NAME[f] ?? f).join(' + ')
         return (
-          <div key={i} className={`ded-step${i === activeStep ? ' active' : ''}`}>
+          <div key={i} className={`ded-step${i === activeStep ? ' active' : ''}`} title={title}>
             <div className="ded-strings">{strings.split('').join('·')}</div>
             <div className="ded-fingers">{fingers}</div>
           </div>
@@ -55,14 +58,17 @@ export function RhythmGrid({ rhythm, activeStep }: { rhythm: Rhythm; activeStep?
     : <DedilhadoGrid rhythm={rhythm} activeStep={activeStep} />
 }
 
-export function RhythmCard({ rhythm, selected, onSelect }: {
+export function RhythmCard({ rhythm, selected, playing = false, onSelect }: {
   rhythm: Rhythm
   selected: boolean
+  /** selecionado E com o metrônomo tocando agora — visual diferente de só "escolhido" */
+  playing?: boolean
   onSelect: () => void
 }) {
   return (
-    <button className={`rhythmcard${selected ? ' selected' : ''}`} onClick={onSelect}>
+    <button className={`rhythmcard${selected ? ' selected' : ''}${playing ? ' playing' : ''}`} onClick={onSelect}>
       <div className="rhythmcard-head">
+        {playing && <span className="rhythmcard-playing" aria-label="Tocando agora">▶</span>}
         <span className="rhythmcard-name">{rhythm.name}</span>
         <span className="tag">{rhythm.meter}</span>
         <span className="tag muted">{rhythm.bpmSuggested} bpm</span>

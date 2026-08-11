@@ -1,5 +1,8 @@
-import { Fragment } from 'react'
+import { Fragment, useRef } from 'react'
 import type { CifraLine, ParsedCifra } from '../cifra/parse'
+
+/** casas de tolerância antes de um toque virar "arrastou, não é clique" */
+const DRAG_THRESHOLD = 8
 
 /** Posiciona os acordes reconstruindo a linha, respeitando o alinhamento original. */
 function layoutChords(line: CifraLine, map: (s: string) => string): { gap: number; symbol: string; original: string }[] {
@@ -25,6 +28,9 @@ export function CifraText({ parsed, map, fontSize, hideTabs, onChordClick, highl
 }) {
   const lines = hideTabs ? parsed.lines.filter((l) => l.kind !== 'tab') : parsed.lines
   const hiddenTabs = parsed.lines.filter((l) => l.kind === 'tab').length
+  // guarda onde o toque começou para distinguir "clicou no acorde" de "estava
+  // arrastando pra rolar a letra e o dedo passou por cima de um acorde"
+  const downPos = useRef<{ x: number; y: number } | null>(null)
 
   return (
     <div className="cifra" style={{ fontSize: `${fontSize}px`, lineHeight: 1.5 }}>
@@ -44,7 +50,12 @@ export function CifraText({ parsed, map, fontSize, hideTabs, onChordClick, highl
                   <span className="gap">{' '.repeat(Math.max(0, it.gap))}</span>
                   <button
                     className={`chordchip${highlight === it.symbol ? ' hl' : ''}`}
-                    onClick={() => onChordClick?.(it.original, it.symbol)}
+                    onPointerDown={(e) => { downPos.current = { x: e.clientX, y: e.clientY } }}
+                    onClick={(e) => {
+                      const start = downPos.current
+                      const dragged = !!start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > DRAG_THRESHOLD
+                      if (!dragged) onChordClick?.(it.original, it.symbol)
+                    }}
                   >
                     {it.symbol}
                   </button>

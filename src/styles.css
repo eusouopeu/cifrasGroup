@@ -71,8 +71,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .songcard-main { background: none; border: none; text-align: left; padding: 0; display: flex; flex-direction: column; gap: .2rem; }
 .songcard .artist { color: var(--dim); font-size: .8rem; }
 .songcard .chords { color: var(--accent2); font-size: .78rem; }
+.songcard-actions { display: flex; gap: .4rem; align-self: flex-end; }
 .badges { display: flex; flex-wrap: wrap; gap: .25rem; }
 .badges i { font-style: normal; font-size: .68rem; background: var(--bg3); border: 1px solid var(--line); border-radius: 4px; padding: 0 .3rem; color: var(--dim); }
+.badges i.more { color: var(--accent2); border-color: var(--accent2); cursor: default; }
 .newlist { display: flex; gap: .5rem; margin-top: .75rem; }
 .newlist input { flex: 1; padding: .5rem .7rem; border-radius: 8px; border: 1px solid var(--line); background: var(--bg2); color: var(--fg); }
 .appfoot { display: flex; gap: .5rem; margin-top: 2.5rem; }
@@ -104,12 +106,33 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .songhead-title strong { font-size: .95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .songhead-title span { font-size: .75rem; color: var(--dim); }
 
-.toolbar { display: flex; gap: .35rem; overflow-x: auto; padding: .45rem .6rem; border-bottom: 1px solid var(--line); background: var(--bg2); scrollbar-width: none; }
+.toolbar {
+  display: flex; gap: .35rem; overflow-x: auto; padding: .45rem .6rem; border-bottom: 1px solid var(--line);
+  scrollbar-width: none;
+  /* sombra nas bordas indica que há mais botões fora da tela; some sozinha
+     quando o scroll chega no fim de cada lado (truque de background-attachment) */
+  background:
+    linear-gradient(to right, var(--bg2) 30%, rgba(255, 255, 255, 0)) left,
+    linear-gradient(to left, var(--bg2) 30%, rgba(255, 255, 255, 0)) right,
+    linear-gradient(to right, rgba(0, 0, 0, .18), rgba(0, 0, 0, 0)) left,
+    linear-gradient(to left, rgba(0, 0, 0, .18), rgba(0, 0, 0, 0)) right,
+    var(--bg2);
+  background-repeat: no-repeat;
+  background-size: 24px 100%, 24px 100%, 10px 100%, 10px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
 .toolbar::-webkit-scrollbar { display: none; }
 .tool { flex: 0 0 auto; background: var(--bg3); border: 1px solid var(--line); border-radius: 8px; padding: .3rem .6rem; display: flex; flex-direction: column; align-items: flex-start; line-height: 1.2; }
 .tool.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--bg3)); }
 .tool-label { font-size: .66rem; text-transform: uppercase; letter-spacing: .05em; color: var(--dim); }
 .tool-value { font-size: .8rem; }
+/* chama atenção por alguns segundos quando algo muda o estado deste botão
+   sem o usuário ter tocado nele diretamente (ex.: nível 2 desligado sozinho) */
+.tool.flash { animation: tool-flash 1s ease-in-out 4; }
+@keyframes tool-flash {
+  0%, 100% { border-color: var(--line); background: var(--bg3); }
+  50% { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 18%, var(--bg3)); }
+}
 
 .panel { padding: .8rem 1rem; border-bottom: 1px solid var(--line); background: var(--bg2); max-height: 55vh; overflow-y: auto; }
 .panel h3 { font-size: .95rem; }
@@ -127,6 +150,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .levels { display: grid; gap: .4rem; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
 .level, .palette { background: var(--bg3); border: 1px solid var(--line); border-radius: 9px; padding: .55rem .7rem; text-align: left; display: flex; flex-direction: column; gap: .2rem; }
 .level.selected, .palette.selected, .rhythmcard.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--bg3)); }
+.rhythmcard.playing { border-color: var(--accent2); background: color-mix(in srgb, var(--accent2) 14%, var(--bg3)); }
+.rhythmcard-playing { color: var(--accent2); font-size: .7rem; }
 .level span, .palette span { font-size: .74rem; color: var(--dim); }
 .palettes { display: grid; gap: .4rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 .palette .preview { color: var(--accent2); font-size: .72rem; }
@@ -215,6 +240,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   display: grid; place-items: center;
 }
 .transport-play.on { background: var(--accent); border-color: var(--accent); color: #14161a; }
+.transport-play.counting { background: var(--bg3); border-color: var(--accent2); color: var(--accent2); font-weight: 700; font-size: 1.1rem; }
 .transport-scroll.on { background: var(--accent2); border-color: var(--accent2); color: #14161a; }
 .transport-bpm {
   flex: 0 0 auto; background: none; border: none; text-align: left;
@@ -244,6 +270,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .chordgrid > * { flex: 0 0 auto; scroll-snap-align: start; }
 .chordgrid::-webkit-scrollbar { height: 4px; }
 .chordgrid::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
+.chordslot { position: relative; }
+.overridden-dot {
+  position: absolute; top: -3px; right: -3px; z-index: 1;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--accent2); border: 1px solid var(--bg2);
+}
+.overridden-dot.inline { position: static; display: inline-block; vertical-align: middle; margin: 0 .15rem; }
 .chordcard { background: var(--bg3); border: 1px solid var(--line); border-radius: 9px; padding: .4rem; text-align: center; }
 .chordgrid .chordcard { min-width: 104px; }
 /* o teclado é largo: no modo faixa ele rola dentro do próprio cartão */
@@ -262,6 +295,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .d-barre { fill: var(--accent); opacity: .85; }
 .d-degree { fill: var(--dim); }
 .d-fretnum { fill: var(--dim); }
+.d-finger { fill: var(--dim); font-weight: 700; }
+.d-finger.on { fill: #14161a; }
+.k-label { fill: var(--dim); font-weight: 600; }
+.k-label.on { fill: #14161a; }
 .k-white { fill: var(--bg2); stroke: var(--line); }
 .k-white.on { fill: var(--accent); }
 .k-black { fill: var(--fg); }
@@ -284,6 +321,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .alt span:last-child { font-size: .66rem; color: var(--dim); }
 .manual { margin: .4rem 0 .8rem; }
 .rootrow, .suffixrow { display: flex; flex-wrap: wrap; gap: .25rem; margin-bottom: .4rem; }
+.freechord { display: flex; gap: .4rem; margin: .3rem 0; }
+.freechord input { flex: 1; background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; color: var(--fg); padding: .45rem .6rem; font-size: .85rem; }
+.freechord input.invalid { border-color: var(--danger); }
+.hint.danger { color: var(--danger); }
+.hint.warn { color: var(--accent); }
 .rootbtn { background: var(--bg3); border: 1px solid var(--line); border-radius: 6px; padding: .2rem .45rem; font-size: .78rem; font-family: var(--mono); }
 .rootbtn.on { background: var(--accent); color: #14161a; border-color: var(--accent); font-weight: 700; }
 .suffixbtn { background: var(--bg3); border: 1px solid var(--line); border-radius: 6px; padding: .18rem .4rem; font-size: .74rem; color: var(--accent2); }
@@ -327,6 +369,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .btn { min-height: 40px; }
   .icon { min-width: 40px; min-height: 40px; }
   .alt, .rootbtn, .suffixbtn { min-height: 36px; }
+  .freechord input { min-height: 40px; }
   .sheet { border-radius: 16px 16px 0 0; padding: .9rem .8rem calc(.9rem + env(safe-area-inset-bottom)); }
 
   /* linha comprida de cifra rola na horizontal em vez de quebrar */

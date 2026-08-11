@@ -26,6 +26,7 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
   const s = song.settings
   const [panel, setPanel] = useState<Panel>(null)
   const [inspect, setInspect] = useState<string | null>(null)
+  const [level2JustOff, setLevel2JustOff] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const showToast = useToast()
 
@@ -34,6 +35,10 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
     if (s.simplifyLevel === 2) {
       onChange({ ...patch, simplifyLevel: 1 })
       showToast('Nível 2 (acordes + tom) desligado: você mudou o tom manualmente.')
+      // o toast some sozinho; o botão "Simplificar" pisca por mais tempo para
+      // quem só perceber a mudança depois de o toast já ter sumido
+      setLevel2JustOff(true)
+      window.setTimeout(() => setLevel2JustOff(false), 5000)
     } else {
       onChange(patch)
     }
@@ -52,6 +57,33 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
   const view = useMemo(() => buildView(song.raw, s), [song.raw, s])
   const rhythm = rhythmById(s.rhythmId)
   const metronome = useMetronome(rhythm, s.bpm, s.playPattern, s.playClick)
+
+  // contagem visual de 1 compasso antes do metrônomo tocar, para dar tempo
+  // de se preparar em vez de o áudio começar de supetão
+  const [countIn, setCountIn] = useState<number | null>(null)
+  const countTimer = useRef<number | null>(null)
+  useEffect(() => () => { if (countTimer.current) window.clearInterval(countTimer.current) }, [])
+  const handlePlay = () => {
+    if (metronome.running) { metronome.toggle(); return }
+    if (countIn !== null) {
+      if (countTimer.current) window.clearInterval(countTimer.current)
+      setCountIn(null)
+      return
+    }
+    const beatMs = 60000 / s.bpm
+    let n = 4
+    setCountIn(n)
+    countTimer.current = window.setInterval(() => {
+      n -= 1
+      if (n <= 0) {
+        if (countTimer.current) window.clearInterval(countTimer.current)
+        setCountIn(null)
+        metronome.toggle()
+      } else {
+        setCountIn(n)
+      }
+    }, beatMs)
+  }
 
   // rolagem automática
   useEffect(() => {
@@ -80,6 +112,11 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
   }, [s.scrollSpeed])
 
   const mapSymbol = (orig: string) => view.map.get(orig) ?? orig
+  // símbolos exibidos que vieram de uma troca manual (para destacar no grid de acordes)
+  const overriddenSymbols = useMemo(
+    () => new Set(Object.keys(s.overrides).map((orig) => view.map.get(orig)).filter((x): x is string => !!x)),
+    [s.overrides, view.map],
+  )
   const best = view.keyRanking[0]
   const currentKeyOption = view.keyRanking.find((k) => k.semitones === ((view.effectiveTranspose % 12) + 12) % 12)
 
@@ -102,7 +139,7 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
         } />
         <ToolButton active={panel === 'simplificar'} onClick={() => togglePanel('simplificar')} label="Simplificar" value={
           s.simplifyLevel === 0 ? 'off' : s.simplifyLevel === 1 ? 'nível 1' : 'nível 2'
-        } />
+        } flash={level2JustOff} />
         <ToolButton active={panel === 'cor'} onClick={() => togglePanel('cor')} label="Cor" value={PALETTES.find((p) => p.id === s.paletteId)?.name ?? 'Original'} />
         <ToolButton active={panel === 'ritmo'} onClick={() => togglePanel('ritmo')} label="Ritmo" value={rhythm?.name ?? 'nenhum'} />
         <ToolButton active={panel === 'acordes'} onClick={() => togglePanel('acordes')} label="Acordes" value={s.instrument === 'guitar' ? 'violão' : 'piano'} />
@@ -253,14 +290,15 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
           <h4>Batidas</h4>
           <div className="rhythmgrid">
             {RHYTHMS.filter((r) => r.kind === 'batida').map((r) => (
-              <RhythmCard key={r.id} rhythm={r} selected={s.rhythmId === r.id}
+              <RhythmCard key={r.id} rhythm={r} selected={s.rhythmId === r.id} playing={metronome.running && s.rhythmId === r.id}
                 onSelect={() => onChange({ rhythmId: r.id, bpm: r.bpmSuggested })} />
             ))}
           </div>
           <h4>Dedilhados</h4>
+          <p className="hint small">p = polegar · i = indicador · m = médio · a = anelar</p>
           <div className="rhythmgrid">
             {RHYTHMS.filter((r) => r.kind === 'dedilhado').map((r) => (
-              <RhythmCard key={r.id} rhythm={r} selected={s.rhythmId === r.id}
+              <RhythmCard key={r.id} rhythm={r} selected={s.rhythmId === r.id} playing={metronome.running && s.rhythmId === r.id}
                 onSelect={() => onChange({ rhythmId: r.id, bpm: r.bpmSuggested })} />
             ))}
           </div>
@@ -278,12 +316,13 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
           </div>
           <div className="chordgrid">
             {view.displayedChords.map((c) => (
-              <div key={c.symbol} onClick={() => setInspect(c.symbol)}>
+              <div key={c.symbol} className={`chordslot${overriddenSymbols.has(c.symbol) ? ' overridden' : ''}`} onClick={() => setInspect(c.symbol)}>
+                {overriddenSymbols.has(c.symbol) && <span className="overridden-dot" title="Troca manual" />}
                 <ChordCard symbol={c.symbol} instrument={s.instrument} compact />
               </div>
             ))}
           </div>
-          <p className="hint small">Toque em um acorde para ver todas as digitações e a construção nota a nota.</p>
+          <p className="hint small">Toque em um acorde para ver todas as digitações e a construção nota a nota. <span className="overridden-dot inline" /> marca acordes trocados manualmente.</p>
         </Panel>
       )}
 
@@ -329,11 +368,11 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
       {/* barra de transporte: fica no rodapé, ao alcance do polegar */}
       <div className="transport">
         <button
-          className={`transport-play${metronome.running ? ' on' : ''}`}
-          onClick={metronome.toggle}
-          aria-label={metronome.running ? 'Parar metrônomo' : 'Iniciar metrônomo'}
+          className={`transport-play${metronome.running ? ' on' : ''}${countIn !== null ? ' counting' : ''}`}
+          onClick={handlePlay}
+          aria-label={metronome.running ? 'Parar metrônomo' : countIn !== null ? 'Cancelar contagem' : 'Iniciar metrônomo'}
         >
-          {metronome.running ? '■' : '▶'}
+          {countIn !== null ? countIn : metronome.running ? '■' : '▶'}
         </button>
         <button className="transport-bpm" onClick={() => togglePanel('ritmo')}>
           <strong>{s.bpm}</strong> bpm
@@ -385,9 +424,9 @@ function previewPalette(symbols: string[], paletteId: string): string {
   return src.map((x) => applyPalette(x, p)).join('  ')
 }
 
-function ToolButton({ label, value, active, onClick }: { label: string; value: string; active: boolean; onClick: () => void }) {
+function ToolButton({ label, value, active, onClick, flash }: { label: string; value: string; active: boolean; onClick: () => void; flash?: boolean }) {
   return (
-    <button className={`tool${active ? ' active' : ''}`} onClick={onClick}>
+    <button className={`tool${active ? ' active' : ''}${flash ? ' flash' : ''}`} onClick={onClick}>
       <span className="tool-label">{label}</span>
       <span className="tool-value">{value}</span>
     </button>
@@ -497,6 +536,16 @@ const MANUAL_SUFFIXES = ['', 'm', '5', 'sus2', 'sus4', '6', 'm6', '7', 'm7', '7M
 function ManualPicker({ current, onPick }: { current: string; onPick: (s: string) => void }) {
   const c = parseChord(current)
   const [root, setRoot] = useState(c?.rootPc ?? 0)
+  const [freeText, setFreeText] = useState('')
+  const freeParsed = freeText.trim() ? parseChord(freeText.trim()) : null
+  const freeInvalid = freeText.trim().length > 0 && !freeParsed
+
+  const submitFree = () => {
+    if (!freeParsed) return
+    onPick(freeText.trim())
+    setFreeText('')
+  }
+
   return (
     <div className="manual">
       <div className="rootrow">
@@ -512,6 +561,17 @@ function ManualPicker({ current, onPick }: { current: string; onPick: (s: string
           )
         })}
       </div>
+      <div className="freechord">
+        <input
+          className={`mono${freeInvalid ? ' invalid' : ''}`}
+          placeholder="digitar outro acorde, ex.: F#7(#9)"
+          value={freeText}
+          onChange={(e) => setFreeText(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') submitFree() }}
+        />
+        <button className="btn" disabled={!freeParsed} onClick={submitFree}>usar</button>
+      </div>
+      {freeInvalid && <p className="hint small danger">Não reconheci esse acorde.</p>}
       <p className="hint small">
         Transpor este acorde isolado: {[-2, -1, 1, 2].map((n) => (
           <button key={n} className="inlinebtn mono" onClick={() => onPick(transposeSymbol(current, n))}>

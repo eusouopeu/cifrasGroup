@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { parseCifra, uniqueChords } from '../cifra/parse'
 import { ImportCancelledError, importFromCifraClubUrl, isCifraClubUrl, nativeImportAvailable } from '../native/cifraClubImport'
+import { allVoicings } from '../theory/voicings'
 import { useToast } from './Toast'
 
 export function ImportView({ onImport, onCancel, initialUrl }: {
@@ -18,26 +19,32 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
   const preview = useMemo(() => {
     if (!raw.trim()) return null
     const p = parseCifra(raw)
+    const chords = uniqueChords(p)
     return {
-      chords: uniqueChords(p),
+      chords,
       chordLines: p.lines.filter((l) => l.kind === 'chords').length,
       lyricLines: p.lines.filter((l) => l.kind === 'lyrics').length,
       tabLines: p.lines.filter((l) => l.kind === 'tab').length,
       declaredKey: p.declaredKey,
       capo: p.capo,
+      // acordes que o app reconheceu mas não sabe tocar no violão dentro das
+      // restrições de mão — melhor avisar aqui do que só depois de importado
+      unplayable: chords.filter((c) => allVoicings(c.symbol, 1).length === 0).map((c) => c.symbol),
     }
   }, [raw])
 
+  /** Chuta título/artista pelas duas primeiras linhas — usado ao colar, digitar ou carregar arquivo. */
   const guessMeta = (text: string) => {
     const lines = text.split('\n').map((l) => l.trim()).filter(Boolean)
-    if (lines.length >= 1 && !title) setTitle(lines[0].slice(0, 80))
-    if (lines.length >= 2 && !artist) setArtist(lines[1].slice(0, 60))
+    if (lines.length >= 1) setTitle((cur) => cur || lines[0].slice(0, 80))
+    if (lines.length >= 2) setArtist((cur) => cur || lines[1].slice(0, 60))
   }
 
   const nativeOk = nativeImportAvailable()
   const [linkUrl, setLinkUrl] = useState(initialUrl ?? '')
   const [linkStatus, setLinkStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [linkError, setLinkError] = useState<string | null>(null)
+  const [fileName, setFileName] = useState<string | null>(null)
   const autoRan = useRef(false)
   const abortRef = useRef<AbortController | null>(null)
 
@@ -95,7 +102,7 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
             <input
               className="linkinput"
               value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
+              onChange={(e) => { setLinkUrl(e.target.value); if (linkStatus === 'error') { setLinkStatus('idle'); setLinkError(null) } }}
               placeholder="https://www.cifraclub.com.br/artista/musica/"
               inputMode="url"
               autoCapitalize="none"
@@ -148,10 +155,11 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
               const text = e.clipboardData.getData('text')
               if (text && !raw) setTimeout(() => guessMeta(text), 0)
             }}
+            onBlur={() => { if (raw) guessMeta(raw) }}
           />
         </label>
         <label className="btn ghost">
-          carregar arquivo .txt / .cho
+          {fileName ? `arquivo: ${fileName}` : 'carregar arquivo .txt / .cho'}
           <input type="file" accept=".txt,.cho,.chopro,.crd,text/plain" hidden onChange={(e) => {
             const f = e.target.files?.[0]
             if (!f) return
@@ -159,7 +167,9 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
             r.onload = () => {
               const text = String(r.result)
               setRaw(text)
-              if (!title) setTitle(f.name.replace(/\.[^.]+$/, ''))
+              setFileName(f.name)
+              guessMeta(text)
+              setTitle((cur) => cur || f.name.replace(/\.[^.]+$/, ''))
             }
             r.onerror = () => showToast(`Não consegui ler o arquivo "${f.name}".`)
             r.readAsText(f)
@@ -180,6 +190,12 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
           <div className="mono chordpreview">{preview.chords.map((c) => `${c.symbol}×${c.count}`).join('  ')}</div>
           {preview.chords.length === 0 && (
             <p className="hint">Nenhum acorde reconhecido. Confira se a cifra tem os acordes em linhas próprias acima da letra.</p>
+          )}
+          {preview.unplayable.length > 0 && (
+            <p className="hint warn">
+              Sem digitação viável no violão dentro das restrições de mão: <span className="mono">{preview.unplayable.join(', ')}</span>.
+              A simplificação automática pode resolver isso depois de importar.
+            </p>
           )}
         </div>
       )}

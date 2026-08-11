@@ -1,7 +1,23 @@
 import { parseChord } from '../theory/chord'
+import { nameOf } from '../theory/notes'
 import { STRING_NAMES, allVoicings, voicingDegrees, type Voicing } from '../theory/voicings'
 
 const FRETS = 5
+
+/**
+ * Numeração de dedo por corda (1 = indicador .. 4 = mindinho), estimada pela
+ * ordem crescente de casa — não é a única digitação possível, mas é a
+ * referência que a maioria dos métodos de violão ensina.
+ */
+function fingerNumbers(voicing: Voicing): (number | null)[] {
+  const idxs = voicing.frets
+    .map((f, i) => ({ f, i }))
+    .filter(({ f }) => f !== null && f > 0 && !(voicing.barre !== null && f === voicing.barre))
+  idxs.sort((a, b) => (a.f as number) - (b.f as number) || a.i - b.i)
+  const out: (number | null)[] = voicing.frets.map(() => null)
+  idxs.forEach(({ i }, n) => { out[i] = (voicing.barre !== null ? 1 : 0) + n + 1 })
+  return out
+}
 
 export function GuitarDiagram({ symbol, voicing, size = 1, showDegrees = true }: {
   symbol: string
@@ -21,19 +37,23 @@ export function GuitarDiagram({ symbol, voicing, size = 1, showDegrees = true }:
 
   const base = voicing.minFret > 0 && voicing.maxFret > FRETS ? voicing.minFret : 0
   const degrees = chord ? voicingDegrees(voicing, chord.rootPc) : voicing.frets.map(() => null)
+  const fingers = fingerNumbers(voicing)
 
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="diagram">
       {/* pestana */}
       {voicing.barre !== null && (
-        <rect
-          x={padX - 4 * size}
-          y={padTop + (voicing.barre - base - 0.5) * dy - 4 * size}
-          width={gridW + 8 * size}
-          height={8 * size}
-          rx={4 * size}
-          className="d-barre"
-        />
+        <>
+          <rect
+            x={padX - 4 * size}
+            y={padTop + (voicing.barre - base - 0.5) * dy - 4 * size}
+            width={gridW + 8 * size}
+            height={8 * size}
+            rx={4 * size}
+            className="d-barre"
+          />
+          <text x={padX - 10 * size} y={padTop + (voicing.barre - base - 0.5) * dy + 3 * size} className="d-finger" fontSize={7.5 * size} textAnchor="middle">1</text>
+        </>
       )}
       {/* cordas */}
       {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -63,8 +83,14 @@ export function GuitarDiagram({ symbol, voicing, size = 1, showDegrees = true }:
         const rel = f - base
         const covered = voicing.barre !== null && f === voicing.barre
         if (covered) return null
+        const cy = padTop + (rel - 0.5) * dy
         return (
-          <circle key={i} cx={x} cy={padTop + (rel - 0.5) * dy} r={5.2 * size} className="d-dot" />
+          <g key={i}>
+            <circle cx={x} cy={cy} r={5.2 * size} className="d-dot" />
+            {fingers[i] !== null && (
+              <text x={x} y={cy + 2.6 * size} className="d-finger on" fontSize={7 * size} textAnchor="middle">{fingers[i]}</text>
+            )}
+          </g>
         )
       })}
       {/* graus */}
@@ -105,7 +131,16 @@ export function PianoDiagram({ symbol, size = 1 }: { symbol: string; size?: numb
         WHITE.map((pc, i) => {
           const x = (o * 7 + i) * kw + 1
           const on = pcs.has(pc)
-          return <rect key={`w${o}-${i}`} x={x} y={0} width={kw - 1} height={kh} rx={2} className={on ? 'k-white on' : 'k-white'} />
+          return (
+            <g key={`w${o}-${i}`}>
+              <rect x={x} y={0} width={kw - 1} height={kh} rx={2} className={on ? 'k-white on' : 'k-white'} />
+              {on && (
+                <text x={x + (kw - 1) / 2} y={kh - 6 * size} className="k-label on" fontSize={7 * size} textAnchor="middle">
+                  {nameOf(pc)}
+                </text>
+              )}
+            </g>
+          )
         }),
       )}
       {Array.from({ length: octaves }, (_, o) =>
@@ -113,7 +148,16 @@ export function PianoDiagram({ symbol, size = 1 }: { symbol: string; size?: numb
           const pc = Number(pcs2)
           const x = (o * 7 + idx + 1) * kw - kw * 0.3 + 1
           const on = pcs.has(pc)
-          return <rect key={`b${o}-${pc}`} x={x} y={0} width={kw * 0.6} height={kh * 0.62} rx={2} className={on ? 'k-black on' : 'k-black'} />
+          return (
+            <g key={`b${o}-${pc}`}>
+              <rect x={x} y={0} width={kw * 0.6} height={kh * 0.62} rx={2} className={on ? 'k-black on' : 'k-black'} />
+              {on && (
+                <text x={x + (kw * 0.6) / 2} y={kh * 0.62 - 5 * size} className="k-label on" fontSize={6 * size} textAnchor="middle">
+                  {nameOf(pc)}
+                </text>
+              )}
+            </g>
+          )
         }),
       )}
       {chord && (
