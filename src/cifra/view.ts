@@ -8,7 +8,7 @@ import type { SongSettings } from '../store/db'
 import { transposeSymbol } from '../theory/chord'
 import { applyPalette, paletteById } from '../theory/palettes'
 import { rankKeys, simplifyLevel1, type KeyOption, type Substitution } from '../theory/simplify'
-import { chordSequence, parseCifra, uniqueChords, type ParsedCifra } from './parse'
+import { chordSequence, parseCifra, renderChordLine, uniqueChords, type ParsedCifra } from './parse'
 
 export interface CifraView {
   parsed: ParsedCifra
@@ -75,4 +75,19 @@ export function buildView(raw: string, settings: SongSettings): CifraView {
     suggestedCapo,
     displayedChords,
   }
+}
+
+/** Reconstrói a cifra exibida (já com simplificação/tom/overrides aplicados) como texto puro. */
+export function viewToText(view: CifraView, title: string, artist: string): string {
+  const out: string[] = []
+  if (title) out.push(artist ? `${title} - ${artist}` : title)
+  else if (artist) out.push(artist)
+  if (out.length > 0) out.push('')
+  for (const line of view.parsed.lines) {
+    if (line.kind === 'blank') { out.push(''); continue }
+    if (line.kind === 'section') { out.push(`[${line.text}]`); continue }
+    if (line.kind === 'chords') { out.push(renderChordLine(line, (s) => view.map.get(s) ?? s)); continue }
+    out.push(line.text)
+  }
+  return out.join('\n').trim() + '\n'
 }

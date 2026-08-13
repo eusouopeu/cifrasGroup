@@ -1,41 +1,56 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { DEMO_RAW } from './data/demo'
 import { Library } from './components/Library'
 import { ImportView } from './components/ImportView'
 import { SongView } from './components/SongView'
 import { useToast } from './components/Toast'
+import { Tuner } from './components/Tuner'
 import { initShareTarget } from './native/shareTarget'
-import { DEFAULT_SETTINGS, exportDB, importDB, loadDB, newId, saveDB, type DB, type SongSettings } from './store/db'
+import { DEFAULT_SETTINGS, exportDB, importDB, loadDBAsync, newId, saveDBAsync, type DB, type SongSettings } from './store/db'
 
-type Route = { view: 'library' } | { view: 'import' } | { view: 'song'; id: string }
+type Route = { view: 'library' } | { view: 'import' } | { view: 'song'; id: string; listId?: string }
+
+function withDemoSong(loaded: DB): DB {
+  if (Object.keys(loaded.songs).length > 0) return loaded
+  const id = newId()
+  loaded.songs[id] = {
+    id,
+    title: 'Grade de estudo (exemplo)',
+    artist: 'cifrasGroup',
+    source: null,
+    raw: DEMO_RAW,
+    notes: '',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    settings: { ...DEFAULT_SETTINGS },
+  }
+  return loaded
+}
 
 export default function App() {
-  const [db, setDb] = useState<DB>(() => {
-    const loaded = loadDB()
-    if (Object.keys(loaded.songs).length === 0) {
-      const id = newId()
-      loaded.songs[id] = {
-        id,
-        title: 'Grade de estudo (exemplo)',
-        artist: 'cifrasGroup',
-        source: null,
-        raw: DEMO_RAW,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        settings: { ...DEFAULT_SETTINGS },
-      }
-    }
-    return loaded
-  })
+  const [db, setDb] = useState<DB | null>(null)
   const [route, setRoute] = useState<Route>({ view: 'library' })
   const [picker, setPicker] = useState<string | null>(null)
   const [sharedUrl, setSharedUrl] = useState<string | null>(null)
+  const [tunerOpen, setTunerOpen] = useState(false)
   const showToast = useToast()
 
   useEffect(() => {
-    if (!saveDB(db)) {
-      showToast('Não foi possível salvar: armazenamento cheio. Exporte um backup e apague músicas antigas.', { duration: 8000 })
-    }
+    let cancelled = false
+    void loadDBAsync().then((loaded) => {
+      if (!cancelled) setDb(withDemoSong(loaded))
+    })
+    return () => { cancelled = true }
+  }, [])
+
+  const loadedOnce = useRef(false)
+  useEffect(() => {
+    if (!db) return
+    // não salva de volta a própria carga inicial, só mudanças feitas depois
+    if (!loadedOnce.current) { loadedOnce.current = true; return }
+    void saveDBAsync(db).then((ok) => {
+      if (!ok) showToast('Não foi possível salvar as mudanças neste aparelho.', { duration: 8000 })
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [db])
 
@@ -49,14 +64,23 @@ export default function App() {
     [],
   )
 
+  if (!db) return <div className="empty">Carregando…</div>
+
   const patchSettings = (id: string, patch: Partial<SongSettings>) => {
-    setDb((cur) => ({
-      ...cur,
+    setDb({
+      ...db,
       songs: {
-        ...cur.songs,
-        [id]: { ...cur.songs[id], updatedAt: Date.now(), settings: { ...cur.songs[id].settings, ...patch } },
+        ...db.songs,
+        [id]: { ...db.songs[id], updatedAt: Date.now(), settings: { ...db.songs[id].settings, ...patch } },
       },
-    }))
+    })
+  }
+
+  const patchSong = (id: string, patch: Partial<Pick<DB['songs'][string], 'title' | 'artist' | 'notes'>>) => {
+    setDb({
+      ...db,
+      songs: { ...db.songs, [id]: { ...db.songs[id], ...patch, updatedAt: Date.now() } },
+    })
   }
 
   if (route.view === 'import') {
@@ -71,11 +95,18 @@ export default function App() {
           setRoute({ view: 'library' })
         }}
         onImport={(data) => {
+          const norm = (t: string) => t.trim().toLowerCase()
+          const dup = Object.values(db.songs).find(
+            (s) => norm(s.title) === norm(data.title) && norm(s.artist) === norm(data.artist),
+          )
+          if (dup && !window.confirm(`Já existe "${dup.title}" de ${dup.artist || 'artista desconhecido'} na biblioteca. Importar mesmo assim?`)) {
+            return
+          }
           const id = newId()
-          setDb((cur) => ({
-            ...cur,
-            songs: { ...cur.songs, [id]: { id, ...data, createdAt: Date.now(), updatedAt: Date.now(), settings: { ...DEFAULT_SETTINGS } } },
-          }))
+          setDb({
+            ...db,
+            songs: { ...db.songs, [id]: { id, ...data, notes: '', createdAt: Date.now(), updatedAt: Date.now(), settings: { ...DEFAULT_SETTINGS } } },
+          })
           setSharedUrl(null)
           setRoute({ view: 'song', id })
         }}
@@ -86,30 +117,41 @@ export default function App() {
   if (route.view === 'song') {
     const song = db.songs[route.id]
     if (!song) return <div className="empty">Música não encontrada. <button className="btn" onClick={() => setRoute({ view: 'library' })}>voltar</button></div>
+    // modo setlist: navegar entre as músicas da lista de onde a música foi aberta
+    const setlist = route.listId ? db.lists.find((l) => l.id === route.listId) : undefined
+    const setlistIds = setlist?.songIds.filter((id) => db.songs[id]) ?? []
+    const setlistIndex = setlistIds.indexOf(route.id)
+    const siblings = setlist && setlistIds.length > 1 && setlistIndex >= 0
+      ? { listName: setlist.name, ids: setlistIds, index: setlistIndex }
+      : undefined
     return (
       <>
         <SongView
           song={song}
           onBack={() => setRoute({ view: 'library' })}
           onChange={(patch) => patchSettings(song.id, patch)}
+          onRename={(title, artist) => patchSong(song.id, { title, artist })}
+          onNotesChange={(notes) => patchSong(song.id, { notes })}
           onSaveToList={() => setPicker(song.id)}
+          siblings={siblings}
+          onNavigate={(id) => setRoute({ view: 'song', id, listId: route.listId })}
         />
         {picker && (
           <ListPicker
             db={db}
             onClose={() => setPicker(null)}
             onPick={(listId) => {
-              setDb((cur) => ({
-                ...cur,
-                lists: cur.lists.map((l) =>
+              setDb({
+                ...db,
+                lists: db.lists.map((l) =>
                   l.id === listId && !l.songIds.includes(picker) ? { ...l, songIds: [...l.songIds, picker] } : l,
                 ),
-              }))
+              })
               setPicker(null)
             }}
             onCreate={(name) => {
               const id = newId()
-              setDb((cur) => ({ ...cur, lists: [...cur.lists, { id, name, description: '', songIds: [picker], createdAt: Date.now() }] }))
+              setDb({ ...db, lists: [...db.lists, { id, name, description: '', songIds: [picker], createdAt: Date.now() }] })
               setPicker(null)
             }}
           />
@@ -119,19 +161,19 @@ export default function App() {
   }
 
   return (
+    <>
     <Library
       db={db}
-      onOpen={(id) => setRoute({ view: 'song', id })}
+      onOpen={(id, listId) => setRoute({ view: 'song', id, listId })}
       onNew={() => setRoute({ view: 'import' })}
+      onOpenTuner={() => setTunerOpen(true)}
       onDeleteSong={(id) => {
         const prev = db
         const song = db.songs[id]
         if (!song) return
-        setDb((cur) => {
-          const songs = { ...cur.songs }
-          delete songs[id]
-          return { ...cur, songs, lists: cur.lists.map((l) => ({ ...l, songIds: l.songIds.filter((x) => x !== id) })) }
-        })
+        const songs = { ...db.songs }
+        delete songs[id]
+        setDb({ ...db, songs, lists: db.lists.map((l) => ({ ...l, songIds: l.songIds.filter((x) => x !== id) })) })
         showToast(`"${song.title}" apagada.`, { actionLabel: 'Desfazer', onAction: () => setDb(prev) })
       }}
       onDuplicateSong={(id) => {
@@ -139,23 +181,37 @@ export default function App() {
         if (!song) return
         const copyId = newId()
         const now = Date.now()
-        setDb((cur) => ({
-          ...cur,
-          songs: { ...cur.songs, [copyId]: { ...song, id: copyId, title: `${song.title} (cópia)`, createdAt: now, updatedAt: now } },
-        }))
+        setDb({
+          ...db,
+          songs: { ...db.songs, [copyId]: { ...song, id: copyId, title: `${song.title} (cópia)`, createdAt: now, updatedAt: now } },
+        })
         showToast(`"${song.title} (cópia)" criada.`)
       }}
-      onCreateList={(name) => setDb((cur) => ({ ...cur, lists: [...cur.lists, { id: newId(), name, description: '', songIds: [], createdAt: Date.now() }] }))}
+      onCreateList={(name) => setDb({ ...db, lists: [...db.lists, { id: newId(), name, description: '', songIds: [], createdAt: Date.now() }] })}
       onDeleteList={(id) => {
         const prev = db
         const list = db.lists.find((l) => l.id === id)
         if (!list) return
-        setDb((cur) => ({ ...cur, lists: cur.lists.filter((l) => l.id !== id) }))
+        setDb({ ...db, lists: db.lists.filter((l) => l.id !== id) })
         showToast(`Lista "${list.name}" apagada. As músicas continuam salvas.`, { actionLabel: 'Desfazer', onAction: () => setDb(prev) })
       }}
       onRemoveFromList={(listId, songId) =>
-        setDb((cur) => ({ ...cur, lists: cur.lists.map((l) => (l.id === listId ? { ...l, songIds: l.songIds.filter((x) => x !== songId) } : l)) }))
+        setDb({ ...db, lists: db.lists.map((l) => (l.id === listId ? { ...l, songIds: l.songIds.filter((x) => x !== songId) } : l)) })
       }
+      onReorderSong={(listId, songId, dir) => {
+        setDb({
+          ...db,
+          lists: db.lists.map((l) => {
+            if (l.id !== listId) return l
+            const i = l.songIds.indexOf(songId)
+            const j = dir === 'up' ? i - 1 : i + 1
+            if (i < 0 || j < 0 || j >= l.songIds.length) return l
+            const songIds = [...l.songIds]
+            ;[songIds[i], songIds[j]] = [songIds[j], songIds[i]]
+            return { ...l, songIds }
+          }),
+        })
+      }}
       onExport={() => {
         const blob = new Blob([exportDB(db)], { type: 'application/json' })
         const a = document.createElement('a')
@@ -171,6 +227,8 @@ export default function App() {
         showToast('Backup importado.')
       }}
     />
+    {tunerOpen && <Tuner onClose={() => setTunerOpen(false)} />}
+    </>
   )
 }
 

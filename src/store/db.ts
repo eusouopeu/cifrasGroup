@@ -1,4 +1,12 @@
-/** Persistência local (localStorage). Sem servidor, sem conta. */
+/**
+ * Persistência local em IndexedDB. Sem servidor, sem conta.
+ *
+ * Versões anteriores guardavam tudo em localStorage, serializando o banco
+ * inteiro a cada mudança — lento e limitado a poucos MB. Na primeira carga,
+ * se o IndexedDB estiver vazio, o que estiver no localStorage é migrado para
+ * lá automaticamente e a chave antiga é removida.
+ */
+import { idbGet, idbSet } from './idb'
 
 export interface SongSettings {
   /** semitons de transposição aplicados sobre a cifra original */
@@ -22,6 +30,8 @@ export interface SongSettings {
   fontSize: number
   hideTabs: boolean
   instrument: 'guitar' | 'piano'
+  /** id do catálogo em theory/tunings.ts */
+  tuning: string
 }
 
 export interface Song {
@@ -31,6 +41,8 @@ export interface Song {
   source: string | null
   /** texto original da cifra, nunca modificado */
   raw: string
+  /** anotações livres do usuário (ex.: "repetir refrão 2x") */
+  notes: string
   createdAt: number
   updatedAt: number
   settings: SongSettings
@@ -67,29 +79,56 @@ export const DEFAULT_SETTINGS: SongSettings = {
   fontSize: 15,
   hideTabs: true,
   instrument: 'guitar',
+  tuning: 'standard',
 }
 
 function emptyDB(): DB {
   return { version: 1, songs: {}, lists: [{ id: 'favoritas', name: 'Favoritas', description: '', songIds: [], createdAt: Date.now() }] }
 }
 
-export function loadDB(): DB {
+function normalize(db: DB): DB {
+  for (const s of Object.values(db.songs)) {
+    s.settings = { ...DEFAULT_SETTINGS, ...s.settings }
+    s.notes ??= ''
+  }
+  return db
+}
+
+function parseLegacy(raw: string): DB | null {
   try {
-    const raw = localStorage.getItem(KEY)
-    if (!raw) return emptyDB()
     const db = JSON.parse(raw) as DB
-    if (!db.songs || !db.lists) return emptyDB()
-    for (const s of Object.values(db.songs)) s.settings = { ...DEFAULT_SETTINGS, ...s.settings }
-    return db
+    if (!db.songs || !db.lists) return null
+    return normalize(db)
+  } catch {
+    return null
+  }
+}
+
+/** Carrega o banco do IndexedDB, migrando do localStorage legado na primeira vez. */
+export async function loadDBAsync(): Promise<DB> {
+  try {
+    const fromIdb = await idbGet<DB>(KEY)
+    if (fromIdb && fromIdb.songs && fromIdb.lists) return normalize(fromIdb)
+
+    const legacyRaw = localStorage.getItem(KEY)
+    if (legacyRaw) {
+      const migrated = parseLegacy(legacyRaw)
+      if (migrated) {
+        await idbSet(KEY, migrated)
+        localStorage.removeItem(KEY)
+        return migrated
+      }
+    }
+    return emptyDB()
   } catch {
     return emptyDB()
   }
 }
 
-/** Retorna true se salvou; false se o navegador recusou (ex.: cota do localStorage estourada). */
-export function saveDB(db: DB): boolean {
+/** Retorna true se salvou; false se o navegador recusou a gravação. */
+export async function saveDBAsync(db: DB): Promise<boolean> {
   try {
-    localStorage.setItem(KEY, JSON.stringify(db))
+    await idbSet(KEY, db)
     return true
   } catch {
     return false
@@ -105,12 +144,5 @@ export function exportDB(db: DB): string {
 }
 
 export function importDB(json: string): DB | null {
-  try {
-    const db = JSON.parse(json) as DB
-    if (!db.songs || !db.lists) return null
-    for (const s of Object.values(db.songs)) s.settings = { ...DEFAULT_SETTINGS, ...s.settings }
-    return db
-  } catch {
-    return null
-  }
+  return parseLegacy(json)
 }

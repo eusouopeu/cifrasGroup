@@ -1,0 +1,15 @@
+{
+  "name": "cifrasGroup",
+  "short_name": "cifrasGroup",
+  "description": "Leitor de cifras para violão com análise harmônica automática. Sem servidor, sem conta.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0e1014",
+  "theme_color": "#12141a",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

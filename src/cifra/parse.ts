@@ -156,8 +156,7 @@ export function uniqueChords(parsed: ParsedCifra): { symbol: string; count: numb
 }
 
 /** Tom provável, pela primeira e última fundamental + frequência. */
-export function guessKey(parsed: ParsedCifra): number | null {
-  const seq = chordSequence(parsed)
+export function guessKeyFromSymbols(seq: string[]): number | null {
   if (seq.length === 0) return null
   const counts = new Map<number, number>()
   seq.forEach((s, i) => {
@@ -172,6 +171,10 @@ export function guessKey(parsed: ParsedCifra): number | null {
   let bestN = -1
   for (const [pc, n] of counts) if (n > bestN) { bestN = n; best = pc }
   return best
+}
+
+export function guessKey(parsed: ParsedCifra): number | null {
+  return guessKeyFromSymbols(chordSequence(parsed))
 }
 
 /**

@@ -12,11 +12,22 @@
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
+/* segue o sistema quando não há preferência explícita (data-theme ausente) */
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme]) {
     --bg: #faf9f7; --bg2: #ffffff; --bg3: #f0eeea; --line: #ddd8d0;
     --fg: #1b1d21; --dim: #6b7280; --accent: #c9721a; --accent2: #1f8a70;
   }
+}
+
+/* preferência explícita do usuário (toggle na biblioteca), sobrepõe o sistema */
+:root[data-theme="light"] {
+  --bg: #faf9f7; --bg2: #ffffff; --bg3: #f0eeea; --line: #ddd8d0;
+  --fg: #1b1d21; --dim: #6b7280; --accent: #c9721a; --accent2: #1f8a70;
+}
+:root[data-theme="dark"] {
+  --bg: #0e1014; --bg2: #161a21; --bg3: #1e232c; --line: #2a3039;
+  --fg: #e8eaee; --dim: #98a1ae; --accent: #f2a03d; --accent2: #5ac8a8;
 }
 
 * { box-sizing: border-box; }
@@ -71,7 +82,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .songcard-main { background: none; border: none; text-align: left; padding: 0; display: flex; flex-direction: column; gap: .2rem; }
 .songcard .artist { color: var(--dim); font-size: .8rem; }
 .songcard .chords { color: var(--accent2); font-size: .78rem; }
-.songcard-actions { display: flex; gap: .4rem; align-self: flex-end; }
+.songcard-actions { display: flex; gap: .4rem; align-self: flex-end; align-items: center; }
+.reorder { display: flex; gap: 0; }
+.reorder .icon:disabled { opacity: .3; }
 .badges { display: flex; flex-wrap: wrap; gap: .25rem; }
 .badges i { font-style: normal; font-size: .68rem; background: var(--bg3); border: 1px solid var(--line); border-radius: 4px; padding: 0 .3rem; color: var(--dim); }
 .badges i.more { color: var(--accent2); border-color: var(--accent2); cursor: default; }
@@ -102,9 +115,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* ---------- tela da música ---------- */
 .songview { display: flex; flex-direction: column; height: 100%; }
 .songhead { display: flex; align-items: center; gap: .5rem; padding: .5rem .6rem; border-bottom: 1px solid var(--line); background: var(--bg2); }
-.songhead-title { flex: 1; display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.songhead-title { flex: 1; display: flex; flex-direction: column; line-height: 1.15; min-width: 0; background: none; border: none; color: inherit; font: inherit; text-align: left; padding: 0; cursor: pointer; }
 .songhead-title strong { font-size: .95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .songhead-title span { font-size: .75rem; color: var(--dim); }
+.songhead-title-edit { flex-direction: row; gap: .35rem; cursor: default; }
+.songhead-title-edit input { flex: 1; min-width: 0; background: var(--bg3); border: 1px solid var(--line); border-radius: 6px; color: var(--fg); font-size: .85rem; padding: .3rem .4rem; }
 
 .toolbar {
   display: flex; gap: .35rem; overflow-x: auto; padding: .45rem .6rem; border-bottom: 1px solid var(--line);
@@ -211,6 +226,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .dedilhado::-webkit-scrollbar { display: none; }
 .dedilhado > * { flex: 0 0 auto; }
 .capobar { background: color-mix(in srgb, var(--accent) 16%, var(--bg2)); border-bottom: 1px solid var(--line); padding: .25rem .7rem; font-size: .75rem; }
+.setlistbar { display: flex; align-items: center; justify-content: center; gap: .5rem; background: var(--bg2); border-bottom: 1px solid var(--line); padding: .15rem .4rem; }
+.setlistbar-label { font-size: .75rem; color: var(--dim); flex: 1; text-align: center; }
+.setlistbar .icon:disabled { opacity: .3; }
 
 /* ---------- cifra ---------- */
 .cifra-scroll { flex: 1; overflow-y: auto; padding: .8rem 1rem 6rem; scroll-behavior: auto; }
@@ -376,3 +394,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .cifra-scroll { padding: .7rem .8rem 2rem; overflow-x: auto; }
   .songhead { padding: calc(.4rem + env(safe-area-inset-top)) .5rem .4rem; }
 }
+
+/* ---------- afinador ---------- */
+.tuner-display { display: flex; flex-direction: column; align-items: center; gap: .5rem; padding: 1.2rem 0 .4rem; }
+.tuner-note { font-size: 3rem; font-weight: 700; font-family: var(--mono); color: var(--fg); line-height: 1; }
+.tuner-note sub { font-size: 1.1rem; color: var(--dim); }
+.tuner-display.in-tune .tuner-note { color: var(--accent2); }
+.tuner-meter { position: relative; width: 100%; max-width: 280px; height: 10px; background: var(--bg3); border-radius: 6px; margin: .3rem 0; }
+.tuner-center { position: absolute; left: 50%; top: -4px; bottom: -4px; width: 2px; background: var(--line); transform: translateX(-1px); }
+.tuner-needle { position: absolute; top: -3px; bottom: -3px; width: 8px; border-radius: 50%; background: var(--accent); transform: translateX(-4px); transition: left .08s linear; }
+.tuner-display.in-tune .tuner-needle { background: var(--accent2); }
+.tuner-cents { font-size: .8rem; color: var(--dim); font-family: var(--mono); }

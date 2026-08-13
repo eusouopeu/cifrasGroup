@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { buildView } from '../cifra/view'
+import { chordSequence, guessKeyFromSymbols } from '../cifra/parse'
+import { buildView, viewToText } from '../cifra/view'
 import { RHYTHMS, rhythmById } from '../data/rhythms'
 import { chordQualityName, chordSpelling, parseChord, transposeSymbol } from '../theory/chord'
+import { romanNumeral } from '../theory/functional'
 import { nameOf } from '../theory/notes'
 import { PALETTES, applyPalette } from '../theory/palettes'
 import { simplifyChord } from '../theory/simplify'
+import { TUNINGS, tuningById, type Tuning } from '../theory/tunings'
 import { allVoicings } from '../theory/voicings'
 import type { Song, SongSettings } from '../store/db'
 import { ChordCard, GuitarDiagram, PianoDiagram } from './ChordDiagram'
@@ -13,21 +16,35 @@ import { RhythmCard, RhythmGrid } from './RhythmView'
 import { useMetronome } from '../audio/useMetronome'
 import { useToast } from './Toast'
 
-type Panel = null | 'tom' | 'simplificar' | 'cor' | 'ritmo' | 'acordes' | 'texto'
+type Panel = null | 'tom' | 'simplificar' | 'cor' | 'ritmo' | 'acordes' | 'texto' | 'notas'
 
 const LAST_SCROLL_SPEED_KEY = 'cifrasgroup:lastScrollSpeed'
 
-export function SongView({ song, onChange, onBack, onSaveToList }: {
+export function SongView({ song, onChange, onBack, onSaveToList, onRename, onNotesChange, siblings, onNavigate }: {
   song: Song
   onChange: (patch: Partial<SongSettings>) => void
   onBack: () => void
   onSaveToList: () => void
+  onRename: (title: string, artist: string) => void
+  onNotesChange: (notes: string) => void
+  /** contexto de "setlist": em que lista e posição esta música foi aberta */
+  siblings?: { listName: string; ids: string[]; index: number }
+  onNavigate?: (id: string) => void
 }) {
   const s = song.settings
   const [panel, setPanel] = useState<Panel>(null)
   const [inspect, setInspect] = useState<string | null>(null)
   const [level2JustOff, setLevel2JustOff] = useState(false)
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [fullscreen, setFullscreen] = useState(false)
+  const [loopStart, setLoopStart] = useState<number | null>(null)
+  const [loopEnd, setLoopEnd] = useState<number | null>(null)
+  const [loopActive, setLoopActive] = useState(false)
+  const [manualAnalysisKey, setManualAnalysisKey] = useState<number | null>(null)
+  useEffect(() => { setManualAnalysisKey(null) }, [song.id])
   const scrollRef = useRef<HTMLDivElement>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
   const showToast = useToast()
 
   /** Muda o tom avisando o usuário quando isso desliga o nível 2 de simplificação. */
@@ -111,6 +128,60 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
     return () => cancelAnimationFrame(raf)
   }, [s.scrollSpeed])
 
+  // loop de trecho: ao passar da marca de fim, volta pra marca de início —
+  // funciona tanto na rolagem automática quanto no dedo do usuário
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el || !loopActive || loopEnd === null) return
+    const onScroll = () => {
+      if (el.scrollTop >= loopEnd) el.scrollTop = loopStart ?? 0
+    }
+    el.addEventListener('scroll', onScroll)
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [loopActive, loopStart, loopEnd])
+
+  // modo apresentação: tela cheia
+  useEffect(() => {
+    const onFsChange = () => setFullscreen(document.fullscreenElement === rootRef.current)
+    document.addEventListener('fullscreenchange', onFsChange)
+    return () => document.removeEventListener('fullscreenchange', onFsChange)
+  }, [])
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) void document.exitFullscreen()
+    else if (rootRef.current?.requestFullscreen) void rootRef.current.requestFullscreen()
+  }
+
+  // atalhos de teclado: espaço toca/pausa, ←→ transpõe, ↑↓ rolagem automática
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      if (target && /^(input|textarea|select)$/i.test(target.tagName)) return
+      if (e.key === ' ') { e.preventDefault(); handlePlay() }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); changeTranspose({ transpose: s.transpose - 1 }) }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); changeTranspose({ transpose: s.transpose + 1 }) }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); onChange({ scrollSpeed: Math.min(20, s.scrollSpeed + 1 || 6) }) }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); onChange({ scrollSpeed: Math.max(0, s.scrollSpeed - 1) }) }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s.transpose, s.scrollSpeed, s.bpm])
+
+  const exportText = () => viewToText(view, song.title, song.artist)
+  const shareOrDownload = async () => {
+    const text = exportText()
+    const file = new File([text], `${song.title || 'cifra'}.txt`, { type: 'text/plain' })
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: song.title }); return } catch { /* usuário cancelou */ return }
+    }
+    const blob = new Blob([text], { type: 'text/plain' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `${song.title || 'cifra'}.txt`
+    a.click()
+    URL.revokeObjectURL(a.href)
+  }
+
   const mapSymbol = (orig: string) => view.map.get(orig) ?? orig
   // símbolos exibidos que vieram de uma troca manual (para destacar no grid de acordes)
   const overriddenSymbols = useMemo(
@@ -120,18 +191,58 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
   const best = view.keyRanking[0]
   const currentKeyOption = view.keyRanking.find((k) => k.semitones === ((view.effectiveTranspose % 12) + 12) % 12)
 
+  // análise funcional: numeral romano de cada acorde relativo a uma tônica —
+  // por padrão a tônica mais provável da versão exibida, mas o usuário pode trocar
+  const displayedSeq = useMemo(() => chordSequence(view.parsed).map(mapSymbol), [view.parsed, view.map])
+  const guessedAnalysisKey = useMemo(() => guessKeyFromSymbols(displayedSeq) ?? 0, [displayedSeq])
+  const analysisKeyPc = manualAnalysisKey ?? guessedAnalysisKey
+
   const togglePanel = (p: Panel) => setPanel(panel === p ? null : p)
 
   return (
-    <div className="songview">
+    <div className="songview" ref={rootRef}>
       <header className="songhead">
         <button className="icon" onClick={onBack} aria-label="Voltar">←</button>
-        <div className="songhead-title">
-          <strong>{song.title}</strong>
-          <span>{song.artist}</span>
-        </div>
+        {editingTitle ? (
+          <EditTitle
+            title={song.title}
+            artist={song.artist}
+            onDone={(title, artist) => { onRename(title, artist); setEditingTitle(false) }}
+          />
+        ) : (
+          <button className="songhead-title" onClick={() => setEditingTitle(true)} aria-label="Editar título e artista">
+            <strong>{song.title}</strong>
+            <span>{song.artist || '—'}</span>
+          </button>
+        )}
+        <button className="icon" onClick={() => setMenuOpen(true)} aria-label="Mais opções">⋯</button>
         <button className="icon" onClick={onSaveToList} aria-label="Salvar em lista">＋</button>
       </header>
+
+      {menuOpen && (
+        <div className="sheet-backdrop" onClick={() => setMenuOpen(false)}>
+          <div className="sheet small" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-head">
+              <h3>Mais opções</h3>
+              <button className="icon" onClick={() => setMenuOpen(false)}>×</button>
+            </div>
+            <div className="listpick">
+              <button className="btn wide" onClick={() => { toggleFullscreen(); setMenuOpen(false) }}>
+                {fullscreen ? 'sair do modo apresentação' : 'modo apresentação (tela cheia)'}
+              </button>
+              <button className="btn wide" onClick={() => { void shareOrDownload(); setMenuOpen(false) }}>
+                {typeof navigator.share === 'function' ? 'compartilhar cifra (.txt)' : 'baixar cifra (.txt)'}
+              </button>
+              {Object.keys(s.overrides).length > 0 && (
+                <button className="btn wide" onClick={() => { onChange({ overrides: {} }); showToast('Todas as trocas manuais foram restauradas.'); setMenuOpen(false) }}>
+                  restaurar todos os acordes trocados manualmente ({Object.keys(s.overrides).length})
+                </button>
+              )}
+            </div>
+            <p className="hint small">Atalhos de teclado: espaço toca/pausa o metrônomo, ←→ transpõem, ↑↓ ajustam a rolagem automática.</p>
+          </div>
+        </div>
+      )}
 
       <nav className="toolbar">
         <ToolButton active={panel === 'tom'} onClick={() => togglePanel('tom')} label="Tom" value={
@@ -144,6 +255,7 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
         <ToolButton active={panel === 'ritmo'} onClick={() => togglePanel('ritmo')} label="Ritmo" value={rhythm?.name ?? 'nenhum'} />
         <ToolButton active={panel === 'acordes'} onClick={() => togglePanel('acordes')} label="Acordes" value={s.instrument === 'guitar' ? 'violão' : 'piano'} />
         <ToolButton active={panel === 'texto'} onClick={() => togglePanel('texto')} label="Texto" value={`${s.fontSize}px`} />
+        <ToolButton active={panel === 'notas'} onClick={() => togglePanel('notas')} label="Notas" value={song.notes.trim() ? 'anotado' : 'vazio'} />
       </nav>
 
       {panel && (
@@ -193,6 +305,29 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
             A coluna “capo” mostra em que casa pôr o capotraste para a música continuar soando no tom original,
             mesmo tocando as formas mais fáceis.
           </p>
+
+          <h4>Análise funcional</h4>
+          <p className="hint small">Cada acorde como grau da tônica escolhida — I, ii, V7… A tônica sugerida é a mais provável desta versão, mas dá pra trocar.</p>
+          <div className="rootrow">
+            {Array.from({ length: 12 }, (_, i) => (
+              <button
+                key={i}
+                className={`rootbtn${analysisKeyPc === i ? ' on' : ''}`}
+                onClick={() => setManualAnalysisKey(i === guessedAnalysisKey ? null : i)}
+              >
+                {nameOf(i)}
+              </button>
+            ))}
+          </div>
+          <div className="sublist">
+            {view.displayedChords.map((c) => (
+              <div key={c.symbol} className="subrow">
+                <span className="mono from">{c.symbol}</span>
+                <span className="arrow">→</span>
+                <span className="mono to">{romanNumeral(c.symbol, analysisKeyPc) ?? '?'}</span>
+              </div>
+            ))}
+          </div>
         </Panel>
       )}
 
@@ -314,11 +449,19 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
             </div>
             {s.capo > 0 && <span className="hint small">Diagramas relativos ao capotraste na {s.capo}ª casa.</span>}
           </div>
+          {s.instrument === 'guitar' && (
+            <label className="field wide">
+              Afinação
+              <select value={s.tuning} onChange={(e) => onChange({ tuning: e.target.value })}>
+                {TUNINGS.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+            </label>
+          )}
           <div className="chordgrid">
             {view.displayedChords.map((c) => (
               <div key={c.symbol} className={`chordslot${overriddenSymbols.has(c.symbol) ? ' overridden' : ''}`} onClick={() => setInspect(c.symbol)}>
                 {overriddenSymbols.has(c.symbol) && <span className="overridden-dot" title="Troca manual" />}
-                <ChordCard symbol={c.symbol} instrument={s.instrument} compact />
+                <ChordCard symbol={c.symbol} instrument={s.instrument} compact tuning={tuningById(s.tuning)} />
               </div>
             ))}
           </div>
@@ -344,6 +487,51 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
             Rolagem automática: <strong>{s.scrollSpeed === 0 ? 'parada' : `${s.scrollSpeed}`}</strong>
             <input type="range" min={0} max={20} value={s.scrollSpeed} onChange={(e) => onChange({ scrollSpeed: Number(e.target.value) })} />
           </label>
+
+          <h4>Loop de trecho</h4>
+          <p className="hint small">
+            Marque o início e o fim de uma passagem pra repeti-la sem parar — útil pra treinar um trecho difícil.
+            A marca usa a posição de rolagem atual, então role até o ponto certo antes de marcar.
+          </p>
+          <div className="row tight">
+            <button className="btn" onClick={() => setLoopStart(scrollRef.current?.scrollTop ?? 0)}>
+              marcar início{loopStart !== null ? ' ✓' : ''}
+            </button>
+            <button className="btn" onClick={() => setLoopEnd(scrollRef.current?.scrollTop ?? 0)}>
+              marcar fim{loopEnd !== null ? ' ✓' : ''}
+            </button>
+          </div>
+          <div className="row tight">
+            <button
+              className={`chip${loopActive ? ' on' : ''}`}
+              disabled={loopStart === null || loopEnd === null || loopEnd <= loopStart}
+              onClick={() => setLoopActive((v) => !v)}
+            >
+              {loopActive ? 'loop ativo — tocando em repetição' : 'ativar loop'}
+            </button>
+            {(loopStart !== null || loopEnd !== null) && (
+              <button className="btn ghost" onClick={() => { setLoopActive(false); setLoopStart(null); setLoopEnd(null) }}>
+                limpar marcas
+              </button>
+            )}
+          </div>
+          {loopStart !== null && loopEnd !== null && loopEnd <= loopStart && (
+            <p className="hint small danger">O fim precisa estar depois do início — role mais e marque de novo.</p>
+          )}
+        </Panel>
+      )}
+
+      {panel === 'notas' && (
+        <Panel title="Notas">
+          <p className="hint small">Anotações livres desta música — arranjo, combinado com a banda, o que lembrar no ensaio.</p>
+          <label className="field wide">
+            <textarea
+              rows={6}
+              value={song.notes}
+              placeholder="ex.: repetir o refrão 2x, entrar direto no segundo verso…"
+              onChange={(e) => onNotesChange(e.target.value)}
+            />
+          </label>
         </Panel>
       )}
       </div>
@@ -351,6 +539,28 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
       )}
 
       {s.capo > 0 && <div className="capobar">Capotraste na {s.capo}ª casa</div>}
+
+      {siblings && onNavigate && (
+        <div className="setlistbar">
+          <button
+            className="icon"
+            disabled={siblings.index === 0}
+            onClick={() => onNavigate(siblings.ids[siblings.index - 1])}
+            aria-label="Música anterior da lista"
+          >
+            ‹
+          </button>
+          <span className="setlistbar-label">{siblings.listName} · {siblings.index + 1}/{siblings.ids.length}</span>
+          <button
+            className="icon"
+            disabled={siblings.index === siblings.ids.length - 1}
+            onClick={() => onNavigate(siblings.ids[siblings.index + 1])}
+            aria-label="Próxima música da lista"
+          >
+            ›
+          </button>
+        </div>
+      )}
 
       <div className="cifra-scroll" ref={scrollRef}>
         <CifraText
@@ -395,6 +605,7 @@ export function SongView({ song, onChange, onBack, onSaveToList }: {
           symbol={inspect}
           instrument={s.instrument}
           threshold={s.threshold}
+          tuning={tuningById(s.tuning)}
           onPick={(newSym) => {
             const original = [...view.map.entries()].find(([, v]) => v === inspect)?.[0]
             if (original) onChange({ overrides: { ...s.overrides, [original]: newSym } })
@@ -422,6 +633,24 @@ function previewPalette(symbols: string[], paletteId: string): string {
   const src = symbols.slice(0, 4)
   if (src.length === 0) return ''
   return src.map((x) => applyPalette(x, p)).join('  ')
+}
+
+function EditTitle({ title, artist, onDone }: { title: string; artist: string; onDone: (title: string, artist: string) => void }) {
+  const [t, setT] = useState(title)
+  const [a, setA] = useState(artist)
+  const boxRef = useRef<HTMLDivElement>(null)
+  const commit = () => onDone(t.trim() || title, a.trim())
+  return (
+    <div
+      className="songhead-title songhead-title-edit"
+      ref={boxRef}
+      // só confirma quando o foco sai dos dois campos (não a cada troca entre eles)
+      onBlur={(e) => { if (!boxRef.current?.contains(e.relatedTarget as Node)) commit() }}
+    >
+      <input className="mono" value={t} onChange={(e) => setT(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && commit()} autoFocus placeholder="título" />
+      <input value={a} onChange={(e) => setA(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && commit()} placeholder="artista" />
+    </div>
+  )
 }
 
 function ToolButton({ label, value, active, onClick, flash }: { label: string; value: string; active: boolean; onClick: () => void; flash?: boolean }) {
@@ -452,16 +681,17 @@ function LevelButton({ active, onClick, title, desc }: { active: boolean; onClic
 }
 
 /** Ficha do acorde: digitações, construção e alternativas para troca manual. */
-function ChordSheet({ symbol, instrument, threshold, onPick, onReset, onClose }: {
+function ChordSheet({ symbol, instrument, threshold, tuning, onPick, onReset, onClose }: {
   symbol: string
   instrument: 'guitar' | 'piano'
   threshold: number
+  tuning: Tuning
   onPick: (s: string) => void
   onReset: () => void
   onClose: () => void
 }) {
   const chord = parseChord(symbol)
-  const voicings = allVoicings(symbol, 6)
+  const voicings = allVoicings(symbol, 6, tuning.strings)
   const sub = simplifyChord(symbol, threshold)
   const spelling = chord ? chordSpelling(chord) : []
 
@@ -495,7 +725,7 @@ function ChordSheet({ symbol, instrument, threshold, onPick, onReset, onClose }:
           <div className="sheet-voicings">
             {voicings.map((v, i) => (
               <div key={i} className="voicing">
-                <GuitarDiagram symbol={symbol} voicing={v} />
+                <GuitarDiagram symbol={symbol} voicing={v} tuning={tuning} />
                 <div className="voicing-meta">
                   {v.barre !== null ? `pestana ${v.barre}ª` : 'sem pestana'} · {v.fingers} dedo{v.fingers === 1 ? '' : 's'} · {v.open} solta{v.open === 1 ? '' : 's'}{v.muted > 0 ? ` · ${v.muted} muda${v.muted === 1 ? '' : 's'}` : ''}
                 </div>

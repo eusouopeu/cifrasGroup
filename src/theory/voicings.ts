@@ -36,6 +36,8 @@ interface SearchOpts {
   requireRootInBass?: boolean
   allowRootless?: boolean
   maxResults?: number
+  /** afinação a usar na busca; padrão é a afinação-padrão do violão */
+  tuning?: number[]
 }
 
 function costOf(v: Omit<Voicing, 'cost'>, targetBassPc: number): number {
@@ -53,7 +55,7 @@ function costOf(v: Omit<Voicing, 'cost'>, targetBassPc: number): number {
   return c
 }
 
-function analyze(frets: (number | null)[], targetBassPc: number): Voicing | null {
+function analyze(frets: (number | null)[], targetBassPc: number, tuning: number[]): Voicing | null {
   const sounded: number[] = []
   frets.forEach((f, i) => {
     if (f !== null) sounded.push(i)
@@ -97,7 +99,7 @@ function analyze(frets: (number | null)[], targetBassPc: number): Voicing | null
   // mãos humanas: no máximo 4 notas pisadas distintas fora da pestana
   if (barre === null && fretted.length > 4) return null
 
-  const bassPc = (STANDARD_TUNING[first] + (frets[first] as number)) % 12
+  const bassPc = (tuning[first] + (frets[first] as number)) % 12
 
   const base = { frets, muted, interiorMuted, open, fingers, barre, minFret, maxFret, span, bassPc }
   return { ...base, cost: costOf(base, targetBassPc) }
@@ -107,7 +109,8 @@ const cache = new Map<string, Voicing[]>()
 
 /** Busca as melhores digitações para um acorde. Resultado em cache por símbolo. */
 export function findVoicings(chord: Chord, opts: SearchOpts = {}): Voicing[] {
-  const key = `${chord.pcs.slice().sort().join(',')}|${chord.rootPc}|${chord.bassPc ?? '-'}|${opts.allowRootless ? 1 : 0}`
+  const tuning = opts.tuning ?? STANDARD_TUNING
+  const key = `${chord.pcs.slice().sort().join(',')}|${chord.rootPc}|${chord.bassPc ?? '-'}|${opts.allowRootless ? 1 : 0}|${tuning.join(',')}`
   // o cache guarda a lista inteira; maxResults é só um recorte na saída
   const hit = cache.get(key)
   if (hit) return hit.slice(0, opts.maxResults ?? 8)
@@ -131,7 +134,7 @@ export function findVoicings(chord: Chord, opts: SearchOpts = {}): Voicing[] {
 
   for (let w = 0; w <= MAX_FRET - WINDOW; w++) {
     // opções por corda dentro da janela [w, w+WINDOW]
-    const options: (number | null)[][] = STANDARD_TUNING.map((openPc) => {
+    const options: (number | null)[][] = tuning.map((openPc) => {
       const opts2: (number | null)[] = [null]
       if (pcSet.has(openPc)) opts2.push(0)
       for (let f = Math.max(1, w); f <= w + WINDOW; f++) {
@@ -144,12 +147,12 @@ export function findVoicings(chord: Chord, opts: SearchOpts = {}): Voicing[] {
     const dfs = (i: number, mutedSoFar: number) => {
       if (mutedSoFar > 2) return
       if (i === 6) {
-        const v = analyze(current.slice(), targetBass)
+        const v = analyze(current.slice(), targetBass, tuning)
         if (!v) return
         // cobertura das notas essenciais
         const got = new Set<number>()
         current.forEach((f, s) => {
-          if (f !== null) got.add((STANDARD_TUNING[s] + f) % 12)
+          if (f !== null) got.add((tuning[s] + f) % 12)
         })
         for (const e of essential) if (!got.has(e)) return
         if (!got.has(rootPc) && !opts.allowRootless) return
@@ -193,30 +196,30 @@ export function chordDifficulty(symbol: string): number {
   return d
 }
 
-export function bestVoicing(symbol: string): Voicing | null {
+export function bestVoicing(symbol: string, tuning: number[] = STANDARD_TUNING): Voicing | null {
   const c = parseChord(symbol)
   if (!c) return null
-  let vs = findVoicings(c, { maxResults: 6 })
-  if (vs.length === 0) vs = findVoicings(c, { allowRootless: true, maxResults: 6 })
+  let vs = findVoicings(c, { maxResults: 6, tuning })
+  if (vs.length === 0) vs = findVoicings(c, { allowRootless: true, maxResults: 6, tuning })
   return vs[0] ?? null
 }
 
-export function allVoicings(symbol: string, max = 6): Voicing[] {
+export function allVoicings(symbol: string, max = 6, tuning: number[] = STANDARD_TUNING): Voicing[] {
   const c = parseChord(symbol)
   if (!c) return []
-  let vs = findVoicings(c, { maxResults: max })
-  if (vs.length === 0) vs = findVoicings(c, { allowRootless: true, maxResults: max })
+  let vs = findVoicings(c, { maxResults: max, tuning })
+  if (vs.length === 0) vs = findVoicings(c, { allowRootless: true, maxResults: max, tuning })
   return vs
 }
 
 /** Rótulos "T / 3 / 5 / b7" por corda, para exibir a construção no diagrama. */
-export function voicingDegrees(v: Voicing, rootPc: number): (string | null)[] {
+export function voicingDegrees(v: Voicing, rootPc: number, tuning: number[] = STANDARD_TUNING): (string | null)[] {
   const labels: Record<number, string> = {
     0: 'T', 1: 'b9', 2: '9', 3: 'b3', 4: '3', 5: '11', 6: 'b5', 7: '5', 8: '#5', 9: '13', 10: 'b7', 11: '7M',
   }
   return v.frets.map((f, s) => {
     if (f === null) return null
-    const pc = (STANDARD_TUNING[s] + f) % 12
+    const pc = (tuning[s] + f) % 12
     return labels[(pc - rootPc + 12) % 12] ?? '?'
   })
 }

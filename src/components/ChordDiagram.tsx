@@ -1,6 +1,9 @@
 import { parseChord } from '../theory/chord'
 import { nameOf } from '../theory/notes'
-import { STRING_NAMES, allVoicings, voicingDegrees, type Voicing } from '../theory/voicings'
+import { tuningById, type Tuning } from '../theory/tunings'
+import { allVoicings, voicingDegrees, type Voicing } from '../theory/voicings'
+
+const DEFAULT_TUNING: Tuning = tuningById('standard')
 
 const FRETS = 5
 
@@ -19,11 +22,12 @@ function fingerNumbers(voicing: Voicing): (number | null)[] {
   return out
 }
 
-export function GuitarDiagram({ symbol, voicing, size = 1, showDegrees = true }: {
+export function GuitarDiagram({ symbol, voicing, size = 1, showDegrees = true, tuning = DEFAULT_TUNING }: {
   symbol: string
   voicing: Voicing
   size?: number
   showDegrees?: boolean
+  tuning?: Tuning
 }) {
   const chord = parseChord(symbol)
   const w = 96 * size
@@ -36,7 +40,7 @@ export function GuitarDiagram({ symbol, voicing, size = 1, showDegrees = true }:
   const dy = gridH / FRETS
 
   const base = voicing.minFret > 0 && voicing.maxFret > FRETS ? voicing.minFret : 0
-  const degrees = chord ? voicingDegrees(voicing, chord.rootPc) : voicing.frets.map(() => null)
+  const degrees = chord ? voicingDegrees(voicing, chord.rootPc, tuning.strings) : voicing.frets.map(() => null)
   const fingers = fingerNumbers(voicing)
 
   return (
@@ -104,7 +108,7 @@ export function GuitarDiagram({ symbol, voicing, size = 1, showDegrees = true }:
         )}
       {/* nomes das cordas */}
       {!showDegrees &&
-        STRING_NAMES.map((n, i) => (
+        tuning.stringNames.map((n, i) => (
           <text key={`n${i}`} x={padX + i * dx} y={h - 5 * size} className="d-degree" fontSize={8 * size} textAnchor="middle">
             {n}
           </text>
@@ -169,10 +173,11 @@ export function PianoDiagram({ symbol, size = 1 }: { symbol: string; size?: numb
   )
 }
 
-export function ChordCard({ symbol, instrument, compact = false }: {
+export function ChordCard({ symbol, instrument, compact = false, tuning = DEFAULT_TUNING }: {
   symbol: string
   instrument: 'guitar' | 'piano'
   compact?: boolean
+  tuning?: Tuning
 }) {
   if (instrument === 'piano') {
     return (
@@ -182,7 +187,7 @@ export function ChordCard({ symbol, instrument, compact = false }: {
       </div>
     )
   }
-  const vs = allVoicings(symbol, compact ? 1 : 3)
+  const vs = allVoicings(symbol, compact ? 1 : 3, tuning.strings)
   if (vs.length === 0) {
     return (
       <div className="chordcard">
@@ -197,7 +202,7 @@ export function ChordCard({ symbol, instrument, compact = false }: {
       <div className="chordcard-voicings">
         {vs.map((v, i) => (
           <div key={i} className="voicing">
-            <GuitarDiagram symbol={symbol} voicing={v} size={compact ? 0.85 : 1} />
+            <GuitarDiagram symbol={symbol} voicing={v} size={compact ? 0.85 : 1} tuning={tuning} />
             {!compact && (
               <div className="voicing-meta">
                 {v.barre !== null ? 'pestana' : 'sem pestana'} · {v.open} solta{v.open === 1 ? '' : 's'} · {v.muted} muda{v.muted === 1 ? '' : 's'}

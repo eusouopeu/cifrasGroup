@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { parseCifra, uniqueChords } from '../cifra/parse'
+import { guessKey, parseCifra, uniqueChords } from '../cifra/parse'
 import { ImportCancelledError, importFromCifraClubUrl, isCifraClubUrl, nativeImportAvailable } from '../native/cifraClubImport'
+import { nameOf } from '../theory/notes'
 import { allVoicings } from '../theory/voicings'
 import { useToast } from './Toast'
 
@@ -26,6 +27,8 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
       lyricLines: p.lines.filter((l) => l.kind === 'lyrics').length,
       tabLines: p.lines.filter((l) => l.kind === 'tab').length,
       declaredKey: p.declaredKey,
+      // só chuta o tom quando a cifra não declarou um no cabeçalho
+      guessedKeyPc: p.declaredKey ? null : guessKey(p),
       capo: p.capo,
       // acordes que o app reconheceu mas não sabe tocar no violão dentro das
       // restrições de mão — melhor avisar aqui do que só depois de importado
@@ -185,6 +188,9 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
             <li><strong>{preview.chords.length}</strong> acordes diferentes em <strong>{preview.chordLines}</strong> linhas de acorde</li>
             <li><strong>{preview.lyricLines}</strong> linhas de letra · <strong>{preview.tabLines}</strong> linhas de tablatura {preview.tabLines > 0 && <em>(serão escondidas por padrão)</em>}</li>
             {preview.declaredKey && <li>tom declarado: <span className="mono">{preview.declaredKey}</span></li>}
+            {preview.guessedKeyPc !== null && (
+              <li>tom provável: <span className="mono">{nameOf(preview.guessedKeyPc)}</span> <em>(chute pela fundamental mais frequente; não declarado na cifra)</em></li>
+            )}
             {preview.capo !== null && <li>capotraste na {preview.capo}ª casa</li>}
           </ul>
           <div className="mono chordpreview">{preview.chords.map((c) => `${c.symbol}×${c.count}`).join('  ')}</div>
