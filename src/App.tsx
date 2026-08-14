@@ -20,6 +20,7 @@ function withDemoSong(loaded: DB): DB {
     source: null,
     raw: DEMO_RAW,
     notes: '',
+    tags: [],
     createdAt: Date.now(),
     updatedAt: Date.now(),
     settings: { ...DEFAULT_SETTINGS },
@@ -76,7 +77,7 @@ export default function App() {
     })
   }
 
-  const patchSong = (id: string, patch: Partial<Pick<DB['songs'][string], 'title' | 'artist' | 'notes'>>) => {
+  const patchSong = (id: string, patch: Partial<Pick<DB['songs'][string], 'title' | 'artist' | 'notes' | 'tags'>>) => {
     setDb({
       ...db,
       songs: { ...db.songs, [id]: { ...db.songs[id], ...patch, updatedAt: Date.now() } },
@@ -105,7 +106,7 @@ export default function App() {
           const id = newId()
           setDb({
             ...db,
-            songs: { ...db.songs, [id]: { id, ...data, notes: '', createdAt: Date.now(), updatedAt: Date.now(), settings: { ...DEFAULT_SETTINGS } } },
+            songs: { ...db.songs, [id]: { id, ...data, notes: '', tags: [], createdAt: Date.now(), updatedAt: Date.now(), settings: { ...DEFAULT_SETTINGS } } },
           })
           setSharedUrl(null)
           setRoute({ view: 'song', id })
@@ -132,6 +133,7 @@ export default function App() {
           onChange={(patch) => patchSettings(song.id, patch)}
           onRename={(title, artist) => patchSong(song.id, { title, artist })}
           onNotesChange={(notes) => patchSong(song.id, { notes })}
+          onTagsChange={(tags) => patchSong(song.id, { tags })}
           onSaveToList={() => setPicker(song.id)}
           siblings={siblings}
           onNavigate={(id) => setRoute({ view: 'song', id, listId: route.listId })}

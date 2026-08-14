@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { nameOf } from '../theory/notes'
+import { tuningById, type Tuning } from '../theory/tunings'
+
+const STANDARD_TUNING = tuningById('standard')
 
 /**
  * Detecção de altura por autocorrelação (ACF) com interpolação parabólica
@@ -54,6 +57,7 @@ function autoCorrelate(buf: Float32Array, sampleRate: number): number {
 
 interface Reading {
   note: string
+  pc: number
   octave: number
   cents: number
   freq: number
@@ -65,10 +69,16 @@ function freqToReading(freq: number): Reading {
   const cents = Math.round((semitoneFromA4 - (midi - 69)) * 100)
   const pc = ((midi % 12) + 12) % 12
   const octave = Math.floor(midi / 12) - 1
-  return { note: nameOf(pc), octave, cents, freq }
+  return { note: nameOf(pc), pc, octave, cents, freq }
 }
 
-export function Tuner({ onClose }: { onClose: () => void }) {
+/**
+ * @param tuning afinação alvo para comparar a leitura — por padrão a afinação
+ * padrão do violão. Quando aberto a partir de uma música, o chamador passa a
+ * afinação salva para ela (theory/tunings.ts), então o afinador já "lembra"
+ * qual afinação essa música usa sem precisar escolher de novo.
+ */
+export function Tuner({ onClose, tuning = STANDARD_TUNING }: { onClose: () => void; tuning?: Tuning }) {
   const [status, setStatus] = useState<'starting' | 'listening' | 'denied' | 'unsupported'>('starting')
   const [reading, setReading] = useState<Reading | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -121,6 +131,16 @@ export function Tuner({ onClose }: { onClose: () => void }) {
         <div className="sheet-head">
           <h3>Afinador</h3>
           <button className="icon" onClick={onClose}>×</button>
+        </div>
+
+        <p className="hint small">
+          Afinação alvo: <strong>{tuning.name}</strong>
+          {tuning.id !== 'standard' && ' — a última usada nesta música'}.
+        </p>
+        <div className="tuner-strings">
+          {tuning.stringNames.map((name, i) => (
+            <span key={i} className={`tuner-string${reading?.pc === tuning.strings[i] ? ' match' : ''}`}>{name}</span>
+          ))}
         </div>
 
         {status === 'unsupported' && <p className="hint danger">Este navegador não dá acesso ao microfone.</p>}

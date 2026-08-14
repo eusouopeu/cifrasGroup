@@ -11,7 +11,12 @@ import { buildSymbol, parseChord, transposeSymbol, type Chord } from './chord'
 import { CATALOG, SIMPLE_TARGETS } from './catalog'
 import { similarity } from './similarity'
 import { chordDifficulty } from './voicings'
-import { preferFlatsForKey } from './notes'
+import { INTERVAL_LABEL, preferFlatsForKey } from './notes'
+
+/** Traduz pitch classes (absolutos) em graus legíveis relativos à fundamental do acorde original. */
+function toDegreeLabels(rootPc: number, pcs: number[]): string[] {
+  return pcs.map((pc) => INTERVAL_LABEL[((pc - rootPc) % 12 + 12) % 12] ?? '?')
+}
 
 export interface Substitution {
   from: string
@@ -20,7 +25,11 @@ export interface Substitution {
   difficultyBefore: number
   difficultyAfter: number
   reason: string
-  alternatives: { symbol: string; score: number; difficulty: number }[]
+  /** graus perdidos na troca (ex.: "b9", "13") — o que o ouvido deixa de escutar */
+  lost: string[]
+  /** graus acrescentados na troca — só existe em trocas "por fora" (mudam a fundamental) */
+  added: string[]
+  alternatives: { symbol: string; score: number; difficulty: number; lost: string[]; added: string[] }[]
 }
 
 function candidateChord(rootPc: number, suffix: string, bassPc: number | null, flats: boolean): Chord | null {
@@ -43,7 +52,7 @@ export function simplifyChord(symbol: string, threshold = 0.8): Substitution | n
   const originalComplexity =
     CATALOG.find((q) => q.intervals.length === original.intervals.length && q.intervals.every((i) => original.intervals.includes(i)))?.complexity ?? 6 + original.tensions.length
 
-  type Cand = { symbol: string; score: number; difficulty: number; complexity: number; sameRoot: boolean }
+  type Cand = { symbol: string; score: number; difficulty: number; complexity: number; sameRoot: boolean; lost: number[]; added: number[] }
   const cands: Cand[] = []
 
   for (let root = 0; root < 12; root++) {
@@ -66,6 +75,8 @@ export function simplifyChord(symbol: string, threshold = 0.8): Substitution | n
         difficulty: chordDifficulty(sym),
         complexity: q.complexity,
         sameRoot: root === original.rootPc,
+        lost: sim.lost,
+        added: sim.added,
       })
     }
   }
@@ -102,7 +113,15 @@ export function simplifyChord(symbol: string, threshold = 0.8): Substitution | n
     difficultyBefore: originalDifficulty,
     difficultyAfter: best.difficulty,
     reason: reasons.join(' · ') || 'equivalente mais direto',
-    alternatives: cands.slice(1, 6).map((c) => ({ symbol: c.symbol, score: c.score, difficulty: c.difficulty })),
+    lost: toDegreeLabels(original.rootPc, best.lost),
+    added: toDegreeLabels(original.rootPc, best.added),
+    alternatives: cands.slice(1, 6).map((c) => ({
+      symbol: c.symbol,
+      score: c.score,
+      difficulty: c.difficulty,
+      lost: toDegreeLabels(original.rootPc, c.lost),
+      added: toDegreeLabels(original.rootPc, c.added),
+    })),
   }
 }
 

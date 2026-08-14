@@ -50,6 +50,35 @@ describe('parseCifra — reconhecimento de linhas', () => {
   })
 })
 
+describe('parseCifra — formatos de outras origens', () => {
+  it('converte tags [ch]X[/ch] do Ultimate Guitar em acordes inline (estilo ChordPro)', () => {
+    const p = parseCifra('[ch]C[/ch]Ela [ch]G[/ch]partiu sem dizer adeus')
+    expect(p.lines[0].kind).toBe('chords')
+    expect(p.lines[0].chords.map((c) => c.symbol)).toEqual(['C', 'G'])
+    expect(p.lines[1].kind).toBe('lyrics')
+  })
+
+  it('remove os marcadores de bloco [tab]/[/tab] do Ultimate Guitar sem descartar o conteúdo', () => {
+    const p = parseCifra('[tab]\nC           G\nletra da música aqui\n[/tab]')
+    expect(p.lines.some((l) => l.text.includes('[tab]'))).toBe(false)
+    expect(p.lines[0].kind).toBe('chords')
+    expect(p.lines[0].chords.map((c) => c.symbol)).toEqual(['C', 'G'])
+  })
+
+  it('lê tom e capotraste em cabeçalho no formato inglês (Key / Capo)', () => {
+    const p = parseCifra('Key: G\nCapo: 2\n\nC G Am F')
+    expect(p.declaredKey).toBe('G')
+    expect(p.capo).toBe(2)
+    expect(p.lines.some((l) => /^(key|capo)\s*:/i.test(l.text))).toBe(false)
+  })
+
+  it('reconhece nomes de seção em inglês', () => {
+    const p = parseCifra('Verse:\nC G\nChorus:\nAm F\nPre-Chorus\nDm G')
+    const sections = p.lines.filter((l) => l.kind === 'section').map((l) => l.text)
+    expect(sections).toEqual(['Verse:', 'Chorus:', 'Pre-Chorus'])
+  })
+})
+
 describe('chordSequence / uniqueChords', () => {
   it('conta repetições e ordena por frequência', () => {
     const p = parseCifra('C G\nletra\nC Am\nletra\nC G')

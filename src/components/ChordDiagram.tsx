@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { parseChord } from '../theory/chord'
 import { nameOf } from '../theory/notes'
 import { tuningById, type Tuning } from '../theory/tunings'
@@ -187,7 +188,7 @@ export function ChordCard({ symbol, instrument, compact = false, tuning = DEFAUL
       </div>
     )
   }
-  const vs = allVoicings(symbol, compact ? 1 : 3, tuning.strings)
+  const vs = allVoicings(symbol, 3, tuning.strings)
   if (vs.length === 0) {
     return (
       <div className="chordcard">
@@ -196,21 +197,52 @@ export function ChordCard({ symbol, instrument, compact = false, tuning = DEFAUL
       </div>
     )
   }
+  if (compact) return <CompactChordCard symbol={symbol} voicings={vs} tuning={tuning} />
   return (
     <div className="chordcard">
       <div className="chordcard-name">{symbol}</div>
       <div className="chordcard-voicings">
         {vs.map((v, i) => (
           <div key={i} className="voicing">
-            <GuitarDiagram symbol={symbol} voicing={v} size={compact ? 0.85 : 1} tuning={tuning} />
-            {!compact && (
-              <div className="voicing-meta">
-                {v.barre !== null ? 'pestana' : 'sem pestana'} · {v.open} solta{v.open === 1 ? '' : 's'} · {v.muted} muda{v.muted === 1 ? '' : 's'}
-              </div>
-            )}
+            <GuitarDiagram symbol={symbol} voicing={v} size={1} tuning={tuning} />
+            <div className="voicing-meta">
+              {v.barre !== null ? 'pestana' : 'sem pestana'} · {v.open} solta{v.open === 1 ? '' : 's'} · {v.muted} muda{v.muted === 1 ? '' : 's'}
+            </div>
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+/** Cartão compacto do grid de acordes: mostra uma digitação por vez, com setas para ciclar entre as melhores sem abrir a ficha completa. */
+function CompactChordCard({ symbol, voicings, tuning }: { symbol: string; voicings: Voicing[]; tuning: Tuning }) {
+  const [idx, setIdx] = useState(0)
+  const safeIdx = idx % voicings.length
+  const v = voicings[safeIdx]
+  return (
+    <div className="chordcard">
+      <div className="chordcard-name">{symbol}</div>
+      <GuitarDiagram symbol={symbol} voicing={v} size={0.85} tuning={tuning} />
+      {voicings.length > 1 && (
+        <div className="chordcard-cycle">
+          <button
+            className="icon small"
+            aria-label="Digitação anterior"
+            onClick={(e) => { e.stopPropagation(); setIdx((i) => (i - 1 + voicings.length) % voicings.length) }}
+          >
+            ‹
+          </button>
+          <span className="chordcard-cycle-count">{safeIdx + 1}/{voicings.length}</span>
+          <button
+            className="icon small"
+            aria-label="Próxima digitação"
+            onClick={(e) => { e.stopPropagation(); setIdx((i) => (i + 1) % voicings.length) }}
+          >
+            ›
+          </button>
+        </div>
+      )}
     </div>
   )
 }

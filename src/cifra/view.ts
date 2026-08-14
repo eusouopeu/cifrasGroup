@@ -10,16 +10,55 @@ import { applyPalette, paletteById } from '../theory/palettes'
 import { rankKeys, simplifyLevel1, type KeyOption, type Substitution } from '../theory/simplify'
 import { chordSequence, parseCifra, renderChordLine, uniqueChords, type ParsedCifra } from './parse'
 
+export interface SectionKeyInfo {
+  label: string
+  best: KeyOption
+  /** true quando o tom mais fácil deste trecho não é o mesmo escolhido para a música inteira — possível modulação */
+  differsFromGlobal: boolean
+}
+
 export interface CifraView {
   parsed: ParsedCifra
   /** original -> exibido */
   map: Map<string, string>
   substitutions: Map<string, Substitution>
   keyRanking: KeyOption[]
+  /** melhor tom por trecho da música (entre marcações de seção) — útil quando a música modula */
+  sectionKeys: SectionKeyInfo[]
   /** transposição efetiva aplicada (inclui o nível 2) */
   effectiveTranspose: number
   suggestedCapo: number
   displayedChords: { symbol: string; count: number }[]
+}
+
+/**
+ * Nível 2 por trecho: em vez de um único tom para a música inteira, ranqueia
+ * o tom mais fácil dentro de cada seção (entre marcações [Intro], [Refrão]…).
+ * Sinaliza quando o trecho discorda do tom escolhido globalmente — indício de
+ * modulação interna que o ranking único não capturaria.
+ */
+function buildSectionKeys(parsed: ParsedCifra, afterPalette: Map<string, string>, globalBestSemitones: number): SectionKeyInfo[] {
+  const segments: { label: string; symbols: string[] }[] = [{ label: 'Início', symbols: [] }]
+  for (const line of parsed.lines) {
+    if (line.kind === 'section') {
+      segments.push({ label: line.text, symbols: [] })
+      continue
+    }
+    if (line.kind === 'chords') {
+      const seg = segments[segments.length - 1]
+      for (const c of line.chords) seg.symbols.push(afterPalette.get(c.symbol) ?? c.symbol)
+    }
+  }
+
+  const out: SectionKeyInfo[] = []
+  for (const seg of segments) {
+    // trecho curto demais (1 acorde ou menos) não sustenta um "tom" próprio
+    if (new Set(seg.symbols).size < 2) continue
+    const best = rankKeys(seg.symbols)[0]
+    if (!best) continue
+    out.push({ label: seg.label, best, differsFromGlobal: best.semitones !== globalBestSemitones })
+  }
+  return out
 }
 
 export function buildView(raw: string, settings: SongSettings): CifraView {
@@ -42,6 +81,7 @@ export function buildView(raw: string, settings: SongSettings): CifraView {
   // --- nível 2: melhor tom ---
   const seqAfter = seq.map((s) => afterPalette.get(s) ?? s)
   const keyRanking = rankKeys(seqAfter)
+  const sectionKeys = buildSectionKeys(parsed, afterPalette, keyRanking[0]?.semitones ?? 0)
 
   let transpose = settings.transpose
   let suggestedCapo = 0
@@ -71,6 +111,7 @@ export function buildView(raw: string, settings: SongSettings): CifraView {
     map,
     substitutions,
     keyRanking,
+    sectionKeys,
     effectiveTranspose: transpose,
     suggestedCapo,
     displayedChords,

@@ -1,8 +1,21 @@
 import { useMemo, useState } from 'react'
 import type { DB, Song, SongList } from '../store/db'
-import { uniqueChords, parseCifra } from '../cifra/parse'
+import { guessKey, uniqueChords, parseCifra } from '../cifra/parse'
+import { nameOf } from '../theory/notes'
+import { PALETTES } from '../theory/palettes'
+import { chordDifficulty } from '../theory/voicings'
 import { getTheme, setTheme, type ThemePref } from '../store/theme'
 import { useToast } from './Toast'
+
+type Difficulty = 'fácil' | 'médio' | 'difícil'
+
+function difficultyOf(symbols: string[]): Difficulty {
+  if (symbols.length === 0) return 'fácil'
+  const avg = symbols.reduce((sum, s) => sum + chordDifficulty(s), 0) / symbols.length
+  if (avg < 60) return 'fácil'
+  if (avg < 150) return 'médio'
+  return 'difícil'
+}
 
 const THEME_CYCLE: ThemePref[] = ['system', 'light', 'dark']
 const THEME_ICON: Record<ThemePref, string> = { system: '🖥️', light: '☀️', dark: '🌙' }
@@ -25,6 +38,10 @@ export function Library({ db, onOpen, onNew, onOpenTuner, onDeleteSong, onDuplic
   const [query, setQuery] = useState('')
   const [newList, setNewList] = useState('')
   const [theme, setThemeState] = useState<ThemePref>(getTheme)
+  const [tagFilter, setTagFilter] = useState<string | null>(null)
+  const [keyFilter, setKeyFilter] = useState<number | null>(null)
+  const [difficultyFilter, setDifficultyFilter] = useState<Difficulty | null>(null)
+  const [paletteFilter, setPaletteFilter] = useState<string | null>(null)
   const showToast = useToast()
   const cycleTheme = () => {
     const next = THEME_CYCLE[(THEME_CYCLE.indexOf(theme) + 1) % THEME_CYCLE.length]
@@ -32,9 +49,33 @@ export function Library({ db, onOpen, onNew, onOpenTuner, onDeleteSong, onDuplic
     setThemeState(next)
   }
   const songs = useMemo(() => Object.values(db.songs).sort((a, b) => b.updatedAt - a.updatedAt), [db.songs])
-  const filtered = songs.filter(
-    (s) => !query || (s.title + ' ' + s.artist).toLowerCase().includes(query.toLowerCase()),
-  )
+
+  // tom original e dificuldade média são derivados do texto da cifra — só
+  // recalculados quando a lista de músicas muda, não a cada tecla da busca
+  const songMeta = useMemo(() => {
+    const map = new Map<string, { keyPc: number | null; difficulty: Difficulty }>()
+    for (const s of songs) {
+      const parsed = parseCifra(s.raw)
+      const uniq = uniqueChords(parsed)
+      map.set(s.id, { keyPc: guessKey(parsed), difficulty: difficultyOf(uniq.map((c) => c.symbol)) })
+    }
+    return map
+  }, [songs])
+
+  const allTags = useMemo(() => [...new Set(songs.flatMap((s) => s.tags))].sort(), [songs])
+  const usedKeys = useMemo(() => [...new Set([...songMeta.values()].map((m) => m.keyPc).filter((k): k is number => k !== null))].sort((a, b) => a - b), [songMeta])
+  const usedPalettes = useMemo(() => [...new Set(songs.map((s) => s.settings.paletteId))].filter((id) => id !== 'original'), [songs])
+  const hasActiveFilters = tagFilter !== null || keyFilter !== null || difficultyFilter !== null || paletteFilter !== null
+
+  const filtered = songs.filter((s) => {
+    if (query && !(s.title + ' ' + s.artist).toLowerCase().includes(query.toLowerCase())) return false
+    if (tagFilter !== null && !s.tags.includes(tagFilter)) return false
+    const meta = songMeta.get(s.id)
+    if (keyFilter !== null && meta?.keyPc !== keyFilter) return false
+    if (difficultyFilter !== null && meta?.difficulty !== difficultyFilter) return false
+    if (paletteFilter !== null && s.settings.paletteId !== paletteFilter) return false
+    return true
+  })
 
   return (
     <div className="library">
@@ -46,6 +87,41 @@ export function Library({ db, onOpen, onNew, onOpenTuner, onDeleteSong, onDuplic
       </header>
 
       <input className="search" placeholder="Buscar por título ou artista" value={query} onChange={(e) => setQuery(e.target.value)} />
+
+      {songs.length > 0 && (
+        <div className="filterbar">
+          <select value={keyFilter ?? ''} onChange={(e) => setKeyFilter(e.target.value === '' ? null : Number(e.target.value))}>
+            <option value="">tom: qualquer</option>
+            {usedKeys.map((k) => <option key={k} value={k}>tom: {nameOf(k)}</option>)}
+          </select>
+          <select value={difficultyFilter ?? ''} onChange={(e) => setDifficultyFilter(e.target.value === '' ? null : (e.target.value as Difficulty))}>
+            <option value="">dificuldade: qualquer</option>
+            <option value="fácil">fácil</option>
+            <option value="médio">médio</option>
+            <option value="difícil">difícil</option>
+          </select>
+          {usedPalettes.length > 0 && (
+            <select value={paletteFilter ?? ''} onChange={(e) => setPaletteFilter(e.target.value || null)}>
+              <option value="">paleta: qualquer</option>
+              {usedPalettes.map((id) => <option key={id} value={id}>{PALETTES.find((p) => p.id === id)?.name ?? id}</option>)}
+            </select>
+          )}
+          {hasActiveFilters && (
+            <button className="btn ghost small" onClick={() => { setTagFilter(null); setKeyFilter(null); setDifficultyFilter(null); setPaletteFilter(null) }}>
+              limpar filtros
+            </button>
+          )}
+        </div>
+      )}
+      {allTags.length > 0 && (
+        <div className="tagchips filterbar-tags">
+          {allTags.map((t) => (
+            <button key={t} className={`tagchip filterchip${tagFilter === t ? ' on' : ''}`} onClick={() => setTagFilter(tagFilter === t ? null : t)}>
+              {t}
+            </button>
+          ))}
+        </div>
+      )}
 
       {db.lists.map((list) => (
         <ListSection

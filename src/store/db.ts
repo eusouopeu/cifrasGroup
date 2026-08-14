@@ -43,6 +43,8 @@ export interface Song {
   raw: string
   /** anotações livres do usuário (ex.: "repetir refrão 2x") */
   notes: string
+  /** tags livres do usuário, para busca e filtro na biblioteca (ex.: "roda", "iniciante") */
+  tags: string[]
   createdAt: number
   updatedAt: number
   settings: SongSettings
@@ -90,6 +92,7 @@ function normalize(db: DB): DB {
   for (const s of Object.values(db.songs)) {
     s.settings = { ...DEFAULT_SETTINGS, ...s.settings }
     s.notes ??= ''
+    s.tags ??= []
   }
   return db
 }

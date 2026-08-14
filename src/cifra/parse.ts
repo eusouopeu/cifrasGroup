@@ -30,7 +30,9 @@ export interface ParsedCifra {
   lines: CifraLine[]
 }
 
-const SECTION_RE = /^\s*(\[[^\]]+\]|\{[^}]+\}|(intro|primeira parte|segunda parte|refr[ãa]o|verso|ponte|solo|final|pr[ée][-\s]?refr[ãa]o|coda|interl[úu]dio|base)\s*:?\s*)$/i
+// nomes de seção em português (CifraClub/Cifra Nova) e em inglês (Ultimate Guitar e afins)
+const SECTION_RE =
+  /^\s*(\[[^\]]+\]|\{[^}]+\}|(intro|primeira parte|segunda parte|refr[ãa]o|verso|verse|chorus|bridge|ponte|solo|final|ending|outro|pr[ée][-\s]?refr[ãa]o|pre[-\s]?chorus|coda|interl[úu]dio|interlude|base)\s*:?\s*)$/i
 
 function isTabLine(line: string): boolean {
   if (/^\s*[EADGBe]\|/.test(line)) return true
@@ -84,8 +86,15 @@ function expandChordPro(line: string): { chordLine: string; lyricLine: string } 
   return { chordLine: chordLine.replace(/\s+$/, ''), lyricLine }
 }
 
+/** Tags do Ultimate Guitar: [ch]C[/ch] vira colchete de ChordPro, [tab]/[/tab] são só marcadores de bloco. */
+function stripSourceTags(text: string): string {
+  return text
+    .replace(/\[ch\]([^[]+)\[\/ch\]/gi, '[$1]')
+    .replace(/^\s*\[\/?tab\]\s*$/gim, '')
+}
+
 export function parseCifra(raw: string, meta?: { title?: string; artist?: string }): ParsedCifra {
-  const rawLines = raw.replace(/\r\n?/g, '\n').split('\n')
+  const rawLines = stripSourceTags(raw).replace(/\r\n?/g, '\n').split('\n')
   const lines: CifraLine[] = []
 
   let title = meta?.title ?? null
@@ -93,12 +102,13 @@ export function parseCifra(raw: string, meta?: { title?: string; artist?: string
   let declaredKey: string | null = null
   let capo: number | null = null
 
-  // cabeçalho do CifraClub: "tom: G", "Capotraste na 2ª casa"
+  // cabeçalho do CifraClub/Cifra Nova ("tom: G", "Capotraste na 2ª casa") e do
+  // Ultimate Guitar e afins, em inglês ("Key: G", "Capo: 2")
   const headerScan = rawLines.slice(0, 12).join('\n')
-  const keyM = /\btom\s*:?\s*([A-G][#b]?m?)/i.exec(headerScan)
-  if (keyM) declaredKey = keyM[1]
-  const capoM = /capotraste\D{0,20}(\d{1,2})/i.exec(headerScan)
-  if (capoM) capo = parseInt(capoM[1], 10)
+  const keyM = /\b(tom|key)\s*:?\s*([A-G][#b]?m?)/i.exec(headerScan)
+  if (keyM) declaredKey = keyM[2]
+  const capoM = /\b(capotraste|capo)\D{0,20}(\d{1,2})/i.exec(headerScan)
+  if (capoM) capo = parseInt(capoM[2], 10)
 
   for (const original of rawLines) {
     const line = original.replace(/\t/g, '    ')
@@ -107,9 +117,9 @@ export function parseCifra(raw: string, meta?: { title?: string; artist?: string
       lines.push({ kind: 'blank', text: '', chords: [] })
       continue
     }
-    // cabeçalho do CifraClub, com ou sem dois-pontos ("Capotraste na 2ª casa")
-    if (/^\s*(tom|capotraste|afina[çc][ãa]o)\s*[:.]/i.test(line)) continue
-    if (/^\s*capotraste\b/i.test(line)) continue
+    // cabeçalho ("Capotraste na 2ª casa", "Capo: 2", "Key: G", "Tuning: ...")
+    if (/^\s*(tom|key|capotraste|capo|afina[çc][ãa]o|tuning)\s*[:.]/i.test(line)) continue
+    if (/^\s*(capotraste|capo)\b/i.test(line)) continue
     if (isTabLine(line)) {
       lines.push({ kind: 'tab', text: line, chords: [] })
       continue
