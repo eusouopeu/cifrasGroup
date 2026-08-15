@@ -33,3 +33,12 @@ Notas:
   commitar, ou se as mudanças ainda estiverem incompletas/quebradas.
 - Sempre revise `git status`/`git diff` antes de commitar para não incluir
   arquivos indesejados (ex.: artefatos de build, `.env`, etc.).
+
+## Uso de agentes em segundo plano
+
+Para tarefas independentes e bem simples (ex.: investigar um arquivo específico,
+rodar uma busca no código, verificar algo pontual que não depende do restante do
+trabalho em andamento), pode usar agentes em segundo plano (Agent tool) para
+paralelizar em vez de fazer tudo sequencialmente. Reserve isso para tarefas
+simples e desacopladas — não delegar partes de uma mesma feature/mudança que
+precisam ficar coerentes entre si.
