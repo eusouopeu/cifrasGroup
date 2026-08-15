@@ -1,4 +1,5 @@
-import { STROKE_LABEL, type Rhythm } from '../data/rhythms'
+import { PlayIcon } from '@heroicons/react/24/solid'
+import { STROKE_LABEL, genreColorClass, type Rhythm } from '../data/rhythms'
 
 /**
  * Grade de batida: cada coluna é uma semicolcheia, agrupada por tempo.
@@ -68,13 +69,16 @@ export function RhythmCard({ rhythm, selected, playing = false, onSelect }: {
   return (
     <button className={`rhythmcard${selected ? ' selected' : ''}${playing ? ' playing' : ''}`} onClick={onSelect}>
       <div className="rhythmcard-head">
-        {playing && <span className="rhythmcard-playing" aria-label="Tocando agora">▶</span>}
+        {playing && <PlayIcon className="rhythmcard-playing" aria-label="Tocando agora" />}
         <span className="rhythmcard-name">{rhythm.name}</span>
         <span className="tag">{rhythm.meter}</span>
-        <span className="tag muted">{rhythm.bpmSuggested} bpm</span>
       </div>
       <RhythmGrid rhythm={rhythm} />
-      <div className="rhythmcard-genres">{rhythm.genres.join(' · ')}</div>
+      <div className="rhythmcard-genres">
+        {rhythm.genres.map((g) => (
+          <span key={g} className={`genretag ${genreColorClass(g)}`}>{g}</span>
+        ))}
+      </div>
       {rhythm.hint && <div className="rhythmcard-hint">{rhythm.hint}</div>}
     </button>
   )

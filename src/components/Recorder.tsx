@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { TrashIcon } from '@heroicons/react/24/outline'
+import { StopIcon } from '@heroicons/react/24/solid'
 import { deleteRecording, listRecordings, saveRecording, type Recording } from '../store/recordings'
 
 function formatDuration(ms: number): string {
@@ -99,18 +101,13 @@ export function Recorder({ songId }: { songId: string }) {
 
   return (
     <div className="recorder">
-      <p className="hint small">
-        Grava o que você tocar pelo microfone do aparelho, para reescutar depois — útil pra treinar um trecho ou comparar tentativas.
-        Fica só neste aparelho; as 5 gravações mais recentes ficam guardadas, as mais antigas somem sozinhas.
-      </p>
-
       <div className="row">
         {status !== 'recording' ? (
-          <button className="btn primary" onClick={() => void startRecording()} disabled={status === 'starting'}>
-            {status === 'starting' ? 'preparando…' : '⏺ gravar'}
+          <button className="btn primary recordbtn" onClick={() => void startRecording()} disabled={status === 'starting'}>
+            <span className="record-dot" /> {status === 'starting' ? 'preparando…' : 'gravar'}
           </button>
         ) : (
-          <button className="btn recording" onClick={stopRecording}>■ parar · {formatDuration(elapsedMs)}</button>
+          <button className="btn recording" onClick={stopRecording}><StopIcon /> parar · {formatDuration(elapsedMs)}</button>
         )}
       </div>
       {status === 'denied' && <p className="hint danger">Não consegui acessar o microfone. Confira a permissão nas configurações do navegador ou do app.</p>}
@@ -127,7 +124,7 @@ export function Recorder({ songId }: { songId: string }) {
               <span>{formatDuration(r.durationMs)}</span>
             </div>
             <audio controls src={urlFor(r)} preload="none" />
-            <button className="icon small danger" onClick={() => void remove(r.id)}>apagar</button>
+            <button className="icon small danger" aria-label="Apagar gravação" onClick={() => void remove(r.id)}><TrashIcon /></button>
           </div>
         ))}
       </div>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { XMarkIcon } from '@heroicons/react/24/outline'
 import { nameOf } from '../theory/notes'
 import { tuningById, type Tuning } from '../theory/tunings'
 
@@ -77,8 +78,9 @@ function freqToReading(freq: number): Reading {
  * padrão do violão. Quando aberto a partir de uma música, o chamador passa a
  * afinação salva para ela (theory/tunings.ts), então o afinador já "lembra"
  * qual afinação essa música usa sem precisar escolher de novo.
+ * @param embedded quando true, renderiza sem a folha modal (usado na aba "Afinação").
  */
-export function Tuner({ onClose, tuning = STANDARD_TUNING }: { onClose: () => void; tuning?: Tuning }) {
+export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: { onClose?: () => void; tuning?: Tuning; embedded?: boolean }) {
   const [status, setStatus] = useState<'starting' | 'listening' | 'denied' | 'unsupported'>('starting')
   const [reading, setReading] = useState<Reading | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -125,43 +127,53 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING }: { onClose: () => vo
   const inTune = reading !== null && Math.abs(reading.cents) <= 5
   const clampedCents = reading ? Math.max(-50, Math.min(50, reading.cents)) : 0
 
+  const content = (
+    <>
+      {!embedded && (
+        <div className="sheet-head">
+          <h3>Afinador</h3>
+          <button className="icon" onClick={onClose}><XMarkIcon /></button>
+        </div>
+      )}
+
+      <p className="hint small">
+        Afinação alvo: <strong>{tuning.name}</strong>
+        {tuning.id !== 'standard' && ' — a última usada nesta música'}.
+      </p>
+      <div className="tuner-strings">
+        {tuning.stringNames.map((name, i) => (
+          <span key={i} className={`tuner-string${reading?.pc === tuning.strings[i] ? ' match' : ''}`}>{name}</span>
+        ))}
+      </div>
+
+      {status === 'unsupported' && <p className="hint danger">Este navegador não dá acesso ao microfone.</p>}
+      {status === 'denied' && <p className="hint danger">Não consegui acessar o microfone. Confira a permissão nas configurações do navegador ou do app.</p>}
+      {status === 'starting' && <p className="hint">Pedindo acesso ao microfone…</p>}
+
+      {status === 'listening' && (
+        reading ? (
+          <div className={`tuner-display${inTune ? ' in-tune' : ''}`}>
+            <div className="tuner-note">{reading.note}<sub>{reading.octave}</sub></div>
+            <div className="tuner-meter">
+              <div className="tuner-center" />
+              <div className="tuner-needle" style={{ left: `${50 + clampedCents}%` }} />
+            </div>
+            <div className="tuner-cents">{reading.cents > 0 ? '+' : ''}{reading.cents} cents · {reading.freq.toFixed(1)} Hz</div>
+          </div>
+        ) : (
+          <p className="hint">Toque uma corda ou nota isolada, num ambiente silencioso.</p>
+        )
+      )}
+      <p className="hint small">Referência: A4 = 440 Hz. Cromático — funciona pra qualquer instrumento, não só violão.</p>
+    </>
+  )
+
+  if (embedded) return <div className="tuner tuner-embedded">{content}</div>
+
   return (
     <div className="sheet-backdrop" onClick={onClose}>
       <div className="sheet small tuner" onClick={(e) => e.stopPropagation()}>
-        <div className="sheet-head">
-          <h3>Afinador</h3>
-          <button className="icon" onClick={onClose}>×</button>
-        </div>
-
-        <p className="hint small">
-          Afinação alvo: <strong>{tuning.name}</strong>
-          {tuning.id !== 'standard' && ' — a última usada nesta música'}.
-        </p>
-        <div className="tuner-strings">
-          {tuning.stringNames.map((name, i) => (
-            <span key={i} className={`tuner-string${reading?.pc === tuning.strings[i] ? ' match' : ''}`}>{name}</span>
-          ))}
-        </div>
-
-        {status === 'unsupported' && <p className="hint danger">Este navegador não dá acesso ao microfone.</p>}
-        {status === 'denied' && <p className="hint danger">Não consegui acessar o microfone. Confira a permissão nas configurações do navegador ou do app.</p>}
-        {status === 'starting' && <p className="hint">Pedindo acesso ao microfone…</p>}
-
-        {status === 'listening' && (
-          reading ? (
-            <div className={`tuner-display${inTune ? ' in-tune' : ''}`}>
-              <div className="tuner-note">{reading.note}<sub>{reading.octave}</sub></div>
-              <div className="tuner-meter">
-                <div className="tuner-center" />
-                <div className="tuner-needle" style={{ left: `${50 + clampedCents}%` }} />
-              </div>
-              <div className="tuner-cents">{reading.cents > 0 ? '+' : ''}{reading.cents} cents · {reading.freq.toFixed(1)} Hz</div>
-            </div>
-          ) : (
-            <p className="hint">Toque uma corda ou nota isolada, num ambiente silencioso.</p>
-          )
-        )}
-        <p className="hint small">Referência: A4 = 440 Hz. Cromático — funciona pra qualquer instrumento, não só violão.</p>
+        {content}
       </div>
     </div>
   )

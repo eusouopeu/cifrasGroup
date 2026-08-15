@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
+import { XMarkIcon } from '@heroicons/react/24/outline'
 import { DEMO_RAW } from './data/demo'
-import { Library } from './components/Library'
+import { LibraryHome } from './components/LibraryHome'
+import { ListsView } from './components/ListsView'
+import { SettingsTab } from './components/SettingsTab'
+import { TunerTab } from './components/TunerTab'
+import { TabBar, type LibraryTab } from './components/TabBar'
 import { ImportView } from './components/ImportView'
 import { SongView } from './components/SongView'
 import { useToast } from './components/Toast'
-import { Tuner } from './components/Tuner'
 import { initShareTarget } from './native/shareTarget'
 import { DEFAULT_SETTINGS, exportDB, importDB, loadDBAsync, newId, saveDBAsync, type DB, type SongSettings } from './store/db'
 import { deleteCustomTuning, loadCustomTunings, saveCustomTuning } from './store/customTunings'
@@ -33,9 +37,9 @@ function withDemoSong(loaded: DB): DB {
 export default function App() {
   const [db, setDb] = useState<DB | null>(null)
   const [route, setRoute] = useState<Route>({ view: 'library' })
+  const [libraryTab, setLibraryTab] = useState<LibraryTab>('inicio')
   const [picker, setPicker] = useState<string | null>(null)
   const [sharedUrl, setSharedUrl] = useState<string | null>(null)
-  const [tunerOpen, setTunerOpen] = useState(false)
   const [customTunings, setCustomTunings] = useState<Tuning[]>([])
   const showToast = useToast()
 
@@ -178,75 +182,94 @@ export default function App() {
     )
   }
 
+  const onDeleteSong = (id: string) => {
+    const prev = db
+    const song = db.songs[id]
+    if (!song) return
+    const songs = { ...db.songs }
+    delete songs[id]
+    setDb({ ...db, songs, lists: db.lists.map((l) => ({ ...l, songIds: l.songIds.filter((x) => x !== id) })) })
+    showToast(`"${song.title}" apagada.`, { actionLabel: 'Desfazer', onAction: () => setDb(prev) })
+  }
+
+  const onDuplicateSong = (id: string) => {
+    const song = db.songs[id]
+    if (!song) return
+    const copyId = newId()
+    const now = Date.now()
+    setDb({
+      ...db,
+      songs: { ...db.songs, [copyId]: { ...song, id: copyId, title: `${song.title} (cópia)`, createdAt: now, updatedAt: now } },
+    })
+    showToast(`"${song.title} (cópia)" criada.`)
+  }
+
   return (
-    <>
-    <Library
-      db={db}
-      onOpen={(id, listId) => setRoute({ view: 'song', id, listId })}
-      onNew={() => setRoute({ view: 'import' })}
-      onOpenTuner={() => setTunerOpen(true)}
-      onDeleteSong={(id) => {
-        const prev = db
-        const song = db.songs[id]
-        if (!song) return
-        const songs = { ...db.songs }
-        delete songs[id]
-        setDb({ ...db, songs, lists: db.lists.map((l) => ({ ...l, songIds: l.songIds.filter((x) => x !== id) })) })
-        showToast(`"${song.title}" apagada.`, { actionLabel: 'Desfazer', onAction: () => setDb(prev) })
-      }}
-      onDuplicateSong={(id) => {
-        const song = db.songs[id]
-        if (!song) return
-        const copyId = newId()
-        const now = Date.now()
-        setDb({
-          ...db,
-          songs: { ...db.songs, [copyId]: { ...song, id: copyId, title: `${song.title} (cópia)`, createdAt: now, updatedAt: now } },
-        })
-        showToast(`"${song.title} (cópia)" criada.`)
-      }}
-      onCreateList={(name) => setDb({ ...db, lists: [...db.lists, { id: newId(), name, description: '', songIds: [], createdAt: Date.now() }] })}
-      onDeleteList={(id) => {
-        const prev = db
-        const list = db.lists.find((l) => l.id === id)
-        if (!list) return
-        setDb({ ...db, lists: db.lists.filter((l) => l.id !== id) })
-        showToast(`Lista "${list.name}" apagada. As músicas continuam salvas.`, { actionLabel: 'Desfazer', onAction: () => setDb(prev) })
-      }}
-      onRemoveFromList={(listId, songId) =>
-        setDb({ ...db, lists: db.lists.map((l) => (l.id === listId ? { ...l, songIds: l.songIds.filter((x) => x !== songId) } : l)) })
-      }
-      onReorderSong={(listId, songId, dir) => {
-        setDb({
-          ...db,
-          lists: db.lists.map((l) => {
-            if (l.id !== listId) return l
-            const i = l.songIds.indexOf(songId)
-            const j = dir === 'up' ? i - 1 : i + 1
-            if (i < 0 || j < 0 || j >= l.songIds.length) return l
-            const songIds = [...l.songIds]
-            ;[songIds[i], songIds[j]] = [songIds[j], songIds[i]]
-            return { ...l, songIds }
-          }),
-        })
-      }}
-      onExport={() => {
-        const blob = new Blob([exportDB(db)], { type: 'application/json' })
-        const a = document.createElement('a')
-        a.href = URL.createObjectURL(blob)
-        a.download = `cifrasgroup-backup.json`
-        a.click()
-        URL.revokeObjectURL(a.href)
-      }}
-      onImport={(json) => {
-        const next = importDB(json)
-        if (!next) { showToast('Arquivo de backup inválido.'); return }
-        setDb(next)
-        showToast('Backup importado.')
-      }}
-    />
-    {tunerOpen && <Tuner onClose={() => setTunerOpen(false)} />}
-    </>
+    <div className="app-shell">
+      <div className="app-content">
+        {libraryTab === 'inicio' && (
+          <LibraryHome
+            db={db}
+            onOpen={(id, listId) => setRoute({ view: 'song', id, listId })}
+            onNew={() => setRoute({ view: 'import' })}
+            onDeleteSong={onDeleteSong}
+            onDuplicateSong={onDuplicateSong}
+          />
+        )}
+        {libraryTab === 'listas' && (
+          <ListsView
+            db={db}
+            onOpen={(id, listId) => setRoute({ view: 'song', id, listId })}
+            onDuplicateSong={onDuplicateSong}
+            onCreateList={(name) => setDb({ ...db, lists: [...db.lists, { id: newId(), name, description: '', songIds: [], createdAt: Date.now() }] })}
+            onDeleteList={(id) => {
+              const prev = db
+              const list = db.lists.find((l) => l.id === id)
+              if (!list) return
+              setDb({ ...db, lists: db.lists.filter((l) => l.id !== id) })
+              showToast(`Lista "${list.name}" apagada. As músicas continuam salvas.`, { actionLabel: 'Desfazer', onAction: () => setDb(prev) })
+            }}
+            onRemoveFromList={(listId, songId) =>
+              setDb({ ...db, lists: db.lists.map((l) => (l.id === listId ? { ...l, songIds: l.songIds.filter((x) => x !== songId) } : l)) })
+            }
+            onReorderSong={(listId, songId, dir) => {
+              setDb({
+                ...db,
+                lists: db.lists.map((l) => {
+                  if (l.id !== listId) return l
+                  const i = l.songIds.indexOf(songId)
+                  const j = dir === 'up' ? i - 1 : i + 1
+                  if (i < 0 || j < 0 || j >= l.songIds.length) return l
+                  const songIds = [...l.songIds]
+                  ;[songIds[i], songIds[j]] = [songIds[j], songIds[i]]
+                  return { ...l, songIds }
+                }),
+              })
+            }}
+          />
+        )}
+        {libraryTab === 'afinacao' && <TunerTab />}
+        {libraryTab === 'config' && (
+          <SettingsTab
+            onExport={() => {
+              const blob = new Blob([exportDB(db)], { type: 'application/json' })
+              const a = document.createElement('a')
+              a.href = URL.createObjectURL(blob)
+              a.download = `cifrasgroup-backup.json`
+              a.click()
+              URL.revokeObjectURL(a.href)
+            }}
+            onImport={(json) => {
+              const next = importDB(json)
+              if (!next) { showToast('Arquivo de backup inválido.'); return }
+              setDb(next)
+              showToast('Backup importado.')
+            }}
+          />
+        )}
+      </div>
+      <TabBar active={libraryTab} onChange={setLibraryTab} />
+    </div>
   )
 }
 
@@ -262,7 +285,7 @@ function ListPicker({ db, onPick, onCreate, onClose }: {
       <div className="sheet small" onClick={(e) => e.stopPropagation()}>
         <div className="sheet-head">
           <h3>Salvar nesta lista</h3>
-          <button className="icon" onClick={onClose}>×</button>
+          <button className="icon" onClick={onClose}><XMarkIcon /></button>
         </div>
         <p className="hint small">As configurações atuais (tom, capo, nível de simplificação, paleta, batida, rolagem e tamanho do texto) já ficam salvas com a música.</p>
         <div className="listpick">

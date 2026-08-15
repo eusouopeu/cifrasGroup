@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { guessKey, parseCifra, uniqueChords } from '../cifra/parse'
 import { ImportCancelledError, importFromCifraClubUrl, isCifraClubUrl, nativeImportAvailable } from '../native/cifraClubImport'
 import { nameOf } from '../theory/notes'
@@ -90,7 +91,7 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
   return (
     <div className="importview">
       <header className="apphead">
-        <button className="icon" onClick={onCancel}>←</button>
+        <button className="icon" onClick={onCancel}><ArrowLeftIcon /></button>
         <h1>Importar cifra</h1>
       </header>
 

@@ -1,0 +1,86 @@
+import { useState } from 'react'
+import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
+import type { DB, SongList } from '../store/db'
+import { SongCard } from './SongCard'
+
+export function ListsView({ db, onOpen, onCreateList, onDeleteList, onRemoveFromList, onDuplicateSong, onReorderSong }: {
+  db: DB
+  onOpen: (id: string, listId?: string) => void
+  onCreateList: (name: string) => void
+  onDeleteList: (id: string) => void
+  onRemoveFromList: (listId: string, songId: string) => void
+  onDuplicateSong: (id: string) => void
+  onReorderSong: (listId: string, songId: string, dir: 'up' | 'down') => void
+}) {
+  const [newList, setNewList] = useState('')
+
+  return (
+    <div className="library">
+      <header className="apphead">
+        <h1>Listas</h1>
+      </header>
+
+      {db.lists.map((list) => (
+        <ListSection
+          key={list.id}
+          list={list}
+          db={db}
+          onOpen={onOpen}
+          onDeleteList={onDeleteList}
+          onRemoveFromList={onRemoveFromList}
+          onDuplicateSong={onDuplicateSong}
+          onReorderSong={onReorderSong}
+        />
+      ))}
+
+      <div className="newlist">
+        <input placeholder="Nova lista (ex.: Roda de violão)" value={newList} onChange={(e) => setNewList(e.target.value)} />
+        <button className="btn" disabled={!newList.trim()} onClick={() => { onCreateList(newList.trim()); setNewList('') }}>criar</button>
+      </div>
+    </div>
+  )
+}
+
+function ListSection({ list, db, onOpen, onDeleteList, onRemoveFromList, onDuplicateSong, onReorderSong }: {
+  list: SongList
+  db: DB
+  onOpen: (id: string, listId?: string) => void
+  onDeleteList: (id: string) => void
+  onRemoveFromList: (listId: string, songId: string) => void
+  onDuplicateSong: (id: string) => void
+  onReorderSong: (listId: string, songId: string, dir: 'up' | 'down') => void
+}) {
+  const [open, setOpen] = useState(true)
+  const songs = list.songIds.map((id) => db.songs[id]).filter(Boolean)
+  return (
+    <section className="listsection">
+      <div className="listhead">
+        <button className="listtoggle" onClick={() => setOpen(!open)}>
+          {open ? <ChevronDownIcon /> : <ChevronRightIcon />} {list.name} <span className="count">{songs.length}</span>
+        </button>
+        {list.id !== 'favoritas' && <button className="icon small" onClick={() => onDeleteList(list.id)}>apagar</button>}
+      </div>
+      {open && (
+        songs.length === 0
+          ? <p className="hint small">Lista vazia. Abra uma música e use ＋ para salvá-la aqui com as configurações atuais.</p>
+          : <>
+              {songs.length > 1 && <p className="hint small">A ordem aqui é a ordem do repertório: use as setas para reorganizar e abra qualquer música para navegar pelas outras da lista sem voltar aqui.</p>}
+              <div className="songgrid">
+                {songs.map((s, i) => (
+                  <SongCard
+                    key={s.id}
+                    song={s}
+                    onOpen={() => onOpen(s.id, list.id)}
+                    onDelete={() => onRemoveFromList(list.id, s.id)}
+                    deleteLabel="tirar da lista"
+                    onDuplicate={() => onDuplicateSong(s.id)}
+                    onMoveUp={i > 0 ? () => onReorderSong(list.id, s.id, 'up') : undefined}
+                    onMoveDown={i < songs.length - 1 ? () => onReorderSong(list.id, s.id, 'down') : undefined}
+                  />
+                ))}
+              </div>
+            </>
+      )}
+    </section>
+  )
+}

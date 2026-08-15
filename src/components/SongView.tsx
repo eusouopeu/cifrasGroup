@@ -1,4 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  ArrowLeftIcon,
+  ArrowPathIcon,
+  ArrowRightIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  Cog6ToothIcon,
+  EllipsisHorizontalIcon,
+  MinusIcon,
+  MusicalNoteIcon,
+  PencilSquareIcon,
+  PlusIcon,
+  TrashIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline'
+import { ArrowDownIcon, PauseIcon, PlayIcon, StopIcon } from '@heroicons/react/24/solid'
 import { chordSequence, guessKeyFromSymbols } from '../cifra/parse'
 import { buildView, viewToText } from '../cifra/view'
 import { RHYTHMS, rhythmById } from '../data/rhythms'
@@ -236,7 +252,7 @@ export function SongView({
   return (
     <div className="songview" ref={rootRef}>
       <header className="songhead">
-        <button className="icon" onClick={onBack} aria-label="Voltar">←</button>
+        <button className="icon" onClick={onBack} aria-label="Voltar"><ArrowLeftIcon /></button>
         {editingTitle ? (
           <EditTitle
             title={song.title}
@@ -249,8 +265,8 @@ export function SongView({
             <span>{song.artist || '—'}</span>
           </button>
         )}
-        <button className="icon" onClick={() => setMenuOpen(true)} aria-label="Mais opções">⋯</button>
-        <button className="icon" onClick={onSaveToList} aria-label="Salvar em lista">＋</button>
+        <button className="icon" onClick={() => setMenuOpen(true)} aria-label="Mais opções"><EllipsisHorizontalIcon /></button>
+        <button className="icon" onClick={onSaveToList} aria-label="Salvar em lista"><PlusIcon /></button>
       </header>
 
       {menuOpen && (
@@ -258,7 +274,7 @@ export function SongView({
           <div className="sheet small" onClick={(e) => e.stopPropagation()}>
             <div className="sheet-head">
               <h3>Mais opções</h3>
-              <button className="icon" onClick={() => setMenuOpen(false)}>×</button>
+              <button className="icon" onClick={() => setMenuOpen(false)}><XMarkIcon /></button>
             </div>
             <div className="listpick">
               <button className="btn wide" onClick={() => { toggleFullscreen(); setMenuOpen(false) }}>
@@ -285,50 +301,56 @@ export function SongView({
         <ToolButton active={panel === 'simplificar'} onClick={() => togglePanel('simplificar')} label="Simplificar" value={
           s.simplifyLevel === 0 ? 'off' : s.simplifyLevel === 1 ? 'nível 1' : 'nível 2'
         } flash={level2JustOff} />
-        <ToolButton active={panel === 'cor'} onClick={() => togglePanel('cor')} label="Cor" value={PALETTES.find((p) => p.id === s.paletteId)?.name ?? 'Original'} />
+        <ToolButton active={panel === 'cor'} onClick={() => togglePanel('cor')} label="Emoção" value={PALETTES.find((p) => p.id === s.paletteId)?.name ?? 'Original'} />
         <ToolButton active={panel === 'ritmo'} onClick={() => togglePanel('ritmo')} label="Ritmo" value={rhythm?.name ?? 'nenhum'} />
-        <ToolButton active={panel === 'acordes'} onClick={() => togglePanel('acordes')} label="Acordes" value={s.instrument === 'guitar' ? 'violão' : 'piano'} />
-        <ToolButton active={panel === 'texto'} onClick={() => togglePanel('texto')} label="Texto" value={`${s.fontSize}px`} />
-        <ToolButton active={panel === 'notas'} onClick={() => togglePanel('notas')} label="Notas" value={song.notes.trim() ? 'anotado' : 'vazio'} />
-        <ToolButton active={panel === 'gravar'} onClick={() => togglePanel('gravar')} label="Gravar" value="praticar" />
+        <ToolButton active={panel === 'acordes'} onClick={() => togglePanel('acordes')} label="Instrumento" value={s.instrument === 'guitar' ? 'violão' : 'piano'} />
       </nav>
 
       {panel && (
       <div className="sheet-backdrop panel-backdrop" onClick={() => setPanel(null)}>
       <div className="sheet panel-sheet" onClick={(e) => e.stopPropagation()}>
-      <button className="icon panel-sheet-close" onClick={() => setPanel(null)} aria-label="Fechar painel">×</button>
+      <button className="icon panel-sheet-close" onClick={() => setPanel(null)} aria-label="Fechar painel"><XMarkIcon /></button>
       {panel === 'tom' && (
-        <Panel title="Tom e capotraste">
+        <Panel
+          title="Tom e capotraste"
+          headerExtra={
+            <button className="icon small panel-reset" onClick={() => onChange({ transpose: 0, capo: 0 })} aria-label="Voltar ao original" title="Voltar ao original">
+              <ArrowPathIcon />
+            </button>
+          }
+        >
           <div className="row">
-            <button className="btn" onClick={() => changeTranspose({ transpose: s.transpose - 1 })}>−1 semitom</button>
+            <button className="icon" onClick={() => changeTranspose({ transpose: s.transpose - 1 })} aria-label="−1 semitom"><MinusIcon /></button>
             <div className="keydisplay">
               {view.displayedChords[0] ? <span className="mono">{view.displayedChords.slice(0, 4).map((c) => c.symbol).join('  ')}</span> : '—'}
             </div>
-            <button className="btn" onClick={() => changeTranspose({ transpose: s.transpose + 1 })}>+1 semitom</button>
+            <button className="icon" onClick={() => changeTranspose({ transpose: s.transpose + 1 })} aria-label="+1 semitom"><PlusIcon /></button>
           </div>
           <div className="row">
-            <label className="field">
+            <label className="field inline">
               Capotraste
-              <select value={s.capo} onChange={(e) => onChange({ capo: Number(e.target.value) })}>
-                {Array.from({ length: 13 }, (_, i) => (
-                  <option key={i} value={i}>{i === 0 ? 'sem capo' : `${i}ª casa`}</option>
-                ))}
-              </select>
+              <input
+                type="number"
+                min={0}
+                max={12}
+                className="numinput small"
+                value={s.capo}
+                onChange={(e) => onChange({ capo: Math.max(0, Math.min(12, Number(e.target.value))) })}
+              />
             </label>
-            <button className="btn ghost" onClick={() => onChange({ transpose: 0, capo: 0 })}>voltar ao original</button>
           </div>
           {currentKeyOption && (
             <p className="hint">Facilidade do tom atual: <strong>{currentKeyOption.ease}/100</strong>. Acorde mais difícil: <span className="mono">{currentKeyOption.hardest}</span>.</p>
           )}
-          <h4>Todos os tons, do mais fácil ao mais difícil</h4>
+          <h4>5 tons mais fáceis</h4>
           <div className="keylist">
-            {view.keyRanking.map((k) => (
+            {view.keyRanking.slice(0, 5).map((k) => (
               <button
                 key={k.semitones}
                 className={`keyrow${k.semitones === (((view.effectiveTranspose % 12) + 12) % 12) ? ' current' : ''}`}
                 onClick={() => changeTranspose({ transpose: k.semitones, capo: k.capo })}
               >
-                <span className="keyrow-shift">{k.semitones === 0 ? 'original' : `${k.semitones > 0 ? '+' : ''}${k.semitones}`}</span>
+                <span className="keyrow-shift">{k.semitones === 0 ? '0' : `${k.semitones > 0 ? '+' : ''}${k.semitones}`}</span>
                 <span className="bar"><i style={{ width: `${k.ease}%` }} /></span>
                 <span className="keyrow-ease">{k.ease}</span>
                 <span className="keyrow-capo">{k.capo > 0 ? `capo ${k.capo}ª` : '—'}</span>
@@ -344,16 +366,11 @@ export function SongView({
           {view.sectionKeys.some((k) => k.differsFromGlobal) && (
             <>
               <h4>Por trecho — possível modulação</h4>
-              <p className="hint small">
-                Estes trechos ficariam mais fáceis num tom diferente do escolhido para a música inteira.
-                É só um indício de mudança de tom interna — trocar de capotraste no meio da música é raro na prática,
-                mas ajuda a entender por que um pedaço específico parece mais difícil.
-              </p>
               <div className="sublist">
                 {view.sectionKeys.filter((k) => k.differsFromGlobal).map((k) => (
                   <div key={k.label} className="subrow section-key">
                     <span className="mono from">{k.label}</span>
-                    <span className="arrow">→</span>
+                    <ArrowRightIcon className="arrow-icon" />
                     <span className="mono to">
                       {k.best.semitones === 0 ? 'original' : `${k.best.semitones > 0 ? '+' : ''}${k.best.semitones}`}
                     </span>
@@ -382,7 +399,7 @@ export function SongView({
             {view.displayedChords.map((c) => (
               <div key={c.symbol} className="subrow">
                 <span className="mono from">{c.symbol}</span>
-                <span className="arrow">→</span>
+                <ArrowRightIcon className="arrow-icon" />
                 <span className="mono to">{romanNumeral(c.symbol, analysisKeyPc) ?? '?'}</span>
               </div>
             ))}
@@ -405,9 +422,6 @@ export function SongView({
             <input type="range" min={0.5} max={1} step={0.01} value={s.threshold}
               onChange={(e) => onChange({ threshold: Number(e.target.value) })} />
           </label>
-          <p className="hint small">
-            Quanto maior o limiar, mais fiel ao original — e menos trocas o app faz. 80% é o equilíbrio padrão.
-          </p>
           {s.simplifyLevel === 2 && best && (
             <p className="hint">
               Melhor tom encontrado: <strong>{best.semitones === 0 ? 'o original' : `${best.semitones > 0 ? '+' : ''}${best.semitones} semitons`}</strong>
@@ -420,7 +434,7 @@ export function SongView({
             {[...view.substitutions.values()].map((sub) => (
               <div key={sub.from} className="subrow">
                 <span className="mono from">{sub.from}</span>
-                <span className="arrow">→</span>
+                <ArrowRightIcon className="arrow-icon" />
                 <span className="mono to">{mapSymbol(sub.from)}</span>
                 <span className="score">{Math.round(sub.score * 100)}% igual</span>
                 <span className="reason">
@@ -441,17 +455,13 @@ export function SongView({
       )}
 
       {panel === 'cor' && (
-        <Panel title="Cor / emoção dos acordes">
-          <p className="hint small">
-            Cada paleta reescreve todos os acordes com um mesmo vocabulário de extensões, mantendo fundamental e modo.
-            É isso que faz o conjunto “combinar entre si”.
-          </p>
+        <Panel title="Emoção dos acordes (cor)">
           <div className="palettes">
             {PALETTES.map((p) => (
               <button key={p.id} className={`palette${s.paletteId === p.id ? ' selected' : ''}`} onClick={() => onChange({ paletteId: p.id })}>
                 <strong>{p.name}</strong>
-                <span>{p.description}</span>
                 <span className="mono preview">{previewPalette(view.displayedChords.map((c) => c.symbol), p.id)}</span>
+                <span>{p.description}</span>
               </button>
             ))}
           </div>
@@ -459,7 +469,7 @@ export function SongView({
       )}
 
       {panel === 'ritmo' && (
-        <Panel title="Batida, dedilhado e metrônomo">
+        <Panel title="Ritmo">
           <div className="bpmbox">
             <div className="row tight">
               <button className="btn round" onClick={() => onChange({ bpm: Math.max(30, s.bpm - 5) })}>−5</button>
@@ -468,13 +478,20 @@ export function SongView({
               <button className="btn round" onClick={() => onChange({ bpm: Math.min(240, s.bpm + 1) })}>+1</button>
               <button className="btn round" onClick={() => onChange({ bpm: Math.min(240, s.bpm + 5) })}>+5</button>
             </div>
-            <input type="range" min={30} max={240} value={s.bpm} onChange={(e) => onChange({ bpm: Number(e.target.value) })} />
             <div className="row tight">
               <button className={`chip${s.playClick ? ' on' : ''}`} onClick={() => onChange({ playClick: !s.playClick })}>
-                clique do metrônomo
+                metrônomo
               </button>
               <button className={`chip${s.playPattern ? ' on' : ''}`} onClick={() => onChange({ playPattern: !s.playPattern })}>
-                tocar a batida
+                batida
+              </button>
+              <button
+                className={`icon round-play${metronome.running ? ' on' : ''}`}
+                onClick={handlePlay}
+                aria-label={metronome.running ? 'Parar metrônomo' : 'Tocar metrônomo'}
+                title="Tocar/parar para ouvir as mudanças"
+              >
+                {metronome.running ? <StopIcon /> : <PlayIcon />}
               </button>
               {rhythm && (
                 <button className="btn ghost" onClick={() => onChange({ bpm: rhythm.bpmSuggested })}>
@@ -520,9 +537,9 @@ export function SongView({
           </div>
           {s.instrument === 'guitar' && (
             <>
-              <label className="field wide">
-                Afinação
-                <select value={s.tuning} onChange={(e) => onChange({ tuning: e.target.value })}>
+              <span className="fieldlabel">Afinação</span>
+              <div className="row tight tuningrow">
+                <select className="tuningselect" value={s.tuning} onChange={(e) => onChange({ tuning: e.target.value })}>
                   <optgroup label="Violão">
                     {TUNINGS.filter((t) => t.family !== 'viola').map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </optgroup>
@@ -535,11 +552,16 @@ export function SongView({
                     </optgroup>
                   )}
                 </select>
-              </label>
-              <div className="row tight">
-                <button className="btn ghost" onClick={() => setTunerOpen(true)}>🎵 afinar o violão nesta afinação</button>
-                <button className="btn ghost" onClick={() => setTuningBuilderOpen((v) => !v)}>
-                  {tuningBuilderOpen ? 'fechar criador de afinação' : '+ criar afinação personalizada'}
+                <button className="icon" onClick={() => setTunerOpen(true)} aria-label="Afinar o violão nesta afinação" title="Afinar o violão nesta afinação">
+                  <MusicalNoteIcon />
+                </button>
+                <button
+                  className={`icon${tuningBuilderOpen ? ' active' : ''}`}
+                  onClick={() => setTuningBuilderOpen((v) => !v)}
+                  aria-label={tuningBuilderOpen ? 'Fechar criador de afinação' : 'Criar afinação personalizada'}
+                  title="Criar afinação personalizada"
+                >
+                  <PlusIcon />
                 </button>
               </div>
               {tuningBuilderOpen && (
@@ -560,12 +582,13 @@ export function SongView({
                       <span className="mono">{t.name}</span>
                       <button
                         className="icon small danger"
+                        aria-label="Apagar afinação"
                         onClick={() => {
                           onDeleteCustomTuning(t.id)
                           if (s.tuning === t.id) onChange({ tuning: 'standard' })
                         }}
                       >
-                        apagar
+                        <TrashIcon />
                       </button>
                     </div>
                   ))}
@@ -586,64 +609,80 @@ export function SongView({
       )}
 
       {panel === 'texto' && (
-        <Panel title="Texto e rolagem">
-          <label className="field wide">
-            Tamanho da cifra: <strong>{s.fontSize}px</strong>
+        <Panel title="Configurações">
+          <div className="panel-section">
+            <h4>Tamanho do texto</h4>
             <div className="row tight">
               <button className="btn" onClick={() => onChange({ fontSize: Math.max(10, s.fontSize - 1) })}>A−</button>
-              <input type="range" min={10} max={30} value={s.fontSize} onChange={(e) => onChange({ fontSize: Number(e.target.value) })} />
+              <input
+                type="number" min={10} max={30} className="numinput small"
+                value={s.fontSize}
+                onChange={(e) => onChange({ fontSize: Math.max(10, Math.min(30, Number(e.target.value))) })}
+              />
+              <span className="hint small">px</span>
               <button className="btn" onClick={() => onChange({ fontSize: Math.min(30, s.fontSize + 1) })}>A+</button>
             </div>
-          </label>
-          <label className="field wide checkbox">
-            <input type="checkbox" checked={s.hideTabs} onChange={(e) => onChange({ hideTabs: e.target.checked })} />
-            Esconder tablaturas
-          </label>
-          <label className="field wide">
-            Rolagem automática: <strong>{s.scrollSpeed === 0 ? 'parada' : `${s.scrollSpeed}`}</strong>
-            <input type="range" min={0} max={20} value={s.scrollSpeed} onChange={(e) => onChange({ scrollSpeed: Number(e.target.value) })} />
-          </label>
-
-          <h4>Loop de trecho</h4>
-          <p className="hint small">
-            Marque o início e o fim de uma passagem pra repeti-la sem parar — útil pra treinar um trecho difícil.
-            A marca usa a posição de rolagem atual, então role até o ponto certo antes de marcar.
-          </p>
-          <div className="row tight">
-            <button className="btn" onClick={() => setLoopStart(scrollRef.current?.scrollTop ?? 0)}>
-              marcar início{loopStart !== null ? ' ✓' : ''}
-            </button>
-            <button className="btn" onClick={() => setLoopEnd(scrollRef.current?.scrollTop ?? 0)}>
-              marcar fim{loopEnd !== null ? ' ✓' : ''}
-            </button>
           </div>
-          <div className="row tight">
-            <button
-              className={`chip${loopActive ? ' on' : ''}`}
-              disabled={loopStart === null || loopEnd === null || loopEnd <= loopStart}
-              onClick={() => setLoopActive((v) => !v)}
-            >
-              {loopActive ? 'loop ativo — tocando em repetição' : 'ativar loop'}
-            </button>
-            {(loopStart !== null || loopEnd !== null) && (
-              <button className="btn ghost" onClick={() => { setLoopActive(false); setLoopStart(null); setLoopEnd(null) }}>
-                limpar marcas
+
+          <div className="panel-section">
+            <h4>Rolagem automática</h4>
+            <div className="row tight">
+              <input
+                type="number" min={0} max={20} className="numinput small"
+                value={s.scrollSpeed}
+                onChange={(e) => onChange({ scrollSpeed: Math.max(0, Math.min(20, Number(e.target.value))) })}
+              />
+              <span className="hint small">{s.scrollSpeed === 0 ? 'parada' : `velocidade ${s.scrollSpeed}`}</span>
+            </div>
+          </div>
+
+          <div className="panel-section">
+            <label className="field wide checkbox">
+              <input type="checkbox" checked={s.hideTabs} onChange={(e) => onChange({ hideTabs: e.target.checked })} />
+              Esconder tablaturas
+            </label>
+          </div>
+
+          <div className="panel-section">
+            <h4>Loop de trecho</h4>
+            <p className="hint small">
+              Marque o início e o fim de uma passagem pra repeti-la sem parar — útil pra treinar um trecho difícil.
+              A marca usa a posição de rolagem atual, então role até o ponto certo antes de marcar.
+            </p>
+            <div className="row tight">
+              <button className="btn" onClick={() => setLoopStart(scrollRef.current?.scrollTop ?? 0)}>
+                marcar início{loopStart !== null ? ' ✓' : ''}
               </button>
+              <button className="btn" onClick={() => setLoopEnd(scrollRef.current?.scrollTop ?? 0)}>
+                marcar fim{loopEnd !== null ? ' ✓' : ''}
+              </button>
+            </div>
+            <div className="row tight">
+              <button
+                className={`chip${loopActive ? ' on' : ''}`}
+                disabled={loopStart === null || loopEnd === null || loopEnd <= loopStart}
+                onClick={() => setLoopActive((v) => !v)}
+              >
+                {loopActive ? 'loop ativo — tocando em repetição' : 'ativar loop'}
+              </button>
+              {(loopStart !== null || loopEnd !== null) && (
+                <button className="btn ghost" onClick={() => { setLoopActive(false); setLoopStart(null); setLoopEnd(null) }}>
+                  limpar marcas
+                </button>
+              )}
+            </div>
+            {loopStart !== null && loopEnd !== null && loopEnd <= loopStart && (
+              <p className="hint small danger">O fim precisa estar depois do início — role mais e marque de novo.</p>
             )}
           </div>
-          {loopStart !== null && loopEnd !== null && loopEnd <= loopStart && (
-            <p className="hint small danger">O fim precisa estar depois do início — role mais e marque de novo.</p>
-          )}
         </Panel>
       )}
 
       {panel === 'notas' && (
         <Panel title="Notas e tags">
           <h4>Tags</h4>
-          <p className="hint small">Palavras livres para achar esta música depois na busca da biblioteca — ex.: roda, iniciante, 3 acordes.</p>
           <TagEditor tags={song.tags} onChange={onTagsChange} />
           <h4>Notas</h4>
-          <p className="hint small">Anotações livres desta música — arranjo, combinado com a banda, o que lembrar no ensaio.</p>
           <label className="field wide">
             <textarea
               rows={6}
@@ -674,7 +713,7 @@ export function SongView({
             onClick={() => onNavigate(siblings.ids[siblings.index - 1])}
             aria-label="Música anterior da lista"
           >
-            ‹
+            <ChevronLeftIcon />
           </button>
           <span className="setlistbar-label">{siblings.listName} · {siblings.index + 1}/{siblings.ids.length}</span>
           <button
@@ -683,7 +722,7 @@ export function SongView({
             onClick={() => onNavigate(siblings.ids[siblings.index + 1])}
             aria-label="Próxima música da lista"
           >
-            ›
+            <ChevronRightIcon />
           </button>
         </div>
       )}
@@ -706,10 +745,10 @@ export function SongView({
         }}
       >
         {liveNav && siblings!.index > 0 && (
-          <button className="edge-nav edge-nav-left" onClick={() => goToSibling('prev')} aria-label="Música anterior da lista">‹</button>
+          <button className="edge-nav edge-nav-left" onClick={() => goToSibling('prev')} aria-label="Música anterior da lista"><ChevronLeftIcon /></button>
         )}
         {liveNav && siblings!.index < siblings!.ids.length - 1 && (
-          <button className="edge-nav edge-nav-right" onClick={() => goToSibling('next')} aria-label="Próxima música da lista">›</button>
+          <button className="edge-nav edge-nav-right" onClick={() => goToSibling('next')} aria-label="Próxima música da lista"><ChevronRightIcon /></button>
         )}
         <CifraText
           parsed={view.parsed}
@@ -730,7 +769,7 @@ export function SongView({
           onClick={handlePlay}
           aria-label={metronome.running ? 'Parar metrônomo' : countIn !== null ? 'Cancelar contagem' : 'Iniciar metrônomo'}
         >
-          {countIn !== null ? countIn : metronome.running ? '■' : '▶'}
+          {countIn !== null ? countIn : metronome.running ? <StopIcon /> : <PlayIcon />}
         </button>
         <button className="transport-bpm" onClick={() => togglePanel('ritmo')}>
           <strong>{s.bpm}</strong> bpm
@@ -739,13 +778,24 @@ export function SongView({
         <div className="transport-steps">
           {rhythm && <RhythmGrid rhythm={rhythm} activeStep={metronome.step} />}
         </div>
-        <button
-          className={`transport-scroll${s.scrollSpeed > 0 ? ' on' : ''}`}
-          onClick={toggleScroll}
-          aria-label="Rolagem automática"
-        >
-          {s.scrollSpeed > 0 ? '⏸' : '⇩'}
-        </button>
+        <div className="transport-actions">
+          <button className={`transport-icon${panel === 'gravar' ? ' on' : ''}`} onClick={() => togglePanel('gravar')} aria-label="Gravar prática">
+            <span className="record-dot" />
+          </button>
+          <button className={`transport-icon${panel === 'notas' ? ' on' : ''}`} onClick={() => togglePanel('notas')} aria-label="Notas">
+            <PencilSquareIcon />
+          </button>
+          <button className={`transport-icon${panel === 'texto' ? ' on' : ''}`} onClick={() => togglePanel('texto')} aria-label="Configurações">
+            <Cog6ToothIcon />
+          </button>
+          <button
+            className={`transport-icon${s.scrollSpeed > 0 ? ' on' : ''}`}
+            onClick={toggleScroll}
+            aria-label="Rolagem automática"
+          >
+            {s.scrollSpeed > 0 ? <PauseIcon /> : <ArrowDownIcon />}
+          </button>
+        </div>
       </div>
 
       {inspect && (
@@ -799,10 +849,9 @@ function TagEditor({ tags, onChange }: { tags: string[]; onChange: (tags: string
         {tags.map((t) => (
           <span key={t} className="tagchip">
             {t}
-            <button className="tagchip-remove" onClick={() => onChange(tags.filter((x) => x !== t))} aria-label={`Remover tag ${t}`}>×</button>
+            <button className="tagchip-remove" onClick={() => onChange(tags.filter((x) => x !== t))} aria-label={`Remover tag ${t}`}><XMarkIcon /></button>
           </span>
         ))}
-        {tags.length === 0 && <span className="hint small">Nenhuma tag ainda.</span>}
       </div>
       <div className="row tight">
         <input
@@ -844,10 +893,13 @@ function ToolButton({ label, value, active, onClick, flash }: { label: string; v
   )
 }
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+function Panel({ title, headerExtra, children }: { title: string; headerExtra?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section className="panel">
-      <h3>{title}</h3>
+      <h3>
+        {title}
+        {headerExtra && <span className="panel-title-extra">{headerExtra}</span>}
+      </h3>
       {children}
     </section>
   )
@@ -971,7 +1023,7 @@ function ChordSheet({ symbol, instrument, threshold, tuning, onPick, onReset, on
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
         <div className="sheet-head">
           <h3 className="mono">{symbol}</h3>
-          <button className="icon" onClick={onClose}>×</button>
+          <button className="icon" onClick={onClose}><XMarkIcon /></button>
         </div>
         {chord && (
           <>

@@ -30,7 +30,7 @@ export const TUNINGS: Tuning[] = [
   { id: 'half-down', name: 'Meio tom abaixo (Eb Ab Db Gb Bb Eb)', strings: [3, 8, 1, 6, 10, 3], stringNames: ['Eb', 'Ab', 'Db', 'Gb', 'Bb', 'eb'], family: 'guitar' },
   { id: 'full-down', name: 'Um tom abaixo (D G C F A D)', strings: [2, 7, 0, 5, 9, 2], stringNames: ['D', 'G', 'C', 'F', 'A', 'd'], family: 'guitar' },
   { id: 'open-g', name: 'Open G (D G D G B D)', strings: [2, 7, 2, 7, 11, 2], stringNames: ['D', 'G', 'D', 'G', 'B', 'd'], family: 'guitar' },
-  { id: 'viola-cebolao-d', name: 'Viola caipira · Cebolão em D (D A D F# A D)', strings: [2, 9, 2, 6, 9, 2], stringNames: ['D', 'A', 'D', 'F#', 'A', 'd'], family: 'viola' },
+  { id: 'viola-cebolao-d', name: 'Cebolão em D (D A D F# A D)', strings: [2, 9, 2, 6, 9, 2], stringNames: ['D', 'A', 'D', 'F#', 'A', 'd'], family: 'viola' },
 ]
 
 /** Busca em TUNINGS e, se fornecida, também numa lista extra (afinações personalizadas do usuário). */

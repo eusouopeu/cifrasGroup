@@ -244,6 +244,31 @@ export function rhythmById(id: string | null): Rhythm | null {
   return RHYTHMS.find((r) => r.id === id) ?? null
 }
 
+/**
+ * Cor da tag de gênero, por família — gêneros parecidos (rock/punk,
+ * forró/baião...) compartilham a cor para ficar visualmente óbvio o parentesco.
+ */
+export const GENRE_COLOR: Record<string, string> = {
+  // pop / balada
+  Pop: 'a', 'Pop rock': 'a', Balada: 'a', Indie: 'a', Infantil: 'a', Gospel: 'a',
+  // mpb / erudito
+  MPB: 'b', 'Clássico': 'b',
+  // rock / punk
+  Rock: 'c', 'Rock leve': 'c', Punk: 'c',
+  // sertanejo / country
+  Sertanejo: 'd', 'Sertanejo raiz': 'd', Country: 'd',
+  // ritmos nordestinos / samba
+  Samba: 'e', Pagode: 'e', 'Forró': 'e', Xote: 'e', 'Baião': 'e',
+  // groove / balanço
+  'Bossa nova': 'f', 'Jazz brasileiro': 'f', Reggae: 'f', Soul: 'f', Funk: 'f', 'R&B': 'f',
+  // valsa / folk
+  Valsa: 'g', 'Valsa lenta': 'g', Folk: 'g',
+}
+
+export function genreColorClass(genre: string): string {
+  return `genre-${GENRE_COLOR[genre] ?? 'x'}`
+}
+
 export const STROKE_LABEL: Record<string, string> = {
   D: '↓', U: '↑', X: '×', P: 'P', A: '≡', '.': '',
 }
