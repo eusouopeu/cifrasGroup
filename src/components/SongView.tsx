@@ -7,7 +7,8 @@ import { romanNumeral } from '../theory/functional'
 import { nameOf } from '../theory/notes'
 import { PALETTES, applyPalette } from '../theory/palettes'
 import { simplifyChord } from '../theory/simplify'
-import { TUNINGS, tuningById, type Tuning } from '../theory/tunings'
+import { TUNINGS, tuningById, transposeTuningShape, type Tuning } from '../theory/tunings'
+import { newTuningId } from '../store/customTunings'
 import { allVoicings } from '../theory/voicings'
 import type { Song, SongSettings } from '../store/db'
 import { ChordCard, GuitarDiagram, PianoDiagram } from './ChordDiagram'
@@ -22,7 +23,20 @@ type Panel = null | 'tom' | 'simplificar' | 'cor' | 'ritmo' | 'acordes' | 'texto
 
 const LAST_SCROLL_SPEED_KEY = 'cifrasgroup:lastScrollSpeed'
 
-export function SongView({ song, onChange, onBack, onSaveToList, onRename, onNotesChange, onTagsChange, siblings, onNavigate }: {
+export function SongView({
+  song,
+  onChange,
+  onBack,
+  onSaveToList,
+  onRename,
+  onNotesChange,
+  onTagsChange,
+  customTunings,
+  onSaveCustomTuning,
+  onDeleteCustomTuning,
+  siblings,
+  onNavigate,
+}: {
   song: Song
   onChange: (patch: Partial<SongSettings>) => void
   onBack: () => void
@@ -30,6 +44,10 @@ export function SongView({ song, onChange, onBack, onSaveToList, onRename, onNot
   onRename: (title: string, artist: string) => void
   onNotesChange: (notes: string) => void
   onTagsChange: (tags: string[]) => void
+  /** afinações criadas pelo usuário — theory/tunings.ts só tem os presets fixos */
+  customTunings: Tuning[]
+  onSaveCustomTuning: (tuning: Tuning) => void
+  onDeleteCustomTuning: (id: string) => void
   /** contexto de "setlist": em que lista e posição esta música foi aberta */
   siblings?: { listName: string; ids: string[]; index: number }
   onNavigate?: (id: string) => void
@@ -45,6 +63,7 @@ export function SongView({ song, onChange, onBack, onSaveToList, onRename, onNot
   const [loopEnd, setLoopEnd] = useState<number | null>(null)
   const [loopActive, setLoopActive] = useState(false)
   const [tunerOpen, setTunerOpen] = useState(false)
+  const [tuningBuilderOpen, setTuningBuilderOpen] = useState(false)
   const [manualAnalysisKey, setManualAnalysisKey] = useState<number | null>(null)
   useEffect(() => { setManualAnalysisKey(null) }, [song.id])
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -504,17 +523,61 @@ export function SongView({ song, onChange, onBack, onSaveToList, onRename, onNot
               <label className="field wide">
                 Afinação
                 <select value={s.tuning} onChange={(e) => onChange({ tuning: e.target.value })}>
-                  {TUNINGS.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  <optgroup label="Violão">
+                    {TUNINGS.filter((t) => t.family !== 'viola').map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </optgroup>
+                  <optgroup label="Viola caipira">
+                    {TUNINGS.filter((t) => t.family === 'viola').map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </optgroup>
+                  {customTunings.length > 0 && (
+                    <optgroup label="Suas afinações">
+                      {customTunings.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </optgroup>
+                  )}
                 </select>
               </label>
-              <button className="btn ghost" onClick={() => setTunerOpen(true)}>🎵 afinar o violão nesta afinação</button>
+              <div className="row tight">
+                <button className="btn ghost" onClick={() => setTunerOpen(true)}>🎵 afinar o violão nesta afinação</button>
+                <button className="btn ghost" onClick={() => setTuningBuilderOpen((v) => !v)}>
+                  {tuningBuilderOpen ? 'fechar criador de afinação' : '+ criar afinação personalizada'}
+                </button>
+              </div>
+              {tuningBuilderOpen && (
+                <TuningBuilder
+                  allTunings={[...TUNINGS, ...customTunings]}
+                  onSave={(t) => {
+                    onSaveCustomTuning(t)
+                    onChange({ tuning: t.id })
+                    setTuningBuilderOpen(false)
+                  }}
+                />
+              )}
+              {customTunings.length > 0 && (
+                <div className="customtunings">
+                  <h4>Suas afinações</h4>
+                  {customTunings.map((t) => (
+                    <div key={t.id} className="customtuning-row">
+                      <span className="mono">{t.name}</span>
+                      <button
+                        className="icon small danger"
+                        onClick={() => {
+                          onDeleteCustomTuning(t.id)
+                          if (s.tuning === t.id) onChange({ tuning: 'standard' })
+                        }}
+                      >
+                        apagar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           )}
           <div className="chordgrid">
             {view.displayedChords.map((c) => (
               <div key={c.symbol} className={`chordslot${overriddenSymbols.has(c.symbol) ? ' overridden' : ''}`} onClick={() => setInspect(c.symbol)}>
                 {overriddenSymbols.has(c.symbol) && <span className="overridden-dot" title="Troca manual" />}
-                <ChordCard symbol={c.symbol} instrument={s.instrument} compact tuning={tuningById(s.tuning)} />
+                <ChordCard symbol={c.symbol} instrument={s.instrument} compact tuning={tuningById(s.tuning, customTunings)} />
               </div>
             ))}
           </div>
@@ -690,7 +753,7 @@ export function SongView({ song, onChange, onBack, onSaveToList, onRename, onNot
           symbol={inspect}
           instrument={s.instrument}
           threshold={s.threshold}
-          tuning={tuningById(s.tuning)}
+          tuning={tuningById(s.tuning, customTunings)}
           onPick={(newSym) => {
             const original = [...view.map.entries()].find(([, v]) => v === inspect)?.[0]
             if (original) onChange({ overrides: { ...s.overrides, [original]: newSym } })
@@ -709,7 +772,7 @@ export function SongView({ song, onChange, onBack, onSaveToList, onRename, onNot
         />
       )}
 
-      {tunerOpen && <Tuner onClose={() => setTunerOpen(false)} tuning={tuningById(s.tuning)} />}
+      {tunerOpen && <Tuner onClose={() => setTunerOpen(false)} tuning={tuningById(s.tuning, customTunings)} />}
     </div>
   )
 }
@@ -796,6 +859,95 @@ function LevelButton({ active, onClick, title, desc }: { active: boolean; onClic
       <strong>{title}</strong>
       <span>{desc}</span>
     </button>
+  )
+}
+
+/**
+ * Criador de afinações personalizadas, em dois modos:
+ *  - transpor: pega o "desenho" de uma afinação existente e muda só a fundamental
+ *    (ex.: a afinação padrão, mas em Ré) — cobre qualquer tom sem precisar de um preset fixo.
+ *  - livre: escolhe a nota de cada corda à mão — cobre qualquer instrumento ou
+ *    afinação fora do catálogo (ex.: viola caipira além dos presets já incluídos).
+ */
+function TuningBuilder({ allTunings, onSave }: { allTunings: Tuning[]; onSave: (tuning: Tuning) => void }) {
+  const [mode, setMode] = useState<'transpose' | 'manual'>('transpose')
+  const [baseId, setBaseId] = useState(allTunings[0]?.id ?? 'standard')
+  const [root, setRoot] = useState(0)
+  const [manualPcs, setManualPcs] = useState<number[]>([4, 9, 2, 7, 11, 4])
+  const [name, setName] = useState('')
+
+  const base = allTunings.find((t) => t.id === baseId) ?? allTunings[0]
+  const transposed = base ? transposeTuningShape(base, root) : null
+  const baseLabel = base ? base.name.replace(/\s*\(.*\)$/, '') : ''
+  const previewNames = mode === 'transpose' ? (transposed?.stringNames ?? []) : manualPcs.map((pc, i) => (i === manualPcs.length - 1 ? nameOf(pc).toLowerCase() : nameOf(pc)))
+  const autoName =
+    mode === 'transpose'
+      ? `${baseLabel} em ${nameOf(root)} (${previewNames.map((n) => n.toUpperCase()).join(' ')})`
+      : `Afinação livre (${previewNames.map((n) => n.toUpperCase()).join(' ')})`
+
+  const save = () => {
+    const finalName = name.trim() || autoName
+    if (mode === 'transpose') {
+      if (!transposed) return
+      onSave({ id: newTuningId(), name: finalName, strings: transposed.strings, stringNames: transposed.stringNames, family: 'custom' })
+    } else {
+      const stringNames = manualPcs.map((pc, i) => (i === manualPcs.length - 1 ? nameOf(pc).toLowerCase() : nameOf(pc)))
+      onSave({ id: newTuningId(), name: finalName, strings: manualPcs, stringNames, family: 'custom' })
+    }
+  }
+
+  return (
+    <div className="tuningbuilder">
+      <div className="toggle">
+        <button className={mode === 'transpose' ? 'on' : ''} onClick={() => setMode('transpose')}>Transpor afinação existente</button>
+        <button className={mode === 'manual' ? 'on' : ''} onClick={() => setMode('manual')}>Afinação livre</button>
+      </div>
+
+      {mode === 'transpose' && (
+        <>
+          <p className="hint small">Mantém a relação entre as cordas de uma afinação e só muda o tom geral — ex.: a afinação padrão, mas em Ré.</p>
+          <label className="field wide">
+            Afinação de base
+            <select value={baseId} onChange={(e) => setBaseId(e.target.value)}>
+              {allTunings.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </label>
+          <p className="hint small">Nota da 6ª corda (mais grave) na nova afinação:</p>
+          <div className="rootrow">
+            {Array.from({ length: 12 }, (_, i) => (
+              <button key={i} className={`rootbtn${root === i ? ' on' : ''}`} onClick={() => setRoot(i)}>{nameOf(i)}</button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {mode === 'manual' && (
+        <>
+          <p className="hint small">
+            Escolha a nota de cada corda, da mais grave (6ª) para a mais aguda (1ª) — cobre qualquer instrumento ou
+            afinação aberta fora do catálogo.
+          </p>
+          <div className="manualtuning">
+            {manualPcs.map((pc, i) => (
+              <label key={i} className="field">
+                {6 - i}ª corda
+                <select value={pc} onChange={(e) => setManualPcs(manualPcs.map((p, j) => (j === i ? Number(e.target.value) : p)))}>
+                  {Array.from({ length: 12 }, (_, n) => <option key={n} value={n}>{nameOf(n)}</option>)}
+                </select>
+              </label>
+            ))}
+          </div>
+        </>
+      )}
+
+      <p className="hint">Prévia: <span className="mono">{previewNames.join(' ')}</span></p>
+
+      <label className="field wide">
+        Nome (opcional)
+        <input placeholder={autoName} value={name} onChange={(e) => setName(e.target.value)} />
+      </label>
+      <button className="btn primary" onClick={save}>salvar afinação</button>
+    </div>
   )
 }
 

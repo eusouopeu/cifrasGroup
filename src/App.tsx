@@ -7,6 +7,8 @@ import { useToast } from './components/Toast'
 import { Tuner } from './components/Tuner'
 import { initShareTarget } from './native/shareTarget'
 import { DEFAULT_SETTINGS, exportDB, importDB, loadDBAsync, newId, saveDBAsync, type DB, type SongSettings } from './store/db'
+import { deleteCustomTuning, loadCustomTunings, saveCustomTuning } from './store/customTunings'
+import type { Tuning } from './theory/tunings'
 
 type Route = { view: 'library' } | { view: 'import' } | { view: 'song'; id: string; listId?: string }
 
@@ -16,7 +18,7 @@ function withDemoSong(loaded: DB): DB {
   loaded.songs[id] = {
     id,
     title: 'Grade de estudo (exemplo)',
-    artist: 'cifrasGroup',
+    artist: '',
     source: null,
     raw: DEMO_RAW,
     notes: '',
@@ -34,6 +36,7 @@ export default function App() {
   const [picker, setPicker] = useState<string | null>(null)
   const [sharedUrl, setSharedUrl] = useState<string | null>(null)
   const [tunerOpen, setTunerOpen] = useState(false)
+  const [customTunings, setCustomTunings] = useState<Tuning[]>([])
   const showToast = useToast()
 
   useEffect(() => {
@@ -41,8 +44,18 @@ export default function App() {
     void loadDBAsync().then((loaded) => {
       if (!cancelled) setDb(withDemoSong(loaded))
     })
+    void loadCustomTunings().then((loaded) => {
+      if (!cancelled) setCustomTunings(loaded)
+    })
     return () => { cancelled = true }
   }, [])
+
+  const handleSaveCustomTuning = (tuning: Tuning) => {
+    void saveCustomTuning(customTunings, tuning).then(setCustomTunings)
+  }
+  const handleDeleteCustomTuning = (id: string) => {
+    void deleteCustomTuning(customTunings, id).then(setCustomTunings)
+  }
 
   const loadedOnce = useRef(false)
   useEffect(() => {
@@ -134,6 +147,9 @@ export default function App() {
           onRename={(title, artist) => patchSong(song.id, { title, artist })}
           onNotesChange={(notes) => patchSong(song.id, { notes })}
           onTagsChange={(tags) => patchSong(song.id, { tags })}
+          customTunings={customTunings}
+          onSaveCustomTuning={handleSaveCustomTuning}
+          onDeleteCustomTuning={handleDeleteCustomTuning}
           onSaveToList={() => setPicker(song.id)}
           siblings={siblings}
           onNavigate={(id) => setRoute({ view: 'song', id, listId: route.listId })}

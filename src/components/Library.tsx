@@ -237,7 +237,7 @@ function SongCard({ song, onOpen, onDelete, onDuplicate, deleteLabel = 'apagar',
     <div className="songcard">
       <button className="songcard-main" onClick={onOpen}>
         <strong>{song.title}</strong>
-        <span className="artist">{song.artist || '—'}</span>
+        {song.artist && <span className="artist">{song.artist}</span>}
         <span className="mono chords">{chords.join(' ')}</span>
         <span className="badges">
           {visibleBadges.map((b) => <i key={b}>{b}</i>)}
@@ -251,8 +251,10 @@ function SongCard({ song, onOpen, onDelete, onDuplicate, deleteLabel = 'apagar',
             <button className="icon small" disabled={!onMoveDown} onClick={onMoveDown} aria-label="Mover para baixo">↓</button>
           </span>
         )}
-        <button className="icon small" onClick={onDuplicate} aria-label="Duplicar música">duplicar</button>
-        <button className="icon small danger" onClick={onDelete}>{deleteLabel}</button>
+        <span className="songcard-iconcol">
+          <button className="icon songcard-icon blue" onClick={onDuplicate} aria-label="Duplicar música" title="Duplicar">⎘</button>
+          <button className="icon songcard-icon danger" onClick={onDelete} aria-label={deleteLabel === 'apagar' ? 'Apagar música' : deleteLabel} title={deleteLabel}>✕</button>
+        </span>
       </div>
     </div>
   )
