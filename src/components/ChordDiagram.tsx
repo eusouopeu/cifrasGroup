@@ -41,7 +41,10 @@ export function GuitarDiagram({ symbol, voicing, size = 1, showDegrees = true, t
   const dx = gridW / 5
   const dy = gridH / FRETS
 
-  const base = voicing.minFret > 0 && voicing.maxFret > FRETS ? voicing.minFret : 0
+  // a 1ª linha do grid representa o traste ANTES da primeira casa pisada
+  // (por isso "-1"): sem o ajuste, uma nota bem na casa mais grave da janela
+  // cai em cima da própria linha, colidindo com os símbolos de corda solta/presa
+  const base = voicing.minFret > 0 && voicing.maxFret > FRETS ? voicing.minFret - 1 : 0
   const degrees = chord ? voicingDegrees(voicing, chord.rootPc, tuning.strings) : voicing.frets.map(() => null)
   const fingers = fingerNumbers(voicing)
 

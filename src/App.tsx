@@ -248,7 +248,13 @@ export default function App() {
             }}
           />
         )}
-        {libraryTab === 'afinacao' && <TunerTab />}
+        {libraryTab === 'afinacao' && (
+          <TunerTab
+            customTunings={customTunings}
+            onSaveCustomTuning={handleSaveCustomTuning}
+            onDeleteCustomTuning={handleDeleteCustomTuning}
+          />
+        )}
         {libraryTab === 'config' && (
           <SettingsTab
             onExport={() => {

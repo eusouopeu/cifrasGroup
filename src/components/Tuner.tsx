@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Capacitor } from '@capacitor/core'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { nameOf } from '../theory/notes'
 import { tuningById, type Tuning } from '../theory/tunings'
@@ -83,6 +84,8 @@ function freqToReading(freq: number): Reading {
 export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: { onClose?: () => void; tuning?: Tuning; embedded?: boolean }) {
   const [status, setStatus] = useState<'starting' | 'listening' | 'denied' | 'unsupported'>('starting')
   const [reading, setReading] = useState<Reading | null>(null)
+  const [permHelpOpen, setPermHelpOpen] = useState(false)
+  const [attempt, setAttempt] = useState(0)
   const streamRef = useRef<MediaStream | null>(null)
   const audioCtxRef = useRef<AudioContext | null>(null)
   const rafRef = useRef(0)
@@ -93,6 +96,7 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
       return
     }
     let cancelled = false
+    setStatus('starting')
     void navigator.mediaDevices
       .getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
       .then((stream) => {
@@ -122,7 +126,7 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
       streamRef.current?.getTracks().forEach((t) => t.stop())
       void audioCtxRef.current?.close()
     }
-  }, [])
+  }, [attempt])
 
   const inTune = reading !== null && Math.abs(reading.cents) <= 5
   const clampedCents = reading ? Math.max(-50, Math.min(50, reading.cents)) : 0
@@ -147,7 +151,15 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
       </div>
 
       {status === 'unsupported' && <p className="hint danger">Este navegador não dá acesso ao microfone.</p>}
-      {status === 'denied' && <p className="hint danger">Não consegui acessar o microfone. Confira a permissão nas configurações do navegador ou do app.</p>}
+      {status === 'denied' && (
+        <div className="mic-denied">
+          <p className="hint danger">Não consegui acessar o microfone. É preciso permitir o acesso nas configurações.</p>
+          <div className="row tight">
+            <button className="btn" onClick={() => setPermHelpOpen(true)}>como permitir o microfone</button>
+            <button className="btn ghost" onClick={() => setAttempt((n) => n + 1)}>tentar de novo</button>
+          </div>
+        </div>
+      )}
       {status === 'starting' && <p className="hint">Pedindo acesso ao microfone…</p>}
 
       {status === 'listening' && (
@@ -168,13 +180,43 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
     </>
   )
 
-  if (embedded) return <div className="tuner tuner-embedded">{content}</div>
+  const permHelp = permHelpOpen && (
+    <div className="sheet-backdrop" onClick={(e) => { e.stopPropagation(); setPermHelpOpen(false) }}>
+      <div className="sheet small" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-head">
+          <h3>Permitir o microfone</h3>
+          <button className="icon" onClick={() => setPermHelpOpen(false)}><XMarkIcon /></button>
+        </div>
+        {Capacitor.isNativePlatform() ? (
+          <ol className="permsteps">
+            <li>Abra os <strong>Ajustes</strong> (Configurações) do celular</li>
+            <li>Toque em <strong>Apps</strong> (ou "Aplicativos")</li>
+            <li>Procure e toque em <strong>CifrasGroup</strong></li>
+            <li>Toque em <strong>Permissões</strong></li>
+            <li>Toque em <strong>Microfone</strong> e escolha <strong>Permitir</strong></li>
+          </ol>
+        ) : (
+          <ol className="permsteps">
+            <li>Toque no ícone de cadeado (ou "ⓘ") ao lado do endereço, na barra do navegador</li>
+            <li>Toque em <strong>Permissões do site</strong> (ou "Configurações do site")</li>
+            <li>Procure <strong>Microfone</strong> e escolha <strong>Permitir</strong></li>
+            <li>Recarregue a página</li>
+          </ol>
+        )}
+        <p className="hint small">Depois de permitir, volte aqui e toque em "tentar de novo".</p>
+        <button className="btn primary wide" onClick={() => { setPermHelpOpen(false); setAttempt((n) => n + 1) }}>já permiti, tentar de novo</button>
+      </div>
+    </div>
+  )
+
+  if (embedded) return <div className="tuner tuner-embedded">{content}{permHelp}</div>
 
   return (
     <div className="sheet-backdrop" onClick={onClose}>
       <div className="sheet small tuner" onClick={(e) => e.stopPropagation()}>
         {content}
       </div>
+      {permHelp}
     </div>
   )
 }

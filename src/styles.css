@@ -205,6 +205,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .panel-sheet-close { position: absolute; top: .3rem; right: .3rem; z-index: 1; }
 .row { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; margin: .5rem 0; }
 .row.tight { gap: .4rem; margin: .2rem 0; }
+.row.center { justify-content: center; }
+.hint.center { text-align: center; }
 .row input[type=range] { flex: 1; }
 .keydisplay { flex: 1; text-align: center; color: var(--accent2); font-size: .85rem; }
 
@@ -287,6 +289,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .setlistbar .icon:disabled { opacity: .3; }
 
 /* ---------- cifra ---------- */
+.cifra-area { position: relative; flex: 1; min-height: 0; display: flex; }
 .cifra-scroll { flex: 1; overflow-y: auto; padding: .8rem 1rem 6rem; scroll-behavior: auto; }
 /* modo apresentação: zonas de toque nas bordas para trocar de música do
    repertório sem precisar sair da tela cheia nem rolar até a setlistbar */
@@ -356,7 +359,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .tuningrow { flex-wrap: nowrap; }
 .tuningselect { flex: 1; min-width: 0; }
 .icon.active { border: 1px solid var(--accent); color: var(--accent); border-radius: 8px; }
-.panel-title-extra { float: right; }
+.panel-title-row { display: inline-flex; align-items: center; gap: .5rem; }
+.panel-title-extra { display: inline-flex; }
 .panel-title-extra .icon { padding: 0; }
 .panel-section { margin-bottom: 1.3rem; }
 .round-play { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg2); }
@@ -418,6 +422,15 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .k-black.on { fill: var(--accent2); }
 
 /* ---------- ficha do acorde ---------- */
+/* flutua sobre o topo da cifra em vez de tampar a tela inteira: dá pra ler e
+   rolar o resto da letra por baixo, sempre com a referência do acorde à vista */
+.chordfloat {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 12;
+  max-height: 62vh; overflow-y: auto;
+  background: var(--bg2); border-bottom: 1px solid var(--line);
+  border-radius: 0 0 14px 14px; box-shadow: 0 8px 20px rgba(0, 0, 0, .35);
+  padding: .8rem 1rem;
+}
 .sheet-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: flex-end; justify-content: center; z-index: 20; }
 .sheet { background: var(--bg2); border: 1px solid var(--line); border-radius: 14px 14px 0 0; width: 100%; max-width: 640px; max-height: 88vh; overflow-y: auto; padding: 1rem; }
 .sheet.small { border-radius: 14px; margin-bottom: 10vh; max-width: 420px; }
@@ -429,7 +442,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .degree b { font-family: var(--mono); font-size: .85rem; }
 .degree i { font-style: normal; font-size: .62rem; color: var(--dim); }
 .altlist { display: flex; flex-wrap: wrap; gap: .35rem; }
-.alt { background: var(--bg3); border: 1px solid var(--line); border-radius: 8px; padding: .35rem .6rem; display: flex; flex-direction: column; align-items: flex-start; }
+.alt { background: var(--bg3); border: 1px solid var(--line); border-radius: 8px; padding: .35rem .6rem; display: flex; flex-direction: column; align-items: flex-start; width: 116px; box-sizing: border-box; }
 .alt span:first-child { color: var(--accent); font-weight: 700; font-size: .85rem; }
 .alt span:not(:first-child) { font-size: .66rem; color: var(--dim); }
 .alt .degrees { color: var(--accent2); }
@@ -444,6 +457,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .rootbtn.on { background: var(--accent); color: #14161a; border-color: var(--accent); font-weight: 700; }
 .suffixbtn { background: var(--bg3); border: 1px solid var(--line); border-radius: 6px; padding: .18rem .4rem; font-size: .74rem; color: var(--accent2); }
 .suffixbtn:hover { border-color: var(--accent2); }
+.suffixbtn.minor { color: var(--danger); }
+.suffixbtn.minor:hover { border-color: var(--danger); }
 .tageditor { margin-bottom: .8rem; }
 .tagchips { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: .4rem; }
 .tagchip { display: inline-flex; align-items: center; gap: .25rem; background: var(--bg3); border: 1px solid var(--line); border-radius: 20px; padding: .2rem .3rem .2rem .6rem; font-size: .78rem; }
@@ -506,6 +521,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .alt, .rootbtn, .suffixbtn { min-height: 36px; }
   .freechord input { min-height: 40px; }
   .sheet { border-radius: 16px 16px 0 0; padding: .9rem .8rem calc(.9rem + env(safe-area-inset-bottom)); }
+  .chordfloat { max-height: 72vh; padding: .7rem .8rem; }
 
   /* linha comprida de cifra rola na horizontal em vez de quebrar */
   .cifra-scroll { padding: .7rem .8rem 2rem; overflow-x: auto; }
@@ -513,6 +529,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 
 /* ---------- afinador ---------- */
+.permsteps { margin: .4rem 0 .8rem; padding-left: 1.3rem; display: flex; flex-direction: column; gap: .4rem; font-size: .85rem; }
 .tuner-strings { display: flex; justify-content: center; gap: .35rem; margin: .5rem 0; }
 .tuner-string { font-family: var(--mono); font-size: .82rem; background: var(--bg3); border: 1px solid var(--line); border-radius: 6px; padding: .25rem .5rem; color: var(--dim); }
 .tuner-string.match { border-color: var(--accent2); color: var(--accent2); font-weight: 700; background: color-mix(in srgb, var(--accent2) 16%, var(--bg3)); }
