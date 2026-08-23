@@ -7,6 +7,7 @@
  * lá automaticamente e a chave antiga é removida.
  */
 import { idbGet, idbSet } from './idb'
+import { computeSongMeta, type SongMeta } from '../cifra/meta'
 
 export interface SongSettings {
   /** semitons de transposição aplicados sobre a cifra original */
@@ -48,6 +49,8 @@ export interface Song {
   createdAt: number
   updatedAt: number
   settings: SongSettings
+  /** dificuldade, nº de acordes e prévia — calculados uma vez a partir de `raw`, nunca recalculados na biblioteca */
+  meta: SongMeta
 }
 
 export interface SongList {
@@ -93,6 +96,8 @@ function normalize(db: DB): DB {
     s.settings = { ...DEFAULT_SETTINGS, ...s.settings }
     s.notes ??= ''
     s.tags ??= []
+    // backfill para bancos salvos antes do campo `meta` existir
+    s.meta ??= computeSongMeta(s.raw)
   }
   return db
 }
@@ -148,4 +153,47 @@ export function exportDB(db: DB): string {
 
 export function importDB(json: string): DB | null {
   return parseLegacy(json)
+}
+
+/**
+ * Mescla um backup importado com a biblioteca atual, em vez de substituir tudo.
+ * Músicas com título+artista já existentes são consideradas duplicadas e
+ * mantidas como estão (a versão atual prevalece); as demais entram com IDs
+ * novos, para nunca colidir com os IDs da biblioteca atual. Listas com o
+ * mesmo nome (ex.: "Favoritas") recebem as músicas que faltam; as demais
+ * entram como listas novas.
+ */
+export function mergeDB(current: DB, incoming: DB): DB {
+  const norm = (t: string) => t.trim().toLowerCase()
+  const songs = { ...current.songs }
+  const idMap = new Map<string, string>()
+
+  for (const [oldId, song] of Object.entries(incoming.songs)) {
+    const dup = Object.values(songs).find((s) => norm(s.title) === norm(song.title) && norm(s.artist) === norm(song.artist))
+    if (dup) {
+      idMap.set(oldId, dup.id)
+      continue
+    }
+    const id = newId()
+    songs[id] = { ...song, id }
+    idMap.set(oldId, id)
+  }
+
+  const lists = current.lists.map((l) => ({ ...l, songIds: [...l.songIds] }))
+  return { ...current, songs, lists: mergeLists(lists, incoming.lists, idMap) }
+}
+
+function mergeLists(lists: SongList[], incomingLists: SongList[], idMap: Map<string, string>): SongList[] {
+  const norm = (t: string) => t.trim().toLowerCase()
+  const out = lists
+  for (const incList of incomingLists) {
+    const mappedIds = incList.songIds.map((id) => idMap.get(id)).filter((x): x is string => !!x)
+    const existing = out.find((l) => norm(l.name) === norm(incList.name))
+    if (existing) {
+      for (const id of mappedIds) if (!existing.songIds.includes(id)) existing.songIds.push(id)
+    } else {
+      out.push({ ...incList, id: newId(), songIds: mappedIds })
+    }
+  }
+  return out
 }

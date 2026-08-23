@@ -7,7 +7,7 @@
  * Só as últimas gravações de cada música são mantidas — sem limite o
  * histórico de ensaios cresceria sem controle.
  */
-import { idbGet, idbSet } from './idb'
+import { idbDelete, idbGet, idbSet } from './idb'
 
 export interface Recording {
   id: string
@@ -43,4 +43,15 @@ export async function deleteRecording(songId: string, id: string): Promise<Recor
   const next = (await listRecordings(songId)).filter((r) => r.id !== id)
   await idbSet(keyFor(songId), next)
   return next
+}
+
+/** Apaga todas as gravações da música — usado quando a música em si é apagada. */
+export async function deleteAllRecordings(songId: string): Promise<void> {
+  await idbDelete(keyFor(songId))
+}
+
+/** Repõe uma lista de gravações (usado só para desfazer a exclusão da música). */
+export async function restoreRecordings(songId: string, list: Recording[]): Promise<void> {
+  if (list.length === 0) return
+  await idbSet(keyFor(songId), list)
 }

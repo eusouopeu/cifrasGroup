@@ -10,11 +10,19 @@ import { ImportView } from './components/ImportView'
 import { SongView } from './components/SongView'
 import { useToast } from './components/Toast'
 import { initShareTarget } from './native/shareTarget'
-import { DEFAULT_SETTINGS, exportDB, importDB, loadDBAsync, newId, saveDBAsync, type DB, type SongSettings } from './store/db'
+import { DEFAULT_SETTINGS, exportDB, importDB, loadDBAsync, mergeDB, newId, saveDBAsync, type DB, type SongSettings } from './store/db'
 import { deleteCustomTuning, loadCustomTunings, saveCustomTuning } from './store/customTunings'
+import { getDisplayDefaults } from './store/defaults'
+import { deleteAllRecordings, listRecordings, restoreRecordings } from './store/recordings'
+import { computeSongMeta } from './cifra/meta'
 import type { Tuning } from './theory/tunings'
 
 type Route = { view: 'library' } | { view: 'import' } | { view: 'song'; id: string; listId?: string }
+
+/** Padrões de exibição escolhidos pelo usuário em Configurações, por cima do reset de fábrica. */
+function newSongSettings(): SongSettings {
+  return { ...DEFAULT_SETTINGS, ...getDisplayDefaults() }
+}
 
 function withDemoSong(loaded: DB): DB {
   if (Object.keys(loaded.songs).length > 0) return loaded
@@ -29,9 +37,20 @@ function withDemoSong(loaded: DB): DB {
     tags: [],
     createdAt: Date.now(),
     updatedAt: Date.now(),
-    settings: { ...DEFAULT_SETTINGS },
+    settings: newSongSettings(),
+    meta: computeSongMeta(DEMO_RAW),
   }
   return loaded
+}
+
+/** Baixa um backup do banco inteiro como arquivo JSON. */
+function downloadDBBackup(db: DB, filename: string) {
+  const blob = new Blob([exportDB(db)], { type: 'application/json' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(a.href)
 }
 
 export default function App() {
@@ -41,6 +60,7 @@ export default function App() {
   const [picker, setPicker] = useState<string | null>(null)
   const [sharedUrl, setSharedUrl] = useState<string | null>(null)
   const [customTunings, setCustomTunings] = useState<Tuning[]>([])
+  const [importChoice, setImportChoice] = useState<DB | null>(null)
   const showToast = useToast()
 
   useEffect(() => {
@@ -61,16 +81,44 @@ export default function App() {
     void deleteCustomTuning(customTunings, id).then(setCustomTunings)
   }
 
+  // salva no IndexedDB com debounce: arrastar um slider (bpm, limiar, rolagem)
+  // dispara uma mudança de estado por frame, e sem isso cada uma serializava
+  // e regravava a biblioteca inteira (letras incluídas) no aparelho
   const loadedOnce = useRef(false)
+  const saveTimer = useRef<number | null>(null)
+  const pendingSave = useRef<DB | null>(null)
+  const flushSave = useRef(() => {
+    if (saveTimer.current !== null) window.clearTimeout(saveTimer.current)
+    saveTimer.current = null
+    const toSave = pendingSave.current
+    pendingSave.current = null
+    if (toSave) {
+      void saveDBAsync(toSave).then((ok) => {
+        if (!ok) showToast('Não foi possível salvar as mudanças neste aparelho.', { duration: 8000 })
+      })
+    }
+  })
   useEffect(() => {
     if (!db) return
     // não salva de volta a própria carga inicial, só mudanças feitas depois
     if (!loadedOnce.current) { loadedOnce.current = true; return }
-    void saveDBAsync(db).then((ok) => {
-      if (!ok) showToast('Não foi possível salvar as mudanças neste aparelho.', { duration: 8000 })
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    pendingSave.current = db
+    if (saveTimer.current !== null) window.clearTimeout(saveTimer.current)
+    saveTimer.current = window.setTimeout(flushSave.current, 500)
   }, [db])
+
+  // grava imediatamente se o app for pra segundo plano ou fechar com uma
+  // gravação ainda pendente — sem isso a última mudança podia se perder
+  useEffect(() => {
+    const onVisibility = () => { if (document.visibilityState === 'hidden') flushSave.current() }
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('pagehide', onVisibility)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('pagehide', onVisibility)
+      flushSave.current()
+    }
+  }, [])
 
   // link recebido via "Compartilhar" no Android (só existe no app nativo)
   useEffect(
@@ -123,7 +171,19 @@ export default function App() {
           const id = newId()
           setDb({
             ...db,
-            songs: { ...db.songs, [id]: { id, ...data, notes: '', tags: [], createdAt: Date.now(), updatedAt: Date.now(), settings: { ...DEFAULT_SETTINGS } } },
+            songs: {
+              ...db.songs,
+              [id]: {
+                id,
+                ...data,
+                notes: '',
+                tags: [],
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                settings: newSongSettings(),
+                meta: computeSongMeta(data.raw),
+              },
+            },
           })
           setSharedUrl(null)
           setRoute({ view: 'song', id })
@@ -189,7 +249,18 @@ export default function App() {
     const songs = { ...db.songs }
     delete songs[id]
     setDb({ ...db, songs, lists: db.lists.map((l) => ({ ...l, songIds: l.songIds.filter((x) => x !== id) })) })
-    showToast(`"${song.title}" apagada.`, { actionLabel: 'Desfazer', onAction: () => setDb(prev) })
+    // as gravações de prática ficam num IndexedDB separado (store/recordings)
+    // e não somem sozinhas com a música — apagadas aqui, restauradas se desfizer
+    void listRecordings(id).then((recs) => {
+      void deleteAllRecordings(id)
+      showToast(`"${song.title}" apagada.`, {
+        actionLabel: 'Desfazer',
+        onAction: () => {
+          setDb(prev)
+          void restoreRecordings(id, recs)
+        },
+      })
+    })
   }
 
   const onDuplicateSong = (id: string) => {
@@ -257,24 +328,64 @@ export default function App() {
         )}
         {libraryTab === 'config' && (
           <SettingsTab
-            onExport={() => {
-              const blob = new Blob([exportDB(db)], { type: 'application/json' })
-              const a = document.createElement('a')
-              a.href = URL.createObjectURL(blob)
-              a.download = `cifrasgroup-backup.json`
-              a.click()
-              URL.revokeObjectURL(a.href)
-            }}
+            customTunings={customTunings}
+            onExport={() => downloadDBBackup(db, 'cifrasgroup-backup.json')}
             onImport={(json) => {
               const next = importDB(json)
               if (!next) { showToast('Arquivo de backup inválido.'); return }
-              setDb(next)
-              showToast('Backup importado.')
+              setImportChoice(next)
             }}
           />
         )}
       </div>
       <TabBar active={libraryTab} onChange={setLibraryTab} />
+
+      {importChoice && (
+        <ImportChoiceSheet
+          songCount={Object.keys(importChoice.songs).length}
+          onClose={() => setImportChoice(null)}
+          onChoose={(mode) => {
+            const incoming = importChoice
+            if (!incoming) return
+            downloadDBBackup(db, `cifrasgroup-backup-antes-de-importar-${Date.now()}.json`)
+            const merged = mode === 'merge' ? mergeDB(db, incoming) : incoming
+            setDb(merged)
+            setImportChoice(null)
+            showToast(mode === 'merge' ? 'Backup mesclado com a biblioteca atual.' : 'Backup importado, substituindo a biblioteca.')
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+function ImportChoiceSheet({ songCount, onChoose, onClose }: {
+  songCount: number
+  onChoose: (mode: 'merge' | 'replace') => void
+  onClose: () => void
+}) {
+  return (
+    <div className="sheet-backdrop" onClick={onClose}>
+      <div className="sheet small" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-head">
+          <h3>Importar backup</h3>
+          <button className="icon" onClick={onClose}><XMarkIcon /></button>
+        </div>
+        <p className="hint small">
+          O arquivo tem {songCount} música{songCount === 1 ? '' : 's'}. Um backup do estado atual é baixado
+          automaticamente antes de aplicar, para poder desfazer se precisar.
+        </p>
+        <div className="listpick">
+          <button className="btn wide stacked" onClick={() => onChoose('merge')}>
+            <strong>mesclar com a biblioteca atual</strong>
+            <span className="hint small">músicas repetidas (mesmo título e artista) são mantidas como estão</span>
+          </button>
+          <button className="btn wide stacked danger" onClick={() => onChoose('replace')}>
+            <strong>substituir tudo</strong>
+            <span className="hint small">apaga a biblioteca atual e coloca só o que está no backup</span>
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

@@ -75,8 +75,11 @@ export function SongView({
   const [editingTitle, setEditingTitle] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
-  const [loopStart, setLoopStart] = useState<number | null>(null)
-  const [loopEnd, setLoopEnd] = useState<number | null>(null)
+  // início/fim do loop guardados como índice de linha (em view.parsed.lines),
+  // não posição em pixel — assim sobrevivem a mudanças de fonte, orientação
+  // ou esconder/mostrar tablatura
+  const [loopStartLine, setLoopStartLine] = useState<number | null>(null)
+  const [loopEndLine, setLoopEndLine] = useState<number | null>(null)
   const [loopActive, setLoopActive] = useState(false)
   const [tunerOpen, setTunerOpen] = useState(false)
   const [tuningBuilderOpen, setTuningBuilderOpen] = useState(false)
@@ -111,7 +114,13 @@ export function SongView({
     }
   }
 
-  const view = useMemo(() => buildView(song.raw, s), [song.raw, s])
+  // só os campos que buildView de fato usa — bpm, rolagem, fonte etc. mudam
+  // a cada tecla/arraste e não deveriam refazer parse + ranking de tons
+  const view = useMemo(
+    () => buildView(song.raw, s),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [song.raw, s.simplifyLevel, s.threshold, s.paletteId, s.transpose, s.overrides],
+  )
   const rhythm = rhythmById(s.rhythmId)
   const metronome = useMetronome(rhythm, s.bpm, s.playPattern, s.playClick)
 
@@ -169,16 +178,24 @@ export function SongView({
   }, [s.scrollSpeed])
 
   // loop de trecho: ao passar da marca de fim, volta pra marca de início —
-  // funciona tanto na rolagem automática quanto no dedo do usuário
+  // funciona tanto na rolagem automática quanto no dedo do usuário. A posição
+  // em pixel das linhas marcadas é lida do DOM a cada evento de scroll, em vez
+  // de guardada uma vez, então continua certa mesmo se o layout mudar.
   useEffect(() => {
     const el = scrollRef.current
-    if (!el || !loopActive || loopEnd === null) return
+    if (!el || !loopActive || loopEndLine === null) return
     const onScroll = () => {
-      if (el.scrollTop >= loopEnd) el.scrollTop = loopStart ?? 0
+      const endEl = el.querySelector<HTMLElement>(`[data-line-index="${loopEndLine}"]`)
+      if (!endEl) return
+      const elTop = el.getBoundingClientRect().top
+      const endTop = endEl.getBoundingClientRect().top - elTop + el.scrollTop
+      if (el.scrollTop < endTop) return
+      const startEl = loopStartLine !== null ? el.querySelector<HTMLElement>(`[data-line-index="${loopStartLine}"]`) : null
+      el.scrollTop = startEl ? startEl.getBoundingClientRect().top - elTop + el.scrollTop : 0
     }
     el.addEventListener('scroll', onScroll)
     return () => el.removeEventListener('scroll', onScroll)
-  }, [loopActive, loopStart, loopEnd])
+  }, [loopActive, loopStartLine, loopEndLine])
 
   // loop de trecho: 1º toque usa o texto selecionado na cifra como início/fim,
   // 2º toque desativa — sem precisar de um passo separado de "marcar"
@@ -191,20 +208,19 @@ export function SongView({
       showToast('Selecione o trecho da letra que quer repetir antes de tocar neste botão.')
       return
     }
-    const rects = range.getClientRects()
-    if (rects.length === 0) {
+    const lineOf = (node: Node): HTMLElement | null =>
+      (node instanceof Element ? node : node.parentElement)?.closest<HTMLElement>('[data-line-index]') ?? null
+    const startLineEl = lineOf(range.startContainer)
+    const endLineEl = lineOf(range.endContainer)
+    if (!startLineEl || !endLineEl) {
       showToast('Selecione o trecho da letra que quer repetir antes de tocar neste botão.')
       return
     }
-    const elTop = el.getBoundingClientRect().top
-    let top = Infinity
-    let bottom = -Infinity
-    for (const r of rects) { top = Math.min(top, r.top); bottom = Math.max(bottom, r.bottom) }
-    const start = top - elTop + el.scrollTop
-    const end = bottom - elTop + el.scrollTop
-    if (end <= start) { showToast('Selecione o trecho da letra que quer repetir antes de tocar neste botão.'); return }
-    setLoopStart(start)
-    setLoopEnd(end)
+    const a = Number(startLineEl.dataset.lineIndex)
+    const b = Number(endLineEl.dataset.lineIndex)
+    if (a === b) { showToast('Selecione um trecho com mais de uma linha antes de tocar neste botão.'); return }
+    setLoopStartLine(Math.min(a, b))
+    setLoopEndLine(Math.max(a, b))
     setLoopActive(true)
     sel?.removeAllRanges()
   }
@@ -748,6 +764,7 @@ export function SongView({
             fontSize={s.fontSize}
             hideTabs={s.hideTabs}
             onChordClick={(_, displayed) => setInspect(displayed)}
+            transposed={view.effectiveTranspose !== 0}
           />
           <div className="cifra-footer">
             {song.source && <a href={song.source} target="_blank" rel="noreferrer">fonte original</a>}

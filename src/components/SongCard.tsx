@@ -1,7 +1,5 @@
-import { useMemo } from 'react'
 import { ChevronDownIcon, ChevronUpIcon, DocumentDuplicateIcon, TrashIcon } from '@heroicons/react/24/outline'
 import type { Song } from '../store/db'
-import { uniqueChords, parseCifra } from '../cifra/parse'
 
 export function SongCard({ song, onOpen, onDelete, onDuplicate, deleteLabel = 'apagar', onMoveUp, onMoveDown }: {
   song: Song
@@ -12,7 +10,7 @@ export function SongCard({ song, onOpen, onDelete, onDuplicate, deleteLabel = 'a
   onMoveUp?: () => void
   onMoveDown?: () => void
 }) {
-  const chords = useMemo(() => uniqueChords(parseCifra(song.raw)).slice(0, 5).map((c) => c.symbol), [song.raw])
+  const chords = song.meta.topChords
   const s = song.settings
   // ordem de prioridade: o que mais muda a leitura da cifra vem primeiro
   const badges: string[] = []

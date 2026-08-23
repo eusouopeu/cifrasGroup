@@ -18,16 +18,24 @@ function layoutChords(line: CifraLine, map: (s: string) => string): { gap: numbe
   return out
 }
 
-export function CifraText({ parsed, map, fontSize, hideTabs, onChordClick, highlight }: {
+export function CifraText({ parsed, map, fontSize, hideTabs, onChordClick, highlight, transposed }: {
   parsed: ParsedCifra
   map: (s: string) => string
   fontSize: number
   hideTabs: boolean
   onChordClick?: (original: string, displayed: string) => void
   highlight?: string | null
+  /** true quando tom/nível 2 mudou a cifra — a tablatura não acompanha isso */
+  transposed?: boolean
 }) {
-  const lines = hideTabs ? parsed.lines.filter((l) => l.kind !== 'tab') : parsed.lines
+  // guarda o índice original de cada linha (em parsed.lines) mesmo depois do
+  // filtro de tablatura — é por esse índice que o loop de trecho se ancora,
+  // em vez de posição em pixel, então sobrevive a mudanças de fonte/orientação
+  const lines = parsed.lines
+    .map((line, i) => ({ line, i }))
+    .filter(({ line }) => !hideTabs || line.kind !== 'tab')
   const hiddenTabs = parsed.lines.filter((l) => l.kind === 'tab').length
+  const visibleTabs = !hideTabs && hiddenTabs > 0
   // guarda onde o toque começou para distinguir "clicou no acorde" de "estava
   // arrastando pra rolar a letra e o dedo passou por cima de um acorde"
   const downPos = useRef<{ x: number; y: number } | null>(null)
@@ -37,14 +45,17 @@ export function CifraText({ parsed, map, fontSize, hideTabs, onChordClick, highl
       {hideTabs && hiddenTabs > 0 && (
         <div className="cifra-note">{hiddenTabs} linha{hiddenTabs === 1 ? '' : 's'} de tablatura oculta{hiddenTabs === 1 ? '' : 's'}</div>
       )}
-      {lines.map((line, i) => {
-        if (line.kind === 'blank') return <div key={i} className="cifra-line blank">&nbsp;</div>
-        if (line.kind === 'section') return <div key={i} className="cifra-line section">{line.text}</div>
-        if (line.kind === 'tab') return <div key={i} className="cifra-line tab">{line.text}</div>
+      {visibleTabs && transposed && (
+        <div className="cifra-note warn">Tablatura mostrada no tom original — não acompanha a transposição.</div>
+      )}
+      {lines.map(({ line, i }) => {
+        if (line.kind === 'blank') return <div key={i} data-line-index={i} className="cifra-line blank">&nbsp;</div>
+        if (line.kind === 'section') return <div key={i} data-line-index={i} className="cifra-line section">{line.text}</div>
+        if (line.kind === 'tab') return <div key={i} data-line-index={i} className="cifra-line tab">{line.text}</div>
         if (line.kind === 'chords') {
           const items = layoutChords(line, map)
           return (
-            <div key={i} className="cifra-line chords">
+            <div key={i} data-line-index={i} className="cifra-line chords">
               {items.map((it, j) => (
                 <Fragment key={j}>
                   <span className="gap">{' '.repeat(Math.max(0, it.gap))}</span>
@@ -64,7 +75,7 @@ export function CifraText({ parsed, map, fontSize, hideTabs, onChordClick, highl
             </div>
           )
         }
-        return <div key={i} className="cifra-line lyrics">{line.text}</div>
+        return <div key={i} data-line-index={i} className="cifra-line lyrics">{line.text}</div>
       })}
     </div>
   )
