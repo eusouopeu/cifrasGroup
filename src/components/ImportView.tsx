@@ -91,7 +91,7 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
   return (
     <div className="importview">
       <header className="apphead">
-        <button className="icon" onClick={onCancel}><ArrowLeftIcon /></button>
+        <button className="icon" onClick={onCancel} aria-label="Voltar"><ArrowLeftIcon /></button>
         <h1>Importar cifra</h1>
       </header>
 

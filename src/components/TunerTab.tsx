@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { Tuner } from './Tuner'
-import { TuningBuilder } from './SongView'
+import { TuningBuilder } from './song/TuningBuilder'
 import { TUNINGS, tuningById, type Tuning } from '../theory/tunings'
 
 export function TunerTab({ customTunings, onSaveCustomTuning, onDeleteCustomTuning }: {

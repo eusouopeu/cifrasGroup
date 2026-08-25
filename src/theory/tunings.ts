@@ -54,3 +54,36 @@ export function transposeTuningShape(base: Tuning, targetRootPc: number): { stri
   })
   return { strings, stringNames }
 }
+
+/**
+ * Alturas reais (MIDI) das cordas soltas de uma afinação. O catálogo guarda só
+ * a classe de altura de cada corda (0..11), o que basta para os diagramas, mas
+ * não para tocar a nota: é preciso decidir a oitava. A 6ª corda é posta na
+ * oitava do Mi grave do violão (E2 = 40) e cada corda seguinte vira a menor
+ * altura daquela classe acima da anterior — que é como qualquer afinação de
+ * violão é montada, das graves para as agudas.
+ */
+export function stringMidiNotes(strings: number[]): number[] {
+  const out: number[] = []
+  strings.forEach((pc, i) => {
+    if (i === 0) {
+      // faixa C2..B2 (36..47), onde cai o Mi grave do violão
+      out.push(36 + ((pc % 12) + 12) % 12)
+      return
+    }
+    const prev = out[i - 1]
+    let m = prev + ((pc - (prev % 12) + 12) % 12)
+    if (m <= prev) m += 12
+    out.push(m)
+  })
+  return out
+}
+
+export function midiToFreq(midi: number): number {
+  return 440 * Math.pow(2, (midi - 69) / 12)
+}
+
+/** Frequência (Hz) de cada corda solta da afinação, da 6ª para a 1ª. */
+export function stringFrequencies(strings: number[]): number[] {
+  return stringMidiNotes(strings).map(midiToFreq)
+}

@@ -393,7 +393,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .chordgrid > * { flex: 0 0 auto; scroll-snap-align: start; }
 .chordgrid::-webkit-scrollbar { height: 4px; }
 .chordgrid::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
-.chordslot { position: relative; }
+.chordslot { position: relative; background: none; border: none; padding: 0; color: inherit; font: inherit; text-align: inherit; }
 .overridden-dot {
   position: absolute; top: -3px; right: -3px; z-index: 1;
   width: 9px; height: 9px; border-radius: 50%;
@@ -506,6 +506,66 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .toast-close { background: none; border: none; color: var(--dim); font-size: 1.1rem; padding: 0 .3rem; display: inline-flex; align-items: center; }
 .toast-close svg { width: 16px; height: 16px; }
 
+
+/* ---------- faixa de acordes (abaixo da barra de ferramentas) ---------- */
+/* mostra a digitação mais fácil de cada acorde da música sem tapar a cifra;
+   a ficha completa do acorde sai daqui, não mais de um toque na letra */
+.chordstrip {
+  position: relative; display: flex; align-items: stretch;
+  background: var(--bg2); border-bottom: 1px solid var(--line);
+}
+.chordstrip-scroll {
+  display: flex; gap: .4rem; overflow-x: auto; padding: .4rem 2rem .4rem .5rem;
+  scroll-snap-type: x proximity; scrollbar-width: none;
+}
+.chordstrip-scroll::-webkit-scrollbar { display: none; }
+.chordstrip-item {
+  flex: 0 0 auto; scroll-snap-align: center;
+  background: none; border: 1px solid transparent; border-radius: 8px;
+  padding: .1rem .25rem .2rem; display: flex; flex-direction: column; align-items: center; gap: .1rem;
+}
+.chordstrip-item.focus { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--bg2)); }
+.chordstrip-item.overridden .chordstrip-name { text-decoration: underline dotted var(--accent2); }
+.chordstrip-name { color: var(--accent); font-weight: 700; font-size: .82rem; }
+.chordstrip-none { font-size: .66rem; color: var(--dim); padding: 1rem .5rem; }
+.chordstrip-close {
+  position: absolute; top: .15rem; right: .1rem; z-index: 1;
+  background: var(--bg2); border-radius: 50%;
+}
+
+/* ---------- carrossel de digitações (ficha do acorde) ---------- */
+.voicing-carousel { display: flex; align-items: center; justify-content: center; gap: .2rem; margin: .4rem 0 .6rem; }
+.voicing-carousel-main { display: flex; flex-direction: column; align-items: center; gap: .15rem; min-width: 0; }
+.voicing-carousel-count { font-size: .7rem; color: var(--dim); }
+.voicing-carousel .voicing-meta { max-width: none; white-space: nowrap; }
+.voicing-carousel .icon:disabled { opacity: .25; }
+.undo-override:disabled { opacity: .3; }
+.undo-override { color: var(--dim); }
+
+/* ---------- controle de rolagem automática (acima da barra inferior) ---------- */
+.scrollbar-control {
+  position: sticky; bottom: 0; z-index: 6;
+  display: flex; align-items: center; gap: .4rem;
+  padding: .3rem .6rem; background: var(--bg3); border-top: 1px solid var(--line);
+}
+.scrollbar-slider { flex: 1; min-width: 0; accent-color: var(--accent); }
+.scrollbar-mark { font-size: .95rem; line-height: 1; opacity: .75; }
+
+/* +/- de bpm ao lado do valor, na barra de transporte */
+.transport-bpmbox { display: flex; align-items: center; gap: .1rem; flex: 0 0 auto; }
+.transport-step {
+  width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line);
+  background: var(--bg3); color: var(--fg); display: grid; place-items: center; padding: 0;
+}
+.transport-step svg { width: 14px; height: 14px; }
+
+/* editor do texto da cifra */
+.rawedit { width: 100%; min-height: 40vh; white-space: pre; overflow-wrap: normal; overflow-x: auto; font-size: .8rem; line-height: 1.45; }
+
+/* gravações guardadas */
+.recorditem.pinned { border-color: var(--accent2); }
+.recorditem .icon.small.active { color: var(--accent2); }
+
 /* ---------- ajustes de celular ---------- */
 @media (max-width: 620px) {
   .keyrow { grid-template-columns: 48px 1fr 26px 54px; min-height: 40px; }
@@ -534,6 +594,21 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
   /* linha comprida de cifra rola na horizontal em vez de quebrar */
   .cifra-scroll { padding: .7rem .8rem 2rem; overflow-x: auto; }
+  .chordstrip-scroll { padding: .35rem 1.9rem .35rem .4rem; }
+  .scrollbar-slider { min-height: 32px; }
+
+  /* seis ações + play + bpm não cabem em 360px com os tamanhos do desktop:
+     tudo encolhe um pouco em vez de o último botão sair da tela */
+  .transport { gap: .25rem; padding: .35rem .35rem calc(.35rem + env(safe-area-inset-bottom)); }
+  .transport-play { width: 40px; height: 40px; }
+  .transport-bpm { padding: .2rem 0; }
+  .transport-bpm strong { font-size: .92rem; }
+  .transport-bpm span { max-width: 56px; font-size: .6rem; }
+  .transport-step { width: 26px; height: 26px; }
+  .transport-step svg { width: 12px; height: 12px; }
+  .transport-actions { gap: .12rem; }
+  .transport-icon { width: 32px; height: 32px; }
+  .transport-icon svg { width: 15px; height: 15px; }
   .songhead { padding: calc(.4rem + env(safe-area-inset-top)) .5rem .4rem; }
 }
 
@@ -551,3 +626,23 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .tuner-needle { position: absolute; top: -3px; bottom: -3px; width: 8px; border-radius: 50%; background: var(--accent); transform: translateX(-4px); transition: left .08s linear; }
 .tuner-display.in-tune .tuner-needle { background: var(--accent2); }
 .tuner-cents { font-size: .8rem; color: var(--dim); font-family: var(--mono); }
+.tuner-string { cursor: pointer; }
+.tuner-string:hover { border-color: var(--accent); color: var(--fg); }
+.tuner-freq { font-family: var(--mono); font-size: 1.35rem; color: var(--accent); line-height: 1; }
+.tuner-display.in-tune .tuner-freq { color: var(--accent2); }
+.tuner-gauge { width: 100%; max-width: 320px; height: auto; }
+.g-tick { stroke: var(--line); stroke-width: 2; }
+.g-tick.center { stroke: var(--dim); stroke-width: 2.5; }
+.g-side { fill: var(--dim); font-size: 20px; text-anchor: middle; }
+.g-needle { stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; transition: all .08s linear; }
+.tuner-display.in-tune .g-needle { stroke: var(--accent2); }
+.g-pivot { fill: var(--bg3); stroke: var(--line); stroke-width: 2; }
+.tuner-chromatic { display: flex; flex-wrap: wrap; justify-content: center; gap: .25rem; margin-top: .4rem; }
+.tuner-chromatic-note { font-family: var(--mono); font-size: .72rem; color: var(--dim); padding: 0 .15rem; }
+.tuner-chromatic-note.on { color: var(--accent); font-weight: 700; border-bottom: 2px solid var(--accent); }
+
+/* animações de destaque só para quem não pediu menos movimento no sistema */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  .cifra-scroll { scroll-behavior: auto; }
+}

@@ -1,7 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
-import { TrashIcon } from '@heroicons/react/24/outline'
-import { StopIcon } from '@heroicons/react/24/solid'
-import { deleteRecording, listRecordings, saveRecording, type Recording } from '../store/recordings'
+import { BookmarkIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { BookmarkIcon as BookmarkSolidIcon, StopIcon } from '@heroicons/react/24/solid'
+import {
+  deleteRecording,
+  formatBytes,
+  listRecordings,
+  MAX_PER_SONG,
+  saveRecording,
+  togglePinned,
+  type Recording,
+} from '../store/recordings'
+import { useToast } from './Toast'
 
 function formatDuration(ms: number): string {
   const totalSec = Math.round(ms / 1000)
@@ -28,6 +37,7 @@ export function Recorder({ songId }: { songId: string }) {
   const timerRef = useRef<number | null>(null)
   // URLs de objeto para tocar os blobs — criadas sob demanda e revogadas ao desmontar
   const urlsRef = useRef<Map<string, string>>(new Map())
+  const showToast = useToast()
 
   useEffect(() => {
     let cancelled = false
@@ -74,7 +84,21 @@ export function Recorder({ songId }: { songId: string }) {
         const durationMs = Date.now() - startTimeRef.current
         streamRef.current?.getTracks().forEach((t) => t.stop())
         streamRef.current = null
-        void saveRecording(songId, blob, durationMs).then(setRecordings)
+        void saveRecording(songId, blob, durationMs).then(({ list, discarded }) => {
+          setRecordings(list)
+          // o descarte pelo limite não pode ser silencioso: quem grava o mesmo
+          // trecho várias vezes perderia a tomada boa sem nunca saber
+          if (discarded.length > 0) {
+            for (const d of discarded) {
+              const url = urlsRef.current.get(d.id)
+              if (url) { URL.revokeObjectURL(url); urlsRef.current.delete(d.id) }
+            }
+            showToast(
+              `Limite de ${MAX_PER_SONG} gravações por música: a mais antiga (${formatDate(discarded[0].createdAt)}) foi descartada. Use o marcador para guardar as que quiser manter.`,
+              { duration: 8000 },
+            )
+          }
+        })
       }
       mediaRecorderRef.current = mr
       startTimeRef.current = Date.now()
@@ -99,6 +123,9 @@ export function Recorder({ songId }: { songId: string }) {
     setRecordings(await deleteRecording(songId, id))
   }
 
+  const totalBytes = recordings?.reduce((sum, r) => sum + r.blob.size, 0) ?? 0
+  const pinnedCount = recordings?.filter((r) => r.pinned).length ?? 0
+
   return (
     <div className="recorder">
       <div className="row">
@@ -116,14 +143,29 @@ export function Recorder({ songId }: { songId: string }) {
       <h4>Gravações desta música</h4>
       {recordings === null && <p className="hint small">Carregando…</p>}
       {recordings !== null && recordings.length === 0 && <p className="hint small">Nenhuma gravação ainda.</p>}
+      {recordings !== null && recordings.length > 0 && (
+        <p className="hint small">
+          {recordings.length} de {MAX_PER_SONG} · {formatBytes(totalBytes)} ocupados neste aparelho
+          {pinnedCount > 0 && <> · {pinnedCount} guardada{pinnedCount === 1 ? '' : 's'}</>}.
+          Ao passar do limite, a mais antiga sem marcador é descartada.
+        </p>
+      )}
       <div className="recordlist">
         {recordings?.map((r) => (
-          <div key={r.id} className="recorditem">
+          <div key={r.id} className={`recorditem${r.pinned ? ' pinned' : ''}`}>
             <div className="recorditem-meta">
               <strong>{formatDate(r.createdAt)}</strong>
-              <span>{formatDuration(r.durationMs)}</span>
+              <span>{formatDuration(r.durationMs)} · {formatBytes(r.blob.size)}</span>
             </div>
             <audio controls src={urlFor(r)} preload="none" />
+            <button
+              className={`icon small${r.pinned ? ' active' : ''}`}
+              aria-label={r.pinned ? 'Não guardar mais esta gravação' : 'Guardar esta gravação (fora do descarte automático)'}
+              title={r.pinned ? 'Guardada — não é descartada pelo limite' : 'Guardar: não descartar pelo limite'}
+              onClick={() => void togglePinned(songId, r.id).then(setRecordings)}
+            >
+              {r.pinned ? <BookmarkSolidIcon /> : <BookmarkIcon />}
+            </button>
             <button className="icon small danger" aria-label="Apagar gravação" onClick={() => void remove(r.id)}><TrashIcon /></button>
           </div>
         ))}

@@ -61,6 +61,7 @@ export function CifraText({ parsed, map, fontSize, hideTabs, onChordClick, highl
                   <span className="gap">{' '.repeat(Math.max(0, it.gap))}</span>
                   <button
                     className={`chordchip${highlight === it.symbol ? ' hl' : ''}`}
+                    aria-label={`Acorde ${it.symbol}`}
                     onPointerDown={(e) => { downPos.current = { x: e.clientX, y: e.clientY } }}
                     onClick={(e) => {
                       const start = downPos.current

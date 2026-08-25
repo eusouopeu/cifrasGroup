@@ -46,4 +46,15 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Afinador e gravação de prática usam getUserMedia dentro da WebView.
+         O Capacitor (BridgeWebChromeClient) pede RECORD_AUDIO/MODIFY_AUDIO_SETTINGS
+         em tempo de execução quando a página pede AUDIO_CAPTURE, mas o Android só
+         mostra o pedido — e a chave em Ajustes > Apps > Permissões — se as
+         permissões estiverem declaradas aqui. Sem isto o acesso é negado na hora,
+         sem diálogo e sem opção de liberar depois. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
 </manifest>

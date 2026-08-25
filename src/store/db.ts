@@ -162,8 +162,12 @@ export function importDB(json: string): DB | null {
  * novos, para nunca colidir com os IDs da biblioteca atual. Listas com o
  * mesmo nome (ex.: "Favoritas") recebem as músicas que faltam; as demais
  * entram como listas novas.
+ *
+ * Devolve também o mapa "id no backup -> id nesta biblioteca": as gravações de
+ * prática ficam fora do documento (store/recordings.ts) e só podem ser
+ * restauradas depois com esse mapa em mãos (store/backup.ts).
  */
-export function mergeDB(current: DB, incoming: DB): DB {
+export function mergeDB(current: DB, incoming: DB): { db: DB; idMap: Map<string, string> } {
   const norm = (t: string) => t.trim().toLowerCase()
   const songs = { ...current.songs }
   const idMap = new Map<string, string>()
@@ -180,7 +184,7 @@ export function mergeDB(current: DB, incoming: DB): DB {
   }
 
   const lists = current.lists.map((l) => ({ ...l, songIds: [...l.songIds] }))
-  return { ...current, songs, lists: mergeLists(lists, incoming.lists, idMap) }
+  return { db: { ...current, songs, lists: mergeLists(lists, incoming.lists, idMap) }, idMap }
 }
 
 function mergeLists(lists: SongList[], incomingLists: SongList[], idMap: Map<string, string>): SongList[] {

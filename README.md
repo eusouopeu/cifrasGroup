@@ -2,7 +2,7 @@
 
 Leitor de cifras para violão com análise harmônica automática. Roda inteiro no
 navegador, sem servidor e sem conta: as músicas e as configurações ficam no
-`localStorage` do próprio aparelho.
+`IndexedDB` do próprio aparelho.
 
 **Site:** https://eusouopeu.github.io/cifrasGroup
 
@@ -55,16 +55,29 @@ distintos — descida grave e cheia, subida curta e brilhante, abafado seco,
 polegar grave — e nos dedilhados cada corda soa na altura real. A coluna que
 está tocando acende na grade.
 
+### Afinador cromático
+
+Detecção de altura por autocorrelação, com mostrador em arco: nota, desvio em
+cents e a **frequência exata em Hz**. As cordas da afinação alvo são botões —
+tocar num deles soa a nota certa com timbre de corda pinçada (Karplus-Strong),
+para afinar de ouvido quando o ambiente está barulhento demais para o microfone.
+
 ### E ainda
 
 - 20 batidas e dedilhados (sertanejo, samba, bossa, xote, baião, valsa, reggae,
   Travis picking, arpejos)
+- Faixa de acordes da música ao tocar num acorde da letra: a digitação mais
+  fácil de cada um, com rolagem horizontal; a ficha completa (digitações em
+  carrossel, construção nota a nota e troca manual) sai dali
 - Construção do acorde nota a nota, com alternância entre violão e piano
 - Listas que guardam tom, capotraste, nível de simplificação, paleta, batida,
   velocidade de rolagem e tamanho do texto de cada música
 - Tablaturas ocultas por padrão, tamanho de texto ajustável, rolagem automática
-- Edição manual de qualquer acorde
-- Backup e restauração em JSON
+  com controle de velocidade no rodapé
+- Edição do texto da cifra dentro do app, e troca manual de qualquer acorde
+- Tela mantida acesa enquanto se toca (rolagem, metrônomo ou modo apresentação)
+- Gravação de prática por música, com marcador para não descartar as boas
+- Backup e restauração em JSON, **com as gravações junto**
 
 ## Importar cifras
 
@@ -100,10 +113,11 @@ com barra (`C/B`, `Am/F#`) nunca entrando no conjunto de notas tocáveis.
 ```
 src/theory/     motor harmônico — parser, semelhança, digitações, simplificação
 src/cifra/      leitura do texto da cifra e montagem da versão exibida
-src/audio/      metrônomo em Web Audio
-src/components/ interface
+src/audio/      metrônomo e corda pinçada em Web Audio
+src/components/ interface (src/components/song/ = painéis e hooks da tela da música)
 src/data/       biblioteca de batidas e dedilhados
-src/store/      persistência em localStorage
+src/hooks/      hooks gerais (wake lock)
+src/store/      persistência em IndexedDB, ações de configuração e backup
 ```
 
 O coração está em `src/theory/`. `voicings.ts` faz a busca no braço,

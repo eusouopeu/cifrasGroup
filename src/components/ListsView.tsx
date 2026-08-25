@@ -34,7 +34,7 @@ export function ListsView({ db, onOpen, onCreateList, onDeleteList, onRemoveFrom
       ))}
 
       <div className="newlist">
-        <input placeholder="Nova lista (ex.: Roda de violão)" value={newList} onChange={(e) => setNewList(e.target.value)} />
+        <input aria-label="Nome da nova lista" placeholder="Nova lista (ex.: Roda de violão)" value={newList} onChange={(e) => setNewList(e.target.value)} />
         <button className="btn" disabled={!newList.trim()} onClick={() => { onCreateList(newList.trim()); setNewList('') }}>criar</button>
       </div>
     </div>
@@ -55,10 +55,10 @@ function ListSection({ list, db, onOpen, onDeleteList, onRemoveFromList, onDupli
   return (
     <section className="listsection">
       <div className="listhead">
-        <button className="listtoggle" onClick={() => setOpen(!open)}>
+        <button className="listtoggle" aria-expanded={open} onClick={() => setOpen(!open)}>
           {open ? <ChevronDownIcon /> : <ChevronRightIcon />} {list.name} <span className="count">{songs.length}</span>
         </button>
-        {list.id !== 'favoritas' && <button className="icon small" onClick={() => onDeleteList(list.id)}>apagar</button>}
+        {list.id !== 'favoritas' && <button className="icon small" aria-label={`Apagar a lista ${list.name}`} onClick={() => onDeleteList(list.id)}>apagar</button>}
       </div>
       {open && (
         songs.length === 0

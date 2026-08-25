@@ -26,7 +26,7 @@ export function TabBar({ active, onChange }: { active: LibraryTab; onChange: (ta
       {TABS.map((t) => {
         const Icon = active === t.id ? t.solid : t.outline
         return (
-          <button key={t.id} className={`tabbar-item${active === t.id ? ' on' : ''}`} onClick={() => onChange(t.id)}>
+          <button key={t.id} className={`tabbar-item${active === t.id ? ' on' : ''}`} aria-current={active === t.id ? 'page' : undefined} onClick={() => onChange(t.id)}>
             <Icon />
             <span>{t.label}</span>
           </button>

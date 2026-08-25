@@ -11,10 +11,12 @@ const THEME_LABEL: Record<ThemePref, string> = { system: 'sistema', light: 'clar
 
 export function SettingsTab({ customTunings, onExport, onImport }: {
   customTunings: Tuning[]
-  onExport: () => void
+  /** o backup embute o áudio das gravações, então pode demorar alguns segundos */
+  onExport: () => void | Promise<void>
   onImport: (json: string) => void
 }) {
   const [theme, setThemeState] = useState<ThemePref>(getTheme)
+  const [exporting, setExporting] = useState(false)
   const [defaults, setDefaults] = useState<DisplayDefaults>(getDisplayDefaults)
   const showToast = useToast()
   const cycleTheme = () => {
@@ -94,8 +96,23 @@ export function SettingsTab({ customTunings, onExport, onImport }: {
 
       <section className="settingsection">
         <h4>Backup</h4>
+        <p className="hint small">
+          O arquivo leva músicas, listas, configurações de cada música e também as gravações de prática —
+          por isso pode ficar grande e demorar alguns segundos para ser gerado.
+        </p>
         <div className="row tight">
-          <button className="btn ghost" onClick={onExport}>exportar backup</button>
+          <button
+            className="btn ghost"
+            disabled={exporting}
+            onClick={() => {
+              setExporting(true)
+              void Promise.resolve(onExport())
+                .catch(() => showToast('Não consegui gerar o backup.'))
+                .finally(() => setExporting(false))
+            }}
+          >
+            {exporting ? 'gerando backup…' : 'exportar backup'}
+          </button>
           <label className="btn ghost">
             importar backup
             <input type="file" accept="application/json" hidden onChange={(e) => {

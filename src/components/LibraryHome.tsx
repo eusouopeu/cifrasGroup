@@ -62,7 +62,7 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
       </header>
 
       <div className="searchrow">
-        <input className="search" placeholder="Buscar por título ou artista" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input className="search" aria-label="Buscar por título ou artista" placeholder="Buscar por título ou artista" value={query} onChange={(e) => setQuery(e.target.value)} />
         {songs.length > 0 && (
           <button
             className={`icon${filtersOpen ? ' active' : ''}`}
@@ -107,7 +107,7 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
           {usedGenres.length > 0 && (
             <div className="genrefilter">
               {usedGenres.map((g) => (
-                <button key={g} className={`genrechip${genreFilter.has(g) ? ' on' : ''}`} onClick={() => toggleGenre(g)}>
+                <button key={g} className={`genrechip${genreFilter.has(g) ? ' on' : ''}`} aria-pressed={genreFilter.has(g)} onClick={() => toggleGenre(g)}>
                   {g}
                 </button>
               ))}
@@ -117,7 +117,7 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
           {allTags.length > 0 && (
             <div className="tagchips filterbar-tags">
               {allTags.map((t) => (
-                <button key={t} className={`tagchip filterchip${tagFilter === t ? ' on' : ''}`} onClick={() => setTagFilter(tagFilter === t ? null : t)}>
+                <button key={t} className={`tagchip filterchip${tagFilter === t ? ' on' : ''}`} aria-pressed={tagFilter === t} onClick={() => setTagFilter(tagFilter === t ? null : t)}>
                   {t}
                 </button>
               ))}

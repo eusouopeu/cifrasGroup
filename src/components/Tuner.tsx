@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { XMarkIcon } from '@heroicons/react/24/outline'
-import { nameOf } from '../theory/notes'
-import { tuningById, type Tuning } from '../theory/tunings'
+import { nameOf, SHARP_NAMES } from '../theory/notes'
+import { stringFrequencies, tuningById, type Tuning } from '../theory/tunings'
+import { pluckNote } from '../audio/pluck'
 
 const STANDARD_TUNING = tuningById('standard')
 
@@ -128,6 +129,8 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
     }
   }, [attempt])
 
+  // altura real de cada corda solta desta afinação, para tocar a nota-alvo
+  const targetFreqs = stringFrequencies(tuning.strings)
   const inTune = reading !== null && Math.abs(reading.cents) <= 5
   const clampedCents = reading ? Math.max(-50, Math.min(50, reading.cents)) : 0
 
@@ -146,9 +149,19 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
       </p>
       <div className="tuner-strings">
         {tuning.stringNames.map((name, i) => (
-          <span key={i} className={`tuner-string${reading?.pc === tuning.strings[i] ? ' match' : ''}`}>{name}</span>
+          <button
+            key={i}
+            type="button"
+            className={`tuner-string${reading?.pc === tuning.strings[i] ? ' match' : ''}`}
+            onClick={() => pluckNote(targetFreqs[i])}
+            aria-label={`Tocar a nota da ${6 - i}ª corda (${name})`}
+            title={`Ouvir ${name} — ${targetFreqs[i].toFixed(1)} Hz`}
+          >
+            {name}
+          </button>
         ))}
       </div>
+      <p className="hint small center">Toque numa corda acima para ouvir a nota certa e afinar de ouvido.</p>
 
       {status === 'unsupported' && <p className="hint danger">Este navegador não dá acesso ao microfone.</p>}
       {status === 'denied' && (
@@ -164,14 +177,7 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
 
       {status === 'listening' && (
         reading ? (
-          <div className={`tuner-display${inTune ? ' in-tune' : ''}`}>
-            <div className="tuner-note">{reading.note}<sub>{reading.octave}</sub></div>
-            <div className="tuner-meter">
-              <div className="tuner-center" />
-              <div className="tuner-needle" style={{ left: `${50 + clampedCents}%` }} />
-            </div>
-            <div className="tuner-cents">{reading.cents > 0 ? '+' : ''}{reading.cents} cents · {reading.freq.toFixed(1)} Hz</div>
-          </div>
+          <TunerGauge reading={reading} inTune={inTune} cents={clampedCents} />
         ) : (
           <p className="hint">Toque uma corda ou nota isolada, num ambiente silencioso.</p>
         )
@@ -217,6 +223,67 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
         {content}
       </div>
       {permHelp}
+    </div>
+  )
+}
+
+/**
+ * Mostrador do afinador: ponteiro em arco, nota e a frequência exata em Hz.
+ *
+ * A barra horizontal anterior dizia se estava perto do centro, mas não *quanto*
+ * nem em que frequência — que é o número que se usa para conferir a afinação
+ * contra uma referência (A4=440) ou para afinar um instrumento que não é
+ * violão. O ponteiro em arco também é mais legível de longe que um traço
+ * deslizando: o ângulo se percebe de relance.
+ */
+const NEEDLE_SWEEP = 55 // graus para cada lado, correspondendo a ±50 cents
+
+function TunerGauge({ reading, inTune, cents }: { reading: Reading; inTune: boolean; cents: number }) {
+  const angle = (cents / 50) * NEEDLE_SWEEP
+  const pivotX = 150
+  const pivotY = 118
+  const needleLen = 96
+
+  return (
+    <div className={`tuner-display${inTune ? ' in-tune' : ''}`}>
+      <div className="tuner-note">{reading.note}<sub>{reading.octave}</sub></div>
+      <div className="tuner-freq">{reading.freq.toFixed(1).replace('.', ',')} Hz</div>
+
+      <svg className="tuner-gauge" viewBox="0 0 300 132" role="img" aria-label={`${reading.note}${reading.octave}, ${reading.freq.toFixed(1)} hertz, ${reading.cents} cents`}>
+        {/* marcas: as três centrais delimitam a zona afinada (±5 cents) */}
+        {[-50, -30, -15, -5, 0, 5, 15, 30, 50].map((c) => {
+          const a = ((c / 50) * NEEDLE_SWEEP * Math.PI) / 180
+          const inner = c === 0 ? 74 : Math.abs(c) <= 5 ? 84 : 90
+          const outer = 106
+          return (
+            <line
+              key={c}
+              x1={pivotX + Math.sin(a) * inner}
+              y1={pivotY - Math.cos(a) * inner}
+              x2={pivotX + Math.sin(a) * outer}
+              y2={pivotY - Math.cos(a) * outer}
+              className={Math.abs(c) <= 5 ? 'g-tick center' : 'g-tick'}
+            />
+          )
+        })}
+        <text x={pivotX - 128} y={64} className="g-side">♭</text>
+        <text x={pivotX + 120} y={64} className="g-side">♯</text>
+        <line
+          x1={pivotX}
+          y1={pivotY}
+          x2={pivotX + Math.sin((angle * Math.PI) / 180) * needleLen}
+          y2={pivotY - Math.cos((angle * Math.PI) / 180) * needleLen}
+          className="g-needle"
+        />
+        <circle cx={pivotX} cy={pivotY} r={7} className="g-pivot" />
+      </svg>
+
+      <div className="tuner-cents">{reading.cents > 0 ? '+' : ''}{reading.cents} cents</div>
+      <div className="tuner-chromatic">
+        {SHARP_NAMES.map((n, pc) => (
+          <span key={n} className={`tuner-chromatic-note${pc === reading.pc ? ' on' : ''}`}>{n}</span>
+        ))}
+      </div>
     </div>
   )
 }

@@ -10,7 +10,8 @@ import { ImportView } from './components/ImportView'
 import { SongView } from './components/SongView'
 import { useToast } from './components/Toast'
 import { initShareTarget } from './native/shareTarget'
-import { DEFAULT_SETTINGS, exportDB, importDB, loadDBAsync, mergeDB, newId, saveDBAsync, type DB, type SongSettings } from './store/db'
+import { DEFAULT_SETTINGS, loadDBAsync, mergeDB, newId, saveDBAsync, type DB, type SongSettings } from './store/db'
+import { buildBackup, countRecordings, parseBackup, quickBackupText, restoreBackupRecordings, type Backup } from './store/backup'
 import { deleteCustomTuning, loadCustomTunings, saveCustomTuning } from './store/customTunings'
 import { getDisplayDefaults } from './store/defaults'
 import { deleteAllRecordings, listRecordings, restoreRecordings } from './store/recordings'
@@ -43,14 +44,18 @@ function withDemoSong(loaded: DB): DB {
   return loaded
 }
 
-/** Baixa um backup do banco inteiro como arquivo JSON. */
-function downloadDBBackup(db: DB, filename: string) {
-  const blob = new Blob([exportDB(db)], { type: 'application/json' })
+function downloadText(text: string, filename: string) {
+  const blob = new Blob([text], { type: 'application/json' })
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
   a.download = filename
   a.click()
   URL.revokeObjectURL(a.href)
+}
+
+/** Backup completo (músicas, listas e gravações de prática) como arquivo JSON. */
+async function downloadFullBackup(db: DB, filename: string) {
+  downloadText(await buildBackup(db), filename)
 }
 
 export default function App() {
@@ -60,7 +65,7 @@ export default function App() {
   const [picker, setPicker] = useState<string | null>(null)
   const [sharedUrl, setSharedUrl] = useState<string | null>(null)
   const [customTunings, setCustomTunings] = useState<Tuning[]>([])
-  const [importChoice, setImportChoice] = useState<DB | null>(null)
+  const [importChoice, setImportChoice] = useState<Backup | null>(null)
   const showToast = useToast()
 
   useEffect(() => {
@@ -149,6 +154,15 @@ export default function App() {
     })
   }
 
+  // editar o texto da cifra muda tudo o que é derivado dela: dificuldade,
+  // contagem de acordes e prévia da biblioteca vêm de `meta`, calculado uma vez
+  const changeRaw = (id: string, raw: string) => {
+    setDb({
+      ...db,
+      songs: { ...db.songs, [id]: { ...db.songs[id], raw, meta: computeSongMeta(raw), updatedAt: Date.now() } },
+    })
+  }
+
   if (route.view === 'import') {
     return (
       <ImportView
@@ -210,6 +224,7 @@ export default function App() {
           onChange={(patch) => patchSettings(song.id, patch)}
           onRename={(title, artist) => patchSong(song.id, { title, artist })}
           onNotesChange={(notes) => patchSong(song.id, { notes })}
+          onRawChange={(raw) => changeRaw(song.id, raw)}
           onTagsChange={(tags) => patchSong(song.id, { tags })}
           customTunings={customTunings}
           onSaveCustomTuning={handleSaveCustomTuning}
@@ -329,9 +344,9 @@ export default function App() {
         {libraryTab === 'config' && (
           <SettingsTab
             customTunings={customTunings}
-            onExport={() => downloadDBBackup(db, 'cifrasgroup-backup.json')}
+            onExport={() => downloadFullBackup(db, 'cifrasgroup-backup.json')}
             onImport={(json) => {
-              const next = importDB(json)
+              const next = parseBackup(json)
               if (!next) { showToast('Arquivo de backup inválido.'); return }
               setImportChoice(next)
             }}
@@ -342,15 +357,22 @@ export default function App() {
 
       {importChoice && (
         <ImportChoiceSheet
-          songCount={Object.keys(importChoice.songs).length}
+          songCount={Object.keys(importChoice.db.songs).length}
+          recordingCount={countRecordings(importChoice)}
           onClose={() => setImportChoice(null)}
           onChoose={(mode) => {
             const incoming = importChoice
             if (!incoming) return
-            downloadDBBackup(db, `cifrasgroup-backup-antes-de-importar-${Date.now()}.json`)
-            const merged = mode === 'merge' ? mergeDB(db, incoming) : incoming
-            setDb(merged)
+            downloadText(quickBackupText(db), `cifrasgroup-backup-antes-de-importar-${Date.now()}.json`)
+            // na mesclagem as músicas entram com ids novos; no "substituir tudo"
+            // os ids do arquivo são os que valem, então o mapa é a identidade
+            const { db: next, idMap } =
+              mode === 'merge'
+                ? mergeDB(db, incoming.db)
+                : { db: incoming.db, idMap: new Map(Object.keys(incoming.db.songs).map((id) => [id, id])) }
+            setDb(next)
             setImportChoice(null)
+            void restoreBackupRecordings(incoming, idMap)
             showToast(mode === 'merge' ? 'Backup mesclado com a biblioteca atual.' : 'Backup importado, substituindo a biblioteca.')
           }}
         />
@@ -359,8 +381,9 @@ export default function App() {
   )
 }
 
-function ImportChoiceSheet({ songCount, onChoose, onClose }: {
+function ImportChoiceSheet({ songCount, recordingCount, onChoose, onClose }: {
   songCount: number
+  recordingCount: number
   onChoose: (mode: 'merge' | 'replace') => void
   onClose: () => void
 }) {
@@ -372,8 +395,9 @@ function ImportChoiceSheet({ songCount, onChoose, onClose }: {
           <button className="icon" onClick={onClose}><XMarkIcon /></button>
         </div>
         <p className="hint small">
-          O arquivo tem {songCount} música{songCount === 1 ? '' : 's'}. Um backup do estado atual é baixado
-          automaticamente antes de aplicar, para poder desfazer se precisar.
+          O arquivo tem {songCount} música{songCount === 1 ? '' : 's'}
+          {recordingCount > 0 && <> e {recordingCount} gravaç{recordingCount === 1 ? 'ão' : 'ões'} de prática</>}.
+          Um backup do estado atual é baixado automaticamente antes de aplicar, para poder desfazer se precisar.
         </p>
         <div className="listpick">
           <button className="btn wide stacked" onClick={() => onChoose('merge')}>
