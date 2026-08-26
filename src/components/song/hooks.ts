@@ -157,6 +157,29 @@ export function useCountIn(bpm: number, metronome: UseMetronome): { countIn: num
   return { countIn, play }
 }
 
+/**
+ * Uma "sessão de prática" é o tempo com o metrônomo ligado. Reportada ao
+ * desligar (não a cada tick), pra não gravar a cada frame de execução.
+ */
+export function usePracticeTracking(running: boolean, onSession: (ms: number) => void): void {
+  const startRef = useRef<number | null>(null)
+  const onSessionRef = useRef(onSession)
+  onSessionRef.current = onSession
+  useEffect(() => {
+    if (running) {
+      startRef.current = performance.now()
+      return
+    }
+    const start = startRef.current
+    startRef.current = null
+    if (start === null) return
+    const ms = performance.now() - start
+    // sessões muito curtas (testou o play e parou na hora) não contam como prática
+    if (ms >= 3000) onSessionRef.current(ms)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [running])
+}
+
 /** Atalhos de teclado: espaço toca/pausa, ←→ transpõem, ↑↓ ajustam a rolagem. */
 export function useSongShortcuts(play: () => void, dispatch: SongDispatch): void {
   const playRef = useRef(play)

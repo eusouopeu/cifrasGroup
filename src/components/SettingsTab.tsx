@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useToast } from './Toast'
 import { ThemePillPicker, ThemeToggleButton } from './ThemeControls'
+import { TuningPicker } from './TuningPicker'
+import { SizePicker } from './song/parts'
 import { getDisplayDefaults, setDisplayDefaults, type DisplayDefaults } from '../store/defaults'
-import { TUNINGS, type Tuning } from '../theory/tunings'
+import type { Tuning } from '../theory/tunings'
 
 export function SettingsTab({ customTunings, onExport, onImport }: {
   customTunings: Tuning[]
@@ -30,29 +32,10 @@ export function SettingsTab({ customTunings, onExport, onImport }: {
 
       <section className="settingsection">
         <h4>Padrões para músicas novas</h4>
-        <p className="hint small">
-          Usados ao importar ou duplicar uma música. Cada música ainda pode ter suas próprias configurações depois.
-        </p>
         <div className="row tight">
-          <label className="field inline">
-            Tamanho do texto
-            <input
-              type="number" min={10} max={30} className="numinput small"
-              value={defaults.fontSize}
-              onChange={(e) => patchDefaults({ fontSize: Math.max(10, Math.min(30, Number(e.target.value))) })}
-            />
-          </label>
+          <span className="fieldlabel">Tamanho do texto</span>
         </div>
-        <div className="row tight">
-          <label className="field inline">
-            Rolagem automática
-            <input
-              type="number" min={0} max={20} className="numinput small"
-              value={defaults.scrollSpeed}
-              onChange={(e) => patchDefaults({ scrollSpeed: Math.max(0, Math.min(20, Number(e.target.value))) })}
-            />
-          </label>
-        </div>
+        <SizePicker value={defaults.fontSize} onChange={(px) => patchDefaults({ fontSize: px })} />
         <label className="field wide checkbox">
           <input type="checkbox" checked={defaults.hideTabs} onChange={(e) => patchDefaults({ hideTabs: e.target.checked })} />
           Esconder tablaturas
@@ -63,22 +46,12 @@ export function SettingsTab({ customTunings, onExport, onImport }: {
             <button className={defaults.instrument === 'piano' ? 'on' : ''} onClick={() => patchDefaults({ instrument: 'piano' })}>Piano</button>
           </div>
         </div>
-        <label className="field wide">
-          Afinação
-          <select value={defaults.tuning} onChange={(e) => patchDefaults({ tuning: e.target.value })}>
-            <optgroup label="Violão">
-              {TUNINGS.filter((t) => t.family !== 'viola').map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-            </optgroup>
-            <optgroup label="Viola caipira">
-              {TUNINGS.filter((t) => t.family === 'viola').map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-            </optgroup>
-            {customTunings.length > 0 && (
-              <optgroup label="Suas afinações">
-                {customTunings.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </optgroup>
-            )}
-          </select>
-        </label>
+        <TuningPicker
+          value={defaults.tuning}
+          onChange={(id) => patchDefaults({ tuning: id })}
+          customTunings={customTunings}
+          allowManage={false}
+        />
       </section>
 
       <section className="settingsection">

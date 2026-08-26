@@ -17,6 +17,21 @@ export const FONT_MAX = 30
 export const SCROLL_MAX = 20
 export const CAPO_MAX = 12
 
+/** Tamanhos de texto oferecidos ao usuário — em vez de escolher o valor em px direto. */
+export const FONT_SIZES = { P: 13, M: 16, G: 19, GG: 23 } as const
+export type FontSizeLabel = keyof typeof FONT_SIZES
+
+/** Rótulo (P/M/G/GG) mais próximo de um tamanho em px — cobre valores salvos antes desta mudança. */
+export function fontSizeLabelFor(px: number): FontSizeLabel {
+  let best: FontSizeLabel = 'M'
+  let bestDiff = Infinity
+  for (const label of Object.keys(FONT_SIZES) as FontSizeLabel[]) {
+    const diff = Math.abs(FONT_SIZES[label] - px)
+    if (diff < bestDiff) { bestDiff = diff; best = label }
+  }
+  return best
+}
+
 export type SongAction =
   | { type: 'transposeBy'; semitones: number }
   | { type: 'setKey'; semitones: number; capo?: number }

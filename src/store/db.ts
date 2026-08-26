@@ -42,6 +42,14 @@ export interface SongSettings {
   preferredVoicings: Record<string, string>
 }
 
+export interface PracticeStats {
+  /** quantas vezes o metrônomo foi ligado (uma "sessão" de prática) nesta música */
+  count: number
+  /** soma do tempo com o metrônomo ligado, em ms */
+  totalMs: number
+  lastPlayedAt: number | null
+}
+
 export interface Song {
   id: string
   title: string
@@ -58,6 +66,7 @@ export interface Song {
   settings: SongSettings
   /** dificuldade, nº de acordes e prévia — calculados uma vez a partir de `raw`, nunca recalculados na biblioteca */
   meta: SongMeta
+  practice: PracticeStats
 }
 
 export interface SongList {
@@ -95,6 +104,8 @@ export const DEFAULT_SETTINGS: SongSettings = {
   preferredVoicings: {},
 }
 
+export const DEFAULT_PRACTICE: PracticeStats = { count: 0, totalMs: 0, lastPlayedAt: null }
+
 function emptyDB(): DB {
   return { version: 1, songs: {}, lists: [{ id: 'favoritas', name: 'Favoritas', description: '', songIds: [], createdAt: Date.now() }] }
 }
@@ -106,6 +117,8 @@ function normalize(db: DB): DB {
     s.tags ??= []
     // backfill para bancos salvos antes do campo `meta` existir
     s.meta ??= computeSongMeta(s.raw)
+    // backfill para bancos salvos antes das estatísticas de prática existirem
+    s.practice ??= { ...DEFAULT_PRACTICE }
   }
   return db
 }

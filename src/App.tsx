@@ -10,7 +10,7 @@ import { ImportView } from './components/ImportView'
 import { SongView } from './components/SongView'
 import { useToast } from './components/Toast'
 import { initShareTarget } from './native/shareTarget'
-import { DEFAULT_SETTINGS, loadDBAsync, mergeDB, newId, saveDBAsync, type DB, type SongSettings } from './store/db'
+import { DEFAULT_PRACTICE, DEFAULT_SETTINGS, loadDBAsync, mergeDB, newId, saveDBAsync, type DB, type SongSettings } from './store/db'
 import { buildBackup, countRecordings, parseBackup, quickBackupText, restoreBackupRecordings, type Backup } from './store/backup'
 import { deleteCustomTuning, loadCustomTunings, saveCustomTuning } from './store/customTunings'
 import { getDisplayDefaults } from './store/defaults'
@@ -40,6 +40,7 @@ function withDemoSong(loaded: DB): DB {
     updatedAt: Date.now(),
     settings: newSongSettings(),
     meta: computeSongMeta(DEMO_RAW),
+    practice: { ...DEFAULT_PRACTICE },
   }
   return loaded
 }
@@ -163,6 +164,22 @@ export default function App() {
     })
   }
 
+  // registrada quando o metrônomo é desligado — cada vez que tocou "com o metrônomo"
+  // conta como uma sessão de prática desta música
+  const logPractice = (id: string, ms: number) => {
+    setDb((prev) => {
+      if (!prev) return prev
+      const song = prev.songs[id]
+      if (!song) return prev
+      const practice = {
+        count: song.practice.count + 1,
+        totalMs: song.practice.totalMs + ms,
+        lastPlayedAt: Date.now(),
+      }
+      return { ...prev, songs: { ...prev.songs, [id]: { ...song, practice } } }
+    })
+  }
+
   if (route.view === 'import') {
     return (
       <ImportView
@@ -196,6 +213,7 @@ export default function App() {
                 updatedAt: Date.now(),
                 settings: newSongSettings(),
                 meta: computeSongMeta(data.raw),
+                practice: { ...DEFAULT_PRACTICE },
               },
             },
           })
@@ -226,6 +244,7 @@ export default function App() {
           onNotesChange={(notes) => patchSong(song.id, { notes })}
           onRawChange={(raw) => changeRaw(song.id, raw)}
           onTagsChange={(tags) => patchSong(song.id, { tags })}
+          onPracticeSession={(ms) => logPractice(song.id, ms)}
           customTunings={customTunings}
           onSaveCustomTuning={handleSaveCustomTuning}
           onDeleteCustomTuning={handleDeleteCustomTuning}

@@ -70,8 +70,25 @@ export function isCifraClubUrl(url: string): boolean {
 const EXTRACTION_SCRIPT = `
 (function () {
   try {
-    var pre = document.querySelector('.cifra_cnt pre') || document.querySelector('#cifra pre') || document.querySelector('pre');
+    // '.cifra_cnt pre'/'#cifra pre' cobrem o template desktop; se nenhum dos
+    // dois existir (mobile SPA, classes hasheadas), cai para "o <pre> da
+    // página com mais linhas" em vez de simplesmente o primeiro <pre> — a
+    // página tem outros <pre> (anúncios, sugestões "cifras parecidas") que um
+    // querySelector('pre') ingênuo pegaria antes da cifra de verdade.
+    var pre = document.querySelector('.cifra_cnt pre') || document.querySelector('#cifra pre');
+    if (!pre) {
+      var pres = document.querySelectorAll('pre');
+      var best = null, bestLines = 0;
+      for (var p = 0; p < pres.length; p++) {
+        var lines = (pres[p].textContent || '').split('\\n').length;
+        if (lines > bestLines) { bestLines = lines; best = pres[p]; }
+      }
+      pre = best;
+    }
     if (!pre || !pre.textContent.trim()) return;
+    // uma cifra de verdade tem várias linhas curtas (acordes + letra), não um
+    // parágrafo corrido — rejeita cedo em vez de importar algo que não é cifra
+    if (pre.textContent.trim().split('\\n').length < 4) return;
 
     function text(sel) {
       var el = document.querySelector(sel);

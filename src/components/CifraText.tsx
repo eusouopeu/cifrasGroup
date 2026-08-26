@@ -4,6 +4,16 @@ import { isTabLikeLine, type CifraLine, type ParsedCifra } from '../cifra/parse'
 /** casas de tolerância antes de um toque virar "arrastou, não é clique" */
 const DRAG_THRESHOLD = 8
 
+/**
+ * Maior espaço em branco entre dois acordes numa linha. A cifra original
+ * alinha os acordes com a letra abaixo, o que às vezes deixa um espaço bem
+ * largo entre dois acordes (ex.: um intro com poucos acordes espalhados pela
+ * largura de um verso inteiro) — largo o bastante para vazar da tela num
+ * celular. Como a linha de acordes nunca quebra, o espaço excedente é
+ * cortado em vez de reproduzido igual ao original.
+ */
+const MAX_CHORD_GAP = 2
+
 /** Posiciona os acordes reconstruindo a linha, respeitando o alinhamento original. */
 function layoutChords(line: CifraLine, map: (s: string) => string): { gap: number; symbol: string; original: string }[] {
   const out: { gap: number; symbol: string; original: string }[] = []
@@ -12,7 +22,7 @@ function layoutChords(line: CifraLine, map: (s: string) => string): { gap: numbe
     const symbol = map(hit.symbol)
     let col = hit.col
     if (col < cursor + 1 && cursor > 0) col = cursor + 1
-    out.push({ gap: col - cursor, symbol, original: hit.symbol })
+    out.push({ gap: Math.min(col - cursor, MAX_CHORD_GAP), symbol, original: hit.symbol })
     cursor = col + symbol.length
   }
   return out

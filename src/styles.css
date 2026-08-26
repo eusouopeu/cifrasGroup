@@ -202,7 +202,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 /* ---------- tela da música ---------- */
 .songview { display: flex; flex-direction: column; height: 100%; }
-.songhead { display: flex; align-items: center; gap: .5rem; padding: .5rem .6rem; border-bottom: 1px solid var(--line); background: var(--bg2); }
+.songhead { display: flex; align-items: center; flex-wrap: wrap; row-gap: .2rem; gap: .3rem; padding: .5rem .6rem; border-bottom: 1px solid var(--line); background: var(--bg2); }
+.songhead .icon { padding: .2rem .4rem; }
 .songhead-title { flex: 1; display: flex; flex-direction: column; line-height: 1.15; min-width: 0; background: none; border: none; color: inherit; font: inherit; text-align: left; padding: 0; cursor: pointer; }
 .songhead-title strong { font-size: .95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .songhead-title span { font-size: .75rem; color: var(--dim); }
@@ -344,11 +345,19 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* ---------- cifra ---------- */
 .cifra-area { position: relative; flex: 1; min-height: 0; display: flex; }
 .cifra-scroll { flex: 1; overflow-y: auto; padding: .8rem 1rem 6rem; scroll-behavior: auto; }
-.cifra { font-family: var(--mono); white-space: pre; }
+.cifra { font-family: var(--mono); overflow-wrap: anywhere; }
 .cifra-line { min-height: 1em; }
-.cifra-line.lyrics { color: var(--fg); }
-.cifra-line.section { color: var(--accent); font-weight: 700; margin-top: .9em; }
-.cifra-line.tab { color: var(--dim); opacity: .8; }
+/* acordes nunca quebram linha — o espaçamento entre eles já é reduzido na
+   montagem da linha (CifraText#layoutChords); se mesmo assim não couber (ex.:
+   muitos acordes estendidos numa linha só), rola na horizontal em vez de
+   cortar ou empurrar o resto da tela */
+.cifra-line.chords { white-space: pre; overflow-x: auto; scrollbar-width: none; }
+.cifra-line.chords::-webkit-scrollbar { display: none; }
+/* letra quebra e continua na linha de baixo em vez de vazar pra lateral */
+.cifra-line.lyrics { color: var(--fg); white-space: pre-wrap; }
+.cifra-line.section { color: var(--accent); font-weight: 700; margin-top: .9em; white-space: pre-wrap; }
+.cifra-line.tab { color: var(--dim); opacity: .8; white-space: pre; }
+.cifra-line.blank { white-space: pre; }
 .cifra-note { color: var(--dim); font-size: .72rem; font-family: var(--sans); margin-bottom: .6rem; }
 .cifra-note.warn { color: var(--accent); }
 .chordchip { background: none; border: none; padding: 0; font: inherit; color: var(--accent); font-weight: 700; }
@@ -356,6 +365,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .chordchip.hl { background: color-mix(in srgb, var(--accent) 25%, transparent); border-radius: 3px; }
 .gap { white-space: pre; }
 .cifra-footer { margin-top: 2rem; font-size: .75rem; color: var(--dim); }
+.cifra-rawedit {
+  width: 100%; height: 100%; min-height: 100%; resize: none; border: none; outline: none;
+  background: none; color: var(--fg); font-family: var(--mono); line-height: 1.5;
+  white-space: pre; overflow-wrap: normal;
+}
 
 /* ---------- barra de transporte (metrônomo + rolagem) ---------- */
 .transport {
@@ -365,6 +379,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
   background: var(--bg2); border-top: 1px solid var(--line);
   box-shadow: 0 -4px 16px rgba(0, 0, 0, .18);
 }
+.transport-editing { gap: .6rem; }
+.transport-editing .btn.wide { flex: 1; text-align: center; margin-bottom: 0; }
 .transport-play {
   flex: 0 0 auto; width: 52px; height: 52px; border-radius: 50%;
   border: 1px solid var(--line); background: var(--bg3);

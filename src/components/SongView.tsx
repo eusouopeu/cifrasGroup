@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
+  AdjustmentsHorizontalIcon,
+  ArrowDownTrayIcon,
   ArrowLeftIcon,
   ArrowPathIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  DocumentTextIcon,
-  EllipsisHorizontalIcon,
   MinusIcon,
+  PencilIcon,
   PencilSquareIcon,
   PlusIcon,
+  Squares2X2Icon,
   XMarkIcon,
 } from '@heroicons/react/24/outline'
 import { ArrowDownIcon, PauseIcon, PlayIcon, StopIcon } from '@heroicons/react/24/solid'
@@ -32,16 +34,22 @@ import {
   ChordsPanel,
   DisplayPanel,
   KeyPanel,
-  LyricsPanel,
   NotesPanel,
   PalettePanel,
   RecordPanel,
   RhythmPanel,
   SimplifyPanel,
 } from './song/panels'
-import { useAutoScroll, useCountIn, useSectionLoop, useSongSettings, useSongShortcuts } from './song/hooks'
+import {
+  useAutoScroll,
+  useCountIn,
+  usePracticeTracking,
+  useSectionLoop,
+  useSongSettings,
+  useSongShortcuts,
+} from './song/hooks'
 
-type Panel = null | 'tom' | 'simplificar' | 'cor' | 'ritmo' | 'acordes' | 'texto' | 'notas' | 'gravar' | 'letra'
+type Panel = null | 'tom' | 'simplificar' | 'cor' | 'ritmo' | 'acordes' | 'texto' | 'notas' | 'gravar'
 
 const LAST_SCROLL_SPEED_KEY = 'cifrasgroup:lastScrollSpeed'
 
@@ -54,6 +62,7 @@ export function SongView({
   onNotesChange,
   onTagsChange,
   onRawChange,
+  onPracticeSession,
   customTunings,
   onSaveCustomTuning,
   onDeleteCustomTuning,
@@ -69,6 +78,8 @@ export function SongView({
   onTagsChange: (tags: string[]) => void
   /** edição do texto da cifra em si (letra e acordes originais) */
   onRawChange: (raw: string) => void
+  /** chamado quando o metrônomo é desligado, com a duração da sessão em ms */
+  onPracticeSession: (ms: number) => void
   /** afinações criadas pelo usuário — theory/tunings.ts só tem os presets fixos */
   customTunings: Tuning[]
   onSaveCustomTuning: (tuning: Tuning) => void
@@ -80,15 +91,20 @@ export function SongView({
   const s = song.settings
   const [panel, setPanel] = useState<Panel>(null)
   const [inspect, setInspect] = useState<string | null>(null)
-  const [stripOpen, setStripOpen] = useState(false)
-  const [stripFocus, setStripFocus] = useState<string | null>(null)
+  // faixa de acordes deslizante: null = fechada; focus = símbolo em destaque
+  const [chordStrip, setChordStrip] = useState<{ focus: string | null } | null>(null)
   const [scrollBarOpen, setScrollBarOpen] = useState(false)
   const [level2JustOff, setLevel2JustOff] = useState(false)
   const [editingTitle, setEditingTitle] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [editingRaw, setEditingRaw] = useState(false)
+  const [rawDraft, setRawDraft] = useState(song.raw)
   const [tunerOpen, setTunerOpen] = useState(false)
   const [manualAnalysisKey, setManualAnalysisKey] = useState<number | null>(null)
-  useEffect(() => { setManualAnalysisKey(null); setStripOpen(false); setStripFocus(null) }, [song.id])
+  useEffect(() => {
+    setManualAnalysisKey(null)
+    setChordStrip(null)
+    setEditingRaw(false)
+  }, [song.id])
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const showToast = useToast()
@@ -114,6 +130,7 @@ export function SongView({
   const loop = useSectionLoop(scrollRef, showToast)
   useAutoScroll(scrollRef, s.scrollSpeed)
   useSongShortcuts(play, dispatch)
+  usePracticeTracking(metronome.running, onPracticeSession)
   // tocando, ninguém encosta no celular por minutos — sem isso a tela apaga
   useWakeLock(s.scrollSpeed > 0 || metronome.running)
 
@@ -146,6 +163,17 @@ export function SongView({
     URL.revokeObjectURL(a.href)
   }
 
+  const startEditingRaw = () => {
+    setChordStrip(null)
+    setRawDraft(song.raw)
+    setEditingRaw(true)
+  }
+  const saveEditingRaw = () => {
+    onRawChange(rawDraft)
+    setEditingRaw(false)
+    showToast('Cifra atualizada.')
+  }
+
   const mapSymbol = (orig: string) => view.map.get(orig) ?? orig
   const originalOf = (displayed: string) => [...view.map.entries()].find(([, v]) => v === displayed)?.[0]
   // símbolos exibidos que vieram de uma troca manual (para destacar nos grids)
@@ -165,10 +193,7 @@ export function SongView({
 
   // tocar num acorde da letra abre a faixa de acordes (e destaca o tocado);
   // a ficha completa fica a um toque, a partir da faixa
-  const onChordInText = (displayed: string) => {
-    setStripFocus(displayed)
-    setStripOpen(true)
-  }
+  const onChordInText = (displayed: string) => setChordStrip({ focus: displayed })
 
   return (
     <div className="songview">
@@ -188,43 +213,38 @@ export function SongView({
         )}
         <button className="icon" onClick={onSaveToList} aria-label="Salvar em lista"><PlusIcon /></button>
         <button
-          className={`icon${panel === 'letra' ? ' active' : ''}`}
-          onClick={() => togglePanel('letra')}
+          className={`icon${editingRaw ? ' active' : ''}`}
+          onClick={startEditingRaw}
           aria-label="Editar texto da cifra"
           title="Editar o texto da cifra (letra e acordes)"
         >
-          <DocumentTextIcon />
+          <PencilIcon />
         </button>
-        <button className="icon" onClick={() => setMenuOpen(true)} aria-label="Mais opções"><EllipsisHorizontalIcon /></button>
+        <button
+          className={`icon${panel === 'acordes' ? ' active' : ''}`}
+          onClick={() => togglePanel('acordes')}
+          aria-label="Construção dos acordes"
+          title="Construção dos acordes (instrumento, afinação)"
+        >
+          <Squares2X2Icon />
+        </button>
+        <button
+          className="icon"
+          onClick={() => void shareOrDownload()}
+          aria-label={typeof navigator.share === 'function' ? 'Compartilhar cifra' : 'Baixar cifra'}
+          title="Baixar cifra (.txt)"
+        >
+          <ArrowDownTrayIcon />
+        </button>
+        <button
+          className={`icon${panel === 'texto' ? ' active' : ''}`}
+          onClick={() => togglePanel('texto')}
+          aria-label="Configurações de exibição"
+          title="Configurações de exibição (fonte, rolagem, tablatura)"
+        >
+          <AdjustmentsHorizontalIcon />
+        </button>
       </header>
-
-      {menuOpen && (
-        <div className="sheet-backdrop" onClick={() => setMenuOpen(false)}>
-          <div className="sheet small" onClick={(e) => e.stopPropagation()}>
-            <div className="sheet-head">
-              <h3>Mais opções</h3>
-              <button className="icon" onClick={() => setMenuOpen(false)} aria-label="Fechar"><XMarkIcon /></button>
-            </div>
-            <div className="listpick">
-              <button className="btn wide" onClick={() => { setPanel('acordes'); setMenuOpen(false) }}>
-                construção dos acordes (instrumento, afinação)
-              </button>
-              <button className="btn wide" onClick={() => { setPanel('texto'); setMenuOpen(false) }}>
-                configurações de exibição (fonte, rolagem, tablatura)
-              </button>
-              <button className="btn wide" onClick={() => { void shareOrDownload(); setMenuOpen(false) }}>
-                {typeof navigator.share === 'function' ? 'compartilhar cifra (.txt)' : 'baixar cifra (.txt)'}
-              </button>
-              {Object.keys(s.overrides).length > 0 && (
-                <button className="btn wide" onClick={() => { dispatch({ type: 'clearAllOverrides' }); showToast('Todas as trocas manuais foram restauradas.'); setMenuOpen(false) }}>
-                  restaurar todos os acordes trocados manualmente ({Object.keys(s.overrides).length})
-                </button>
-              )}
-            </div>
-            <p className="hint small">Atalhos de teclado: espaço toca/pausa o metrônomo, ←→ transpõem, ↑↓ ajustam a rolagem automática.</p>
-          </div>
-        </div>
-      )}
 
       <nav className="toolbar">
         <ToolButton active={panel === 'tom'} onClick={() => togglePanel('tom')} label="Tom" value={
@@ -237,16 +257,16 @@ export function SongView({
         <ToolButton active={panel === 'ritmo'} onClick={() => togglePanel('ritmo')} label="Ritmo" value={rhythm?.name ?? 'nenhum'} />
       </nav>
 
-      {stripOpen && (
+      {chordStrip && (
         <ChordStrip
           chords={view.displayedChords}
           instrument={s.instrument}
           tuning={tuning}
-          focus={stripFocus}
+          focus={chordStrip.focus}
           overridden={overriddenSymbols}
           preferredVoicings={s.preferredVoicings}
-          onSelect={(symbol) => { setStripFocus(symbol); setInspect(symbol) }}
-          onClose={() => { setStripOpen(false); setStripFocus(null) }}
+          onSelect={(symbol) => { setChordStrip({ focus: symbol }); setInspect(symbol) }}
+          onClose={() => setChordStrip(null)}
         />
       )}
 
@@ -278,15 +298,13 @@ export function SongView({
                 overriddenSymbols={overriddenSymbols}
                 onInspect={setInspect}
                 onOpenTuner={() => setTunerOpen(true)}
+                onRestoreAllOverrides={() => {
+                  dispatch({ type: 'clearAllOverrides' })
+                  showToast('Todos os acordes trocados manualmente foram restaurados.')
+                }}
               />
             )}
             {panel === 'texto' && <DisplayPanel s={s} dispatch={dispatch} />}
-            {panel === 'letra' && (
-              <LyricsPanel
-                raw={song.raw}
-                onSave={(raw) => { onRawChange(raw); showToast('Cifra atualizada.'); setPanel(null) }}
-              />
-            )}
             {panel === 'gravar' && <RecordPanel songId={song.id} />}
           </div>
         </div>
@@ -328,21 +346,35 @@ export function SongView({
 
       <div className="cifra-area">
         <div className="cifra-scroll" ref={scrollRef}>
-          <CifraText
-            parsed={view.parsed}
-            map={mapSymbol}
-            fontSize={s.fontSize}
-            hideTabs={s.hideTabs}
-            highlight={stripOpen ? stripFocus : null}
-            onChordClick={(_, displayed) => onChordInText(displayed)}
-            transposed={view.effectiveTranspose !== 0}
-          />
-          <div className="cifra-footer">
-            {song.source && <a href={song.source} target="_blank" rel="noreferrer">fonte original</a>}
-          </div>
+          {editingRaw ? (
+            <textarea
+              className="cifra-rawedit mono"
+              aria-label="Texto da cifra"
+              value={rawDraft}
+              spellCheck={false}
+              autoFocus
+              style={{ fontSize: `${s.fontSize}px` }}
+              onChange={(e) => setRawDraft(e.target.value)}
+            />
+          ) : (
+            <>
+              <CifraText
+                parsed={view.parsed}
+                map={mapSymbol}
+                fontSize={s.fontSize}
+                hideTabs={s.hideTabs}
+                highlight={chordStrip ? chordStrip.focus : null}
+                onChordClick={(_, displayed) => onChordInText(displayed)}
+                transposed={view.effectiveTranspose !== 0}
+              />
+              <div className="cifra-footer">
+                {song.source && <a href={song.source} target="_blank" rel="noreferrer">fonte original</a>}
+              </div>
+            </>
+          )}
         </div>
 
-        {inspect && (
+        {!editingRaw && inspect && (
           <ChordSheet
             key={inspect}
             symbol={inspect}
@@ -369,7 +401,7 @@ export function SongView({
         )}
       </div>
 
-      {scrollBarOpen && (
+      {scrollBarOpen && !editingRaw && (
         <div className="scrollbar-control">
           <button
             className="icon"
@@ -404,50 +436,58 @@ export function SongView({
         </div>
       )}
 
-      {/* barra de transporte: fica no rodapé, ao alcance do polegar */}
-      <div className="transport">
-        <button
-          className={`transport-play${metronome.running ? ' on' : ''}${countIn !== null ? ' counting' : ''}`}
-          onClick={play}
-          aria-label={metronome.running ? 'Parar metrônomo' : countIn !== null ? 'Cancelar contagem' : 'Iniciar metrônomo'}
-        >
-          {countIn !== null ? countIn : metronome.running ? <StopIcon /> : <PlayIcon />}
-        </button>
-        <div className="transport-bpmbox">
-          <button className="transport-bpm" onClick={() => togglePanel('ritmo')} aria-label="Abrir painel de ritmo">
-            <span className="transport-bpm-value"><strong>{s.bpm}</strong> bpm</span>
-            <span>{rhythm ? rhythm.name : 'só o pulso'}</span>
-          </button>
-          <button className="transport-step" onClick={() => dispatch({ type: 'bpmBy', delta: 1 })} aria-label="Aumentar 1 bpm"><PlusIcon /></button>
-          <button className="transport-step" onClick={() => dispatch({ type: 'bpmBy', delta: -1 })} aria-label="Diminuir 1 bpm"><MinusIcon /></button>
+      {/* barra de transporte: fica no rodapé, ao alcance do polegar — durante a
+          edição da cifra vira só os botões de cancelar/salvar */}
+      {editingRaw ? (
+        <div className="transport transport-editing">
+          <button className="btn wide ghost" onClick={() => setEditingRaw(false)}>cancelar</button>
+          <button className="btn wide primary" onClick={saveEditingRaw}>salvar</button>
         </div>
-        <div className="transport-steps">
-          {rhythm && <RhythmGrid rhythm={rhythm} activeStep={metronome.step} />}
-        </div>
-        <div className="transport-actions">
-          <button className={`transport-icon${panel === 'gravar' ? ' on' : ''}`} onClick={() => togglePanel('gravar')} aria-label="Gravar prática">
-            <span className="record-dot" />
-          </button>
+      ) : (
+        <div className="transport">
           <button
-            className={`transport-icon${loop.active ? ' on' : ''}`}
-            onClick={loop.toggle}
-            aria-label={loop.active ? 'Desativar loop do trecho' : 'Ativar loop do trecho selecionado na cifra'}
-            title={loop.active ? 'Loop ativo — toque para desativar' : 'Selecione um trecho da letra e toque para repeti-lo em loop'}
+            className={`transport-play${metronome.running ? ' on' : ''}${countIn !== null ? ' counting' : ''}`}
+            onClick={play}
+            aria-label={metronome.running ? 'Parar metrônomo' : countIn !== null ? 'Cancelar contagem' : 'Iniciar metrônomo'}
           >
-            <ArrowPathIcon />
+            {countIn !== null ? countIn : metronome.running ? <StopIcon /> : <PlayIcon />}
           </button>
-          <button className={`transport-icon${panel === 'notas' ? ' on' : ''}`} onClick={() => togglePanel('notas')} aria-label="Notas">
-            <PencilSquareIcon />
-          </button>
-          <button
-            className={`transport-icon${s.scrollSpeed > 0 ? ' on' : ''}`}
-            onClick={toggleScroll}
-            aria-label="Rolagem automática"
-          >
-            {s.scrollSpeed > 0 ? <PauseIcon /> : <ArrowDownIcon />}
-          </button>
+          <div className="transport-bpmbox">
+            <button className="transport-bpm" onClick={() => togglePanel('ritmo')} aria-label="Abrir painel de ritmo">
+              <span className="transport-bpm-value"><strong>{s.bpm}</strong> bpm</span>
+              <span>{rhythm ? rhythm.name : 'só o pulso'}</span>
+            </button>
+            <button className="transport-step" onClick={() => dispatch({ type: 'bpmBy', delta: 1 })} aria-label="Aumentar 1 bpm"><PlusIcon /></button>
+            <button className="transport-step" onClick={() => dispatch({ type: 'bpmBy', delta: -1 })} aria-label="Diminuir 1 bpm"><MinusIcon /></button>
+          </div>
+          <div className="transport-steps">
+            {rhythm && <RhythmGrid rhythm={rhythm} activeStep={metronome.step} />}
+          </div>
+          <div className="transport-actions">
+            <button className={`transport-icon${panel === 'gravar' ? ' on' : ''}`} onClick={() => togglePanel('gravar')} aria-label="Gravar prática">
+              <span className="record-dot" />
+            </button>
+            <button
+              className={`transport-icon${loop.active ? ' on' : ''}`}
+              onClick={loop.toggle}
+              aria-label={loop.active ? 'Desativar loop do trecho' : 'Ativar loop do trecho selecionado na cifra'}
+              title={loop.active ? 'Loop ativo — toque para desativar' : 'Selecione um trecho da letra e toque para repeti-lo em loop'}
+            >
+              <ArrowPathIcon />
+            </button>
+            <button className={`transport-icon${panel === 'notas' ? ' on' : ''}`} onClick={() => togglePanel('notas')} aria-label="Notas">
+              <PencilSquareIcon />
+            </button>
+            <button
+              className={`transport-icon${s.scrollSpeed > 0 ? ' on' : ''}`}
+              onClick={toggleScroll}
+              aria-label="Rolagem automática"
+            >
+              {s.scrollSpeed > 0 ? <PauseIcon /> : <ArrowDownIcon />}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {tunerOpen && <Tuner onClose={() => setTunerOpen(false)} tuning={tuning} />}
     </div>

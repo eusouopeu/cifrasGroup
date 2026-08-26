@@ -4,22 +4,22 @@
  * painel arriscar os outros.
  */
 import { useState } from 'react'
-import { ArrowPathIcon, ArrowRightIcon, MinusIcon, MusicalNoteIcon, PlusIcon, SpeakerWaveIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { ArrowPathIcon, ArrowRightIcon, MinusIcon, MusicalNoteIcon, PlusIcon, SpeakerWaveIcon } from '@heroicons/react/24/outline'
 import { PlayIcon, StopIcon } from '@heroicons/react/24/solid'
 import type { CifraView } from '../../cifra/view'
 import { RHYTHMS, type Rhythm } from '../../data/rhythms'
 import { romanNumeral } from '../../theory/functional'
 import { nameOf } from '../../theory/notes'
 import { PALETTES, applyPalette } from '../../theory/palettes'
-import { TUNINGS, tuningById, type Tuning } from '../../theory/tunings'
+import { tuningById, type Tuning } from '../../theory/tunings'
 import type { Song, SongSettings } from '../../store/db'
-import { CAPO_MAX, FONT_MAX, FONT_MIN, SCROLL_MAX } from '../../store/songActions'
+import { CAPO_MAX, SCROLL_MAX } from '../../store/songActions'
 import type { UseMetronome } from '../../audio/useMetronome'
 import { ChordCard } from '../ChordDiagram'
 import { RhythmCard } from '../RhythmView'
 import { Recorder } from '../Recorder'
-import { LevelButton, Panel, TagEditor } from './parts'
-import { TuningBuilder } from './TuningBuilder'
+import { TuningPicker } from '../TuningPicker'
+import { LevelButton, Panel, SizePicker, TagEditor } from './parts'
 import type { SongDispatch } from './hooks'
 
 type KeyTab = 'tom' | 'analise'
@@ -298,7 +298,7 @@ export function RhythmPanel({ s, rhythm, dispatch, metronome, onPlay }: {
   )
 }
 
-export function ChordsPanel({ s, view, dispatch, customTunings, onSaveCustomTuning, onDeleteCustomTuning, overriddenSymbols, onInspect, onOpenTuner }: {
+export function ChordsPanel({ s, view, dispatch, customTunings, onSaveCustomTuning, onDeleteCustomTuning, overriddenSymbols, onInspect, onOpenTuner, onRestoreAllOverrides }: {
   s: SongSettings
   view: CifraView
   dispatch: SongDispatch
@@ -308,8 +308,8 @@ export function ChordsPanel({ s, view, dispatch, customTunings, onSaveCustomTuni
   overriddenSymbols: Set<string>
   onInspect: (symbol: string) => void
   onOpenTuner: () => void
+  onRestoreAllOverrides: () => void
 }) {
-  const [builderOpen, setBuilderOpen] = useState(false)
   return (
     <Panel title="Construção dos acordes">
       <div className="row">
@@ -320,65 +320,17 @@ export function ChordsPanel({ s, view, dispatch, customTunings, onSaveCustomTuni
         {s.capo > 0 && <span className="hint small">Diagramas relativos ao capotraste na {s.capo}ª casa.</span>}
       </div>
       {s.instrument === 'guitar' && (
-        <>
-          <span className="fieldlabel">Afinação</span>
-          <div className="row tight tuningrow">
-            <select className="tuningselect" aria-label="Afinação" value={s.tuning} onChange={(e) => dispatch({ type: 'setTuning', id: e.target.value })}>
-              <optgroup label="Violão">
-                {TUNINGS.filter((t) => t.family !== 'viola').map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </optgroup>
-              <optgroup label="Viola caipira">
-                {TUNINGS.filter((t) => t.family === 'viola').map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </optgroup>
-              {customTunings.length > 0 && (
-                <optgroup label="Suas afinações">
-                  {customTunings.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-                </optgroup>
-              )}
-            </select>
-            <button className="icon" onClick={onOpenTuner} aria-label="Afinar o violão nesta afinação" title="Afinar o violão nesta afinação">
-              <MusicalNoteIcon />
-            </button>
-            <button
-              className={`icon${builderOpen ? ' active' : ''}`}
-              onClick={() => setBuilderOpen((v) => !v)}
-              aria-label={builderOpen ? 'Fechar criador de afinação' : 'Criar afinação personalizada'}
-              title="Criar afinação personalizada"
-            >
-              <PlusIcon />
-            </button>
-          </div>
-          {builderOpen && (
-            <TuningBuilder
-              allTunings={[...TUNINGS, ...customTunings]}
-              onSave={(t) => {
-                onSaveCustomTuning(t)
-                dispatch({ type: 'setTuning', id: t.id })
-                setBuilderOpen(false)
-              }}
-            />
-          )}
-          {customTunings.length > 0 && (
-            <div className="customtunings">
-              <h4>Suas afinações</h4>
-              {customTunings.map((t) => (
-                <div key={t.id} className="customtuning-row">
-                  <span className="mono">{t.name}</span>
-                  <button
-                    className="icon small danger"
-                    aria-label={`Apagar afinação ${t.name}`}
-                    onClick={() => {
-                      onDeleteCustomTuning(t.id)
-                      if (s.tuning === t.id) dispatch({ type: 'setTuning', id: 'standard' })
-                    }}
-                  >
-                    <TrashIcon />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
+        <TuningPicker
+          value={s.tuning}
+          onChange={(id) => dispatch({ type: 'setTuning', id })}
+          customTunings={customTunings}
+          onSaveCustomTuning={onSaveCustomTuning}
+          onDeleteCustomTuning={(id) => {
+            onDeleteCustomTuning(id)
+            if (s.tuning === id) dispatch({ type: 'setTuning', id: 'standard' })
+          }}
+          onOpenTuner={onOpenTuner}
+        />
       )}
       <div className="chordgrid">
         {view.displayedChords.map((c) => (
@@ -399,6 +351,11 @@ export function ChordsPanel({ s, view, dispatch, customTunings, onSaveCustomTuni
         ))}
       </div>
       <p className="hint small">Toque em um acorde para ver todas as digitações e a construção nota a nota. <span className="overridden-dot inline" /> marca acordes trocados manualmente.</p>
+      {overriddenSymbols.size > 0 && (
+        <button className="btn ghost wide" onClick={onRestoreAllOverrides}>
+          restaurar todos os acordes trocados manualmente ({Object.keys(s.overrides).length})
+        </button>
+      )}
     </Panel>
   )
 }
@@ -408,15 +365,7 @@ export function DisplayPanel({ s, dispatch }: { s: SongSettings; dispatch: SongD
     <Panel title="Configurações">
       <div className="panel-section">
         <h4>Tamanho do texto</h4>
-        <div className="row tight">
-          <input
-            type="number" min={FONT_MIN} max={FONT_MAX} className="numinput small"
-            aria-label="Tamanho do texto em pixels"
-            value={s.fontSize}
-            onChange={(e) => dispatch({ type: 'setFontSize', value: Number(e.target.value) })}
-          />
-          <span className="hint small">px</span>
-        </div>
+        <SizePicker value={s.fontSize} onChange={(px) => dispatch({ type: 'setFontSize', value: px })} />
       </div>
 
       <div className="panel-section">
@@ -442,13 +391,29 @@ export function DisplayPanel({ s, dispatch }: { s: SongSettings; dispatch: SongD
   )
 }
 
+function formatPracticeTime(ms: number): string {
+  const min = Math.round(ms / 60000)
+  if (min < 60) return `${min} min`
+  const h = Math.floor(min / 60)
+  const rest = min % 60
+  return rest === 0 ? `${h}h` : `${h}h${String(rest).padStart(2, '0')}`
+}
+
 export function NotesPanel({ song, onNotesChange, onTagsChange }: {
   song: Song
   onNotesChange: (notes: string) => void
   onTagsChange: (tags: string[]) => void
 }) {
+  const { practice } = song
   return (
     <Panel title="Notas e tags">
+      {practice.count > 0 && (
+        <p className="hint small">
+          Praticada <strong>{practice.count}</strong> {practice.count === 1 ? 'vez' : 'vezes'}
+          {' '}(<strong>{formatPracticeTime(practice.totalMs)}</strong> com o metrônomo ligado)
+          {practice.lastPlayedAt && <>, última vez em {new Date(practice.lastPlayedAt).toLocaleDateString('pt-BR')}</>}.
+        </p>
+      )}
       <h4>Notas</h4>
       <label className="field wide">
         <textarea
@@ -461,38 +426,6 @@ export function NotesPanel({ song, onNotesChange, onTagsChange }: {
       </label>
       <h4>Tags</h4>
       <TagEditor tags={song.tags} onChange={onTagsChange} />
-    </Panel>
-  )
-}
-
-/**
- * Edição do texto da cifra. Trabalha sobre uma cópia local e só grava ao
- * confirmar: salvar a cada tecla reparsearia a música inteira (e recalcularia
- * dificuldade e ranking de tons) a cada letra digitada.
- */
-export function LyricsPanel({ raw, onSave }: { raw: string; onSave: (raw: string) => void }) {
-  const [text, setText] = useState(raw)
-  const dirty = text !== raw
-  return (
-    <Panel title="Editar cifra">
-      <p className="hint small">
-        Texto original da música: acordes, letra, marcações de seção entre colchetes e tablaturas.
-        Tom, simplificação, paleta e trocas manuais continuam sendo aplicados por cima do que estiver aqui.
-      </p>
-      <label className="field wide">
-        <textarea
-          className="mono rawedit"
-          rows={16}
-          aria-label="Texto da cifra"
-          value={text}
-          spellCheck={false}
-          onChange={(e) => setText(e.target.value)}
-        />
-      </label>
-      <div className="row tight">
-        <button className="btn primary" disabled={!dirty} onClick={() => onSave(text)}>salvar cifra</button>
-        <button className="btn ghost" disabled={!dirty} onClick={() => setText(raw)}>descartar mudanças</button>
-      </div>
     </Panel>
   )
 }

@@ -1,6 +1,21 @@
 /** Peças pequenas e sem lógica da tela da música. */
 import { useRef, useState } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
+import { FONT_SIZES, fontSizeLabelFor, type FontSizeLabel } from '../../store/songActions'
+
+/** Tamanho do texto em quatro passos (P/M/G/GG) em vez de um valor livre em px. */
+export function SizePicker({ value, onChange }: { value: number; onChange: (px: number) => void }) {
+  const current = fontSizeLabelFor(value)
+  return (
+    <div className="toggle sizepicker">
+      {(Object.keys(FONT_SIZES) as FontSizeLabel[]).map((label) => (
+        <button key={label} className={current === label ? 'on' : ''} onClick={() => onChange(FONT_SIZES[label])} aria-pressed={current === label}>
+          {label}
+        </button>
+      ))}
+    </div>
+  )
+}
 
 export function ToolButton({ label, value, active, onClick, flash }: {
   label: string
