@@ -185,11 +185,21 @@ export function Recorder({ songId }: { songId: string }) {
       {status !== 'recording' && (
         <>
           <div className="toggle recmode">
-            <button className={mode === 'audio' ? 'on' : ''} onClick={() => setMode('audio')}>
-              <MicrophoneIcon /> áudio
+            <button
+              className={mode === 'audio' ? 'on' : ''}
+              onClick={() => setMode('audio')}
+              aria-label="Gravar áudio"
+              title="Gravar áudio"
+            >
+              <MicrophoneIcon />
             </button>
-            <button className={mode === 'video' ? 'on' : ''} onClick={() => setMode('video')}>
-              <VideoCameraIcon /> vídeo
+            <button
+              className={mode === 'video' ? 'on' : ''}
+              onClick={() => setMode('video')}
+              aria-label="Gravar vídeo"
+              title="Gravar vídeo"
+            >
+              <VideoCameraIcon />
             </button>
           </div>
 

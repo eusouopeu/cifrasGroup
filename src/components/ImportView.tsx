@@ -131,12 +131,6 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
       )}
 
       <div className="importhelp">
-        <strong>{nativeOk ? 'Ou copie e cole manualmente' : 'Como trazer do CifraClub'}</strong>
-        <ol>
-          <li>Abra a música no site ou no app.</li>
-          <li>Selecione a cifra inteira e copie (o texto já vem com os acordes alinhados).</li>
-          <li>Cole no campo abaixo. O app detecta acordes, tablaturas, seções, tom e capotraste sozinho.</li>
-        </ol>
         <p className="hint small">
           Também aceita ChordPro (<span className="mono">[C]colchetes na letra</span>) e arquivos <span className="mono">.txt</span>/<span className="mono">.cho</span>.
           A cifra fica só no seu aparelho.
@@ -144,24 +138,6 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
       </div>
 
       <div className="importform">
-        <label className="field wide">Título<input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Nome da música" /></label>
-        <label className="field wide">Artista<input value={artist} onChange={(e) => setArtist(e.target.value)} placeholder="Intérprete" /></label>
-        <label className="field wide">Link da fonte (opcional)<input value={source} onChange={(e) => setSource(e.target.value)} placeholder="https://..." /></label>
-        <label className="field wide">
-          Cifra
-          <textarea
-            value={raw}
-            rows={16}
-            spellCheck={false}
-            placeholder={'C           G\nletra da música aqui\n\nAm          F\ncontinua...'}
-            onChange={(e) => setRaw(e.target.value)}
-            onPaste={(e) => {
-              const text = e.clipboardData.getData('text')
-              if (text && !raw) setTimeout(() => guessMeta(text), 0)
-            }}
-            onBlur={() => { if (raw) guessMeta(raw) }}
-          />
-        </label>
         <label className="btn ghost">
           {fileName ? `arquivo: ${fileName}` : 'carregar arquivo .txt / .cho'}
           <input type="file" accept=".txt,.cho,.chopro,.crd,text/plain" hidden onChange={(e) => {
@@ -179,6 +155,24 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
             r.readAsText(f)
             e.target.value = ''
           }} />
+        </label>
+        <label className="field wide">Título<input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Nome da música" /></label>
+        <label className="field wide">Artista<input value={artist} onChange={(e) => setArtist(e.target.value)} placeholder="Intérprete" /></label>
+        <label className="field wide">Link da fonte (opcional)<input value={source} onChange={(e) => setSource(e.target.value)} placeholder="https://..." /></label>
+        <label className="field wide">
+          Cifra
+          <textarea
+            value={raw}
+            rows={16}
+            spellCheck={false}
+            placeholder={'C           G\nletra da música aqui\n\nAm          F\ncontinua...'}
+            onChange={(e) => setRaw(e.target.value)}
+            onPaste={(e) => {
+              const text = e.clipboardData.getData('text')
+              if (text && !raw) setTimeout(() => guessMeta(text), 0)
+            }}
+            onBlur={() => { if (raw) guessMeta(raw) }}
+          />
         </label>
       </div>
 

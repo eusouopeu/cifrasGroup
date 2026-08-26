@@ -428,7 +428,6 @@ function ListPicker({ db, onPick, onCreate, onClose }: {
           <h3>Salvar nesta lista</h3>
           <button className="icon" onClick={onClose}><XMarkIcon /></button>
         </div>
-        <p className="hint small">As configurações atuais (tom, capo, nível de simplificação, paleta, batida, rolagem e tamanho do texto) já ficam salvas com a música.</p>
         <div className="listpick">
           {db.lists.map((l) => (
             <button key={l.id} className="btn wide" onClick={() => onPick(l.id)}>{l.name} <span className="count">{l.songIds.length}</span></button>

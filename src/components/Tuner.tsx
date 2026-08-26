@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
-import { XMarkIcon } from '@heroicons/react/24/outline'
+import { ArrowPathIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { nameOf, SHARP_NAMES } from '../theory/notes'
 import { stringFrequencies, tuningById, type Tuning } from '../theory/tunings'
 import { pluckNote } from '../audio/pluck'
@@ -220,7 +220,6 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
           </button>
         ))}
       </div>
-      <p className="hint small center">Toque numa corda acima para ouvir a nota certa e afinar de ouvido.</p>
 
       {status === 'unsupported' && <p className="hint danger">Este navegador não dá acesso ao microfone.</p>}
       {status === 'denied' && (
@@ -228,7 +227,9 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
           <p className="hint danger">Não consegui acessar o microfone. É preciso permitir o acesso nas configurações.</p>
           <div className="row tight">
             <button className="btn" onClick={() => setPermHelpOpen(true)}>como permitir o microfone</button>
-            <button className="btn ghost" onClick={() => setAttempt((n) => n + 1)}>tentar de novo</button>
+            <button className="icon" onClick={() => setAttempt((n) => n + 1)} aria-label="Tentar de novo" title="Tentar de novo">
+              <ArrowPathIcon />
+            </button>
           </div>
         </div>
       )}
@@ -241,7 +242,7 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
           <p className="hint">Toque uma corda ou nota isolada, num ambiente silencioso.</p>
         )
       )}
-      <p className="hint small">Referência: A4 = 440 Hz. Cromático — funciona pra qualquer instrumento, não só violão.</p>
+      <p className="hint small">Referência: A4 = 440 Hz.</p>
     </>
   )
 

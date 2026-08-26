@@ -414,12 +414,12 @@ export function SongView({
           {countIn !== null ? countIn : metronome.running ? <StopIcon /> : <PlayIcon />}
         </button>
         <div className="transport-bpmbox">
-          <button className="transport-step" onClick={() => dispatch({ type: 'bpmBy', delta: -1 })} aria-label="Diminuir 1 bpm"><MinusIcon /></button>
           <button className="transport-bpm" onClick={() => togglePanel('ritmo')} aria-label="Abrir painel de ritmo">
             <span className="transport-bpm-value"><strong>{s.bpm}</strong> bpm</span>
             <span>{rhythm ? rhythm.name : 'só o pulso'}</span>
           </button>
           <button className="transport-step" onClick={() => dispatch({ type: 'bpmBy', delta: 1 })} aria-label="Aumentar 1 bpm"><PlusIcon /></button>
+          <button className="transport-step" onClick={() => dispatch({ type: 'bpmBy', delta: -1 })} aria-label="Diminuir 1 bpm"><MinusIcon /></button>
         </div>
         <div className="transport-steps">
           {rhythm && <RhythmGrid rhythm={rhythm} activeStep={metronome.step} />}

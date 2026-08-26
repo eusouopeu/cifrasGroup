@@ -12,8 +12,8 @@
  * das duas não fecha a ficha — dá pra comparar mais de uma antes de decidir.
  */
 import { useState } from 'react'
-import { ArrowUturnLeftIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { chordQualityName, chordSpelling, parseChord } from '../../theory/chord'
+import { ArrowUturnLeftIcon, ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { chordSpelling, parseChord } from '../../theory/chord'
 import { nameOf } from '../../theory/notes'
 import { simplifyChord } from '../../theory/simplify'
 import type { Tuning } from '../../theory/tunings'
@@ -57,20 +57,14 @@ export function ChordSheet({ symbol, instrument, threshold, tuning, isOverridden
         <button className="icon" onClick={onClose} aria-label="Fechar ficha do acorde"><XMarkIcon /></button>
       </div>
       {chord && (
-        <>
-          <p className="hint">
-            Fundamental <strong>{nameOf(chord.rootPc)}</strong> · {chordQualityName(chord)}
-            {chord.bassPc !== null && chord.bassPc !== chord.rootPc && <> · baixo em <strong>{nameOf(chord.bassPc)}</strong></>}
-          </p>
-          <div className="spelling">
-            {spelling.map((n) => (
-              <span key={n.interval} className="degree">
-                <b>{n.note}</b>
-                <i>{n.label}</i>
-              </span>
-            ))}
-          </div>
-        </>
+        <div className="spelling">
+          {spelling.map((n) => (
+            <span key={n.interval} className="degree">
+              <b>{n.note}</b>
+              <i>{n.label}</i>
+            </span>
+          ))}
+        </div>
       )}
 
       {instrument === 'piano' ? (
@@ -174,13 +168,6 @@ function VoicingCarousel({ symbol, voicings, tuning, preferredFingerprint, onPre
         <span className="voicing-meta">
           {v.barre !== null ? `pestana na ${v.barre}ª casa` : 'sem pestana'} · {v.open} solta{v.open === 1 ? '' : 's'} · {v.muted} muda{v.muted === 1 ? '' : 's'}
         </span>
-        <span className="voicing-prefer-hint">
-          {isPreferred ? (
-            <><CheckIcon /> usada na faixa de acordes</>
-          ) : (
-            'toque na digitação para usá-la na faixa de acordes'
-          )}
-        </span>
       </div>
       <button
         className="icon"
@@ -235,9 +222,6 @@ function ManualPicker({ current, isOverridden, onPick, onReset }: {
 
   return (
     <div className="manual">
-      <p className="hint small">
-        Variantes de <span className="mono">{nameOf(root)}</span> — em verde as que mantêm maior/menor como no original, em vermelho as que trocam.
-      </p>
       <div className="suffixrow">
         {sameNature.map((sym) => (
           <button key={sym} className="suffixbtn mono" onClick={() => onPick(sym)}>{sym}</button>

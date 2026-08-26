@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { FunnelIcon, PlusIcon } from '@heroicons/react/24/outline'
+import { FunnelIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import type { DB } from '../store/db'
 import type { Difficulty } from '../cifra/meta'
 import { rhythmById } from '../data/rhythms'
@@ -100,7 +100,9 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
               </select>
             </label>
             {hasActiveFilters && (
-              <button className="btn ghost small" onClick={clearFilters}>limpar filtros</button>
+              <button className="icon small" onClick={clearFilters} aria-label="Limpar filtros" title="Limpar filtros">
+                <XMarkIcon />
+              </button>
             )}
           </div>
 

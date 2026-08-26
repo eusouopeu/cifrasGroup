@@ -4,7 +4,7 @@
  * painel arriscar os outros.
  */
 import { useState } from 'react'
-import { ArrowPathIcon, ArrowRightIcon, MinusIcon, MusicalNoteIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { ArrowPathIcon, ArrowRightIcon, MinusIcon, MusicalNoteIcon, PlusIcon, SpeakerWaveIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { PlayIcon, StopIcon } from '@heroicons/react/24/solid'
 import type { CifraView } from '../../cifra/view'
 import { RHYTHMS, type Rhythm } from '../../data/rhythms'
@@ -248,12 +248,15 @@ export function RhythmPanel({ s, rhythm, dispatch, metronome, onPlay }: {
             </button>
           )}
         </div>
-        {!rhythm && s.playPattern && (
-          <p className="hint small center">Escolha uma batida abaixo para o metrônomo tocar os golpes, não só o pulso.</p>
-        )}
         <div className="row tight center">
-          <button className={`chip${s.playClick ? ' on' : ''}`} aria-pressed={s.playClick} onClick={() => dispatch({ type: 'toggleClick' })}>
-            metrônomo
+          <button
+            className={`icon${s.playClick ? ' active' : ''}`}
+            aria-pressed={s.playClick}
+            aria-label="Metrônomo (clique audível)"
+            title="Metrônomo (clique audível)"
+            onClick={() => dispatch({ type: 'toggleClick' })}
+          >
+            <SpeakerWaveIcon />
           </button>
           <button
             className={`icon round-play${metronome.running ? ' on' : ''}`}
@@ -263,8 +266,14 @@ export function RhythmPanel({ s, rhythm, dispatch, metronome, onPlay }: {
           >
             {metronome.running ? <StopIcon /> : <PlayIcon />}
           </button>
-          <button className={`chip${s.playPattern ? ' on' : ''}`} aria-pressed={s.playPattern} onClick={() => dispatch({ type: 'togglePattern' })}>
-            batida
+          <button
+            className={`icon${s.playPattern ? ' active' : ''}`}
+            aria-pressed={s.playPattern}
+            aria-label="Tocar a batida, não só o pulso"
+            title="Tocar a batida, não só o pulso"
+            onClick={() => dispatch({ type: 'togglePattern' })}
+          >
+            <MusicalNoteIcon />
           </button>
         </div>
       </div>

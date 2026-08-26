@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
+import { ChevronDownIcon, ChevronRightIcon, PlusIcon } from '@heroicons/react/24/outline'
 import type { DB, SongList } from '../store/db'
 import { SongCard } from './SongCard'
 
@@ -35,7 +35,15 @@ export function ListsView({ db, onOpen, onCreateList, onDeleteList, onRemoveFrom
 
       <div className="newlist">
         <input aria-label="Nome da nova lista" placeholder="Nova lista (ex.: Roda de violão)" value={newList} onChange={(e) => setNewList(e.target.value)} />
-        <button className="btn" disabled={!newList.trim()} onClick={() => { onCreateList(newList.trim()); setNewList('') }}>criar</button>
+        <button
+          className="icon"
+          disabled={!newList.trim()}
+          onClick={() => { onCreateList(newList.trim()); setNewList('') }}
+          aria-label="Criar lista"
+          title="Criar lista"
+        >
+          <PlusIcon />
+        </button>
       </div>
     </div>
   )
@@ -62,7 +70,7 @@ function ListSection({ list, db, onOpen, onDeleteList, onRemoveFromList, onDupli
       </div>
       {open && (
         songs.length === 0
-          ? <p className="hint small">Lista vazia. Abra uma música e use ＋ para salvá-la aqui com as configurações atuais.</p>
+          ? null
           : <>
               {songs.length > 1 && <p className="hint small">A ordem aqui é a ordem do repertório: use as setas para reorganizar e abra qualquer música para navegar pelas outras da lista sem voltar aqui.</p>}
               <div className="songgrid">
