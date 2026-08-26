@@ -416,8 +416,6 @@ export function NotesPanel({ song, onNotesChange, onTagsChange }: {
 }) {
   return (
     <Panel title="Notas e tags">
-      <h4>Tags</h4>
-      <TagEditor tags={song.tags} onChange={onTagsChange} />
       <h4>Notas</h4>
       <label className="field wide">
         <textarea
@@ -428,6 +426,8 @@ export function NotesPanel({ song, onNotesChange, onTagsChange }: {
           onChange={(e) => onNotesChange(e.target.value)}
         />
       </label>
+      <h4>Tags</h4>
+      <TagEditor tags={song.tags} onChange={onTagsChange} />
     </Panel>
   )
 }

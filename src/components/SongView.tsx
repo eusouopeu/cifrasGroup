@@ -4,7 +4,6 @@ import {
   ArrowPathIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  Cog6ToothIcon,
   DocumentTextIcon,
   EllipsisHorizontalIcon,
   MinusIcon,
@@ -40,7 +39,7 @@ import {
   RhythmPanel,
   SimplifyPanel,
 } from './song/panels'
-import { useAutoScroll, useCountIn, useFullscreen, useSectionLoop, useSongSettings, useSongShortcuts } from './song/hooks'
+import { useAutoScroll, useCountIn, useSectionLoop, useSongSettings, useSongShortcuts } from './song/hooks'
 
 type Panel = null | 'tom' | 'simplificar' | 'cor' | 'ritmo' | 'acordes' | 'texto' | 'notas' | 'gravar' | 'letra'
 
@@ -92,8 +91,6 @@ export function SongView({
   useEffect(() => { setManualAnalysisKey(null); setStripOpen(false); setStripFocus(null) }, [song.id])
 
   const scrollRef = useRef<HTMLDivElement>(null)
-  const rootRef = useRef<HTMLDivElement>(null)
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null)
   const showToast = useToast()
 
   const dispatch = useSongSettings(s, onChange, () => {
@@ -114,12 +111,11 @@ export function SongView({
   const rhythm = rhythmById(s.rhythmId)
   const metronome = useMetronome(rhythm, s.bpm, s.playPattern, s.playClick)
   const { countIn, play } = useCountIn(s.bpm, metronome)
-  const { fullscreen, toggle: toggleFullscreen } = useFullscreen(rootRef)
   const loop = useSectionLoop(scrollRef, showToast)
   useAutoScroll(scrollRef, s.scrollSpeed)
   useSongShortcuts(play, dispatch)
   // tocando, ninguém encosta no celular por minutos — sem isso a tela apaga
-  useWakeLock(fullscreen || s.scrollSpeed > 0 || metronome.running)
+  useWakeLock(s.scrollSpeed > 0 || metronome.running)
 
   // o botão do rodapé abre/fecha o controle de rolagem; pausar sem fechar é o
   // play/pause de dentro do próprio controle
@@ -174,16 +170,8 @@ export function SongView({
     setStripOpen(true)
   }
 
-  const goToSibling = (dir: 'prev' | 'next') => {
-    if (!siblings || !onNavigate) return
-    const i = dir === 'prev' ? siblings.index - 1 : siblings.index + 1
-    if (i < 0 || i >= siblings.ids.length) return
-    onNavigate(siblings.ids[i])
-  }
-  const liveNav = fullscreen && !!siblings && !!onNavigate
-
   return (
-    <div className="songview" ref={rootRef}>
+    <div className="songview">
       <header className="songhead">
         <button className="icon" onClick={onBack} aria-label="Voltar"><ArrowLeftIcon /></button>
         {editingTitle ? (
@@ -199,6 +187,14 @@ export function SongView({
           </button>
         )}
         <button className="icon" onClick={() => setMenuOpen(true)} aria-label="Mais opções"><EllipsisHorizontalIcon /></button>
+        <button
+          className={`icon${panel === 'letra' ? ' active' : ''}`}
+          onClick={() => togglePanel('letra')}
+          aria-label="Editar texto da cifra"
+          title="Editar o texto da cifra (letra e acordes)"
+        >
+          <DocumentTextIcon />
+        </button>
         <button className="icon" onClick={onSaveToList} aria-label="Salvar em lista"><PlusIcon /></button>
       </header>
 
@@ -210,8 +206,8 @@ export function SongView({
               <button className="icon" onClick={() => setMenuOpen(false)} aria-label="Fechar"><XMarkIcon /></button>
             </div>
             <div className="listpick">
-              <button className="btn wide" onClick={() => { toggleFullscreen(); setMenuOpen(false) }}>
-                {fullscreen ? 'sair do modo apresentação' : 'modo apresentação (tela cheia)'}
+              <button className="btn wide" onClick={() => { setPanel('texto'); setMenuOpen(false) }}>
+                configurações de exibição (fonte, rolagem, tablatura)
               </button>
               <button className="btn wide" onClick={() => { void shareOrDownload(); setMenuOpen(false) }}>
                 {typeof navigator.share === 'function' ? 'compartilhar cifra (.txt)' : 'baixar cifra (.txt)'}
@@ -246,12 +242,13 @@ export function SongView({
           tuning={tuning}
           focus={stripFocus}
           overridden={overriddenSymbols}
+          preferredVoicings={s.preferredVoicings}
           onSelect={(symbol) => { setStripFocus(symbol); setInspect(symbol) }}
           onClose={() => { setStripOpen(false); setStripFocus(null) }}
         />
       )}
 
-      {panel && (
+      {panel && panel !== 'notas' && (
         <div className="sheet-backdrop panel-backdrop" onClick={() => setPanel(null)}>
           <div className="sheet panel-sheet" onClick={(e) => e.stopPropagation()}>
             <button className="icon panel-sheet-close" onClick={() => setPanel(null)} aria-label="Fechar painel"><XMarkIcon /></button>
@@ -282,7 +279,6 @@ export function SongView({
               />
             )}
             {panel === 'texto' && <DisplayPanel s={s} dispatch={dispatch} />}
-            {panel === 'notas' && <NotesPanel song={song} onNotesChange={onNotesChange} onTagsChange={onTagsChange} />}
             {panel === 'letra' && (
               <LyricsPanel
                 raw={song.raw}
@@ -290,6 +286,16 @@ export function SongView({
               />
             )}
             {panel === 'gravar' && <RecordPanel songId={song.id} />}
+          </div>
+        </div>
+      )}
+
+      {/* notas e tags: popup centralizado (não a folha do rodapé usada pelos outros painéis) */}
+      {panel === 'notas' && (
+        <div className="sheet-backdrop centered-backdrop" onClick={() => setPanel(null)}>
+          <div className="sheet centered-sheet" onClick={(e) => e.stopPropagation()}>
+            <button className="icon panel-sheet-close" onClick={() => setPanel(null)} aria-label="Fechar painel"><XMarkIcon /></button>
+            <NotesPanel song={song} onNotesChange={onNotesChange} onTagsChange={onTagsChange} />
           </div>
         </div>
       )}
@@ -319,29 +325,7 @@ export function SongView({
       )}
 
       <div className="cifra-area">
-        <div
-          className="cifra-scroll"
-          ref={scrollRef}
-          onTouchStart={(e) => {
-            if (liveNav) touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
-          }}
-          onTouchEnd={(e) => {
-            const start = touchStartRef.current
-            touchStartRef.current = null
-            if (!liveNav || !start) return
-            const dx = e.changedTouches[0].clientX - start.x
-            const dy = e.changedTouches[0].clientY - start.y
-            // só conta como troca de música se for majoritariamente horizontal —
-            // senão qualquer rolagem inclinada trocaria de música sem querer
-            if (Math.abs(dx) > 80 && Math.abs(dy) < 60) goToSibling(dx < 0 ? 'next' : 'prev')
-          }}
-        >
-          {liveNav && siblings!.index > 0 && (
-            <button className="edge-nav edge-nav-left" onClick={() => goToSibling('prev')} aria-label="Música anterior da lista"><ChevronLeftIcon /></button>
-          )}
-          {liveNav && siblings!.index < siblings!.ids.length - 1 && (
-            <button className="edge-nav edge-nav-right" onClick={() => goToSibling('next')} aria-label="Próxima música da lista"><ChevronRightIcon /></button>
-          )}
+        <div className="cifra-scroll" ref={scrollRef}>
           <CifraText
             parsed={view.parsed}
             map={mapSymbol}
@@ -358,21 +342,26 @@ export function SongView({
 
         {inspect && (
           <ChordSheet
+            key={inspect}
             symbol={inspect}
             instrument={s.instrument}
             threshold={s.threshold}
             tuning={tuning}
             isOverridden={overriddenSymbols.has(inspect)}
+            preferredFingerprint={s.preferredVoicings[inspect]}
             onPick={(newSym) => {
               const original = originalOf(inspect)
               if (original) dispatch({ type: 'overrideChord', original, symbol: newSym })
-              setInspect(null)
+              // fica aberto (não fecha) para dar pra comparar mais de uma opção;
+              // segue mostrando o acorde recém-escolhido, não mais o antigo
+              setInspect(newSym)
             }}
             onReset={() => {
               const original = originalOf(inspect)
               if (original) dispatch({ type: 'clearOverride', original })
               setInspect(null)
             }}
+            onPreferVoicing={(fingerprint) => dispatch({ type: 'setPreferredVoicing', symbol: inspect, fingerprint })}
             onClose={() => setInspect(null)}
           />
         )}
@@ -445,19 +434,8 @@ export function SongView({
           >
             <ArrowPathIcon />
           </button>
-          <button
-            className={`transport-icon${panel === 'letra' ? ' on' : ''}`}
-            onClick={() => togglePanel('letra')}
-            aria-label="Editar texto da cifra"
-            title="Editar o texto da cifra (letra e acordes)"
-          >
-            <DocumentTextIcon />
-          </button>
           <button className={`transport-icon${panel === 'notas' ? ' on' : ''}`} onClick={() => togglePanel('notas')} aria-label="Notas">
             <PencilSquareIcon />
-          </button>
-          <button className={`transport-icon${panel === 'texto' ? ' on' : ''}`} onClick={() => togglePanel('texto')} aria-label="Configurações">
-            <Cog6ToothIcon />
           </button>
           <button
             className={`transport-icon${s.scrollSpeed > 0 ? ' on' : ''}`}

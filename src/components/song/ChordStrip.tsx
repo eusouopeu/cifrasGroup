@@ -11,16 +11,21 @@
 import { useEffect, useRef } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import type { Tuning } from '../../theory/tunings'
-import { allVoicings } from '../../theory/voicings'
+import { allVoicings, voicingFingerprint } from '../../theory/voicings'
 import { GuitarDiagram, PianoDiagram } from '../ChordDiagram'
 
-export function ChordStrip({ chords, instrument, tuning, focus, overridden, onSelect, onClose }: {
+/** Digitações candidatas suficientes para achar a preferida escolhida na ficha do acorde. */
+const CANDIDATE_VOICINGS = 12
+
+export function ChordStrip({ chords, instrument, tuning, focus, overridden, preferredVoicings, onSelect, onClose }: {
   chords: { symbol: string; count: number }[]
   instrument: 'guitar' | 'piano'
   tuning: Tuning
   /** acorde tocado na letra: fica destacado e é trazido para a vista */
   focus: string | null
   overridden: Set<string>
+  /** símbolo -> impressão digital da digitação escolhida pelo usuário para esta música (store/db.ts) */
+  preferredVoicings: Record<string, string>
   onSelect: (symbol: string) => void
   onClose: () => void
 }) {
@@ -46,7 +51,7 @@ export function ChordStrip({ chords, instrument, tuning, focus, overridden, onSe
             aria-label={`Ver digitações de ${c.symbol}`}
           >
             <span className="chordstrip-name mono">{c.symbol}</span>
-            <StripDiagram symbol={c.symbol} instrument={instrument} tuning={tuning} />
+            <StripDiagram symbol={c.symbol} instrument={instrument} tuning={tuning} preferred={preferredVoicings[c.symbol]} />
           </button>
         ))}
       </div>
@@ -55,9 +60,17 @@ export function ChordStrip({ chords, instrument, tuning, focus, overridden, onSe
   )
 }
 
-function StripDiagram({ symbol, instrument, tuning }: { symbol: string; instrument: 'guitar' | 'piano'; tuning: Tuning }) {
+function StripDiagram({ symbol, instrument, tuning, preferred }: {
+  symbol: string
+  instrument: 'guitar' | 'piano'
+  tuning: Tuning
+  preferred?: string
+}) {
   if (instrument === 'piano') return <PianoDiagram symbol={symbol} size={0.55} />
-  const [easiest] = allVoicings(symbol, 1, tuning.strings)
-  if (!easiest) return <span className="chordstrip-none">sem digitação</span>
-  return <GuitarDiagram symbol={symbol} voicing={easiest} size={0.62} showDegrees={false} tuning={tuning} />
+  const voicings = allVoicings(symbol, preferred ? CANDIDATE_VOICINGS : 1, tuning.strings)
+  // se a digitação escolhida não existir mais nesta afinação/janela de busca,
+  // cai de volta para a mais fácil — nunca fica sem mostrar nada
+  const chosen = (preferred && voicings.find((v) => voicingFingerprint(v) === preferred)) || voicings[0]
+  if (!chosen) return <span className="chordstrip-none">sem digitação</span>
+  return <GuitarDiagram symbol={symbol} voicing={chosen} size={0.62} showDegrees={false} tuning={tuning} />
 }

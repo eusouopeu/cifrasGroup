@@ -12,15 +12,17 @@
  */
 
 import { exportDB, importDB, type DB } from './db'
-import { listRecordings, restoreRecordings, type Recording } from './recordings'
+import { listRecordings, restoreRecordings, type Recording, type RecordingKind } from './recordings'
 
 interface SerializedRecording {
   id: string
   createdAt: number
   durationMs: number
+  kind?: RecordingKind
   pinned?: boolean
+  layeredOver?: string[]
   mime: string
-  /** conteúdo do áudio em base64 */
+  /** conteúdo do áudio/vídeo em base64 */
   data: string
 }
 
@@ -67,8 +69,10 @@ export async function buildBackup(db: DB): Promise<string> {
         id: r.id,
         createdAt: r.createdAt,
         durationMs: r.durationMs,
+        kind: r.kind,
         pinned: r.pinned,
-        mime: r.blob.type || 'audio/webm',
+        layeredOver: r.layeredOver,
+        mime: r.blob.type || (r.kind === 'video' ? 'video/webm' : 'audio/webm'),
         data: await blobToBase64(r.blob),
       })),
     )
@@ -95,7 +99,9 @@ export function parseBackup(json: string): Backup | null {
         id: r.id,
         createdAt: r.createdAt,
         durationMs: r.durationMs,
+        kind: r.kind ?? 'audio',
         pinned: r.pinned,
+        layeredOver: r.layeredOver,
         blob: base64ToBlob(r.data, r.mime),
       }))
     }

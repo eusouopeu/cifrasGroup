@@ -7,18 +7,31 @@ import { pluckNote } from '../audio/pluck'
 
 const STANDARD_TUNING = tuningById('standard')
 
+/** abaixo disso, o pico de autocorrelação é fraco/ambíguo demais pra confiar */
+const CLARITY_THRESHOLD = 0.4
+/** quantas leituras recentes entram na mediana que amortece os saltos */
+const PITCH_HISTORY_SIZE = 6
+/** o quanto a leitura suavizada anda em direção à mediana a cada quadro (0..1) */
+const PITCH_SMOOTHING = 0.35
+
+interface PitchSample {
+  freq: number
+  /** o quão "limpo" é o pico de autocorrelação (0..~1) — baixo indica ruído ou erro de oitava */
+  clarity: number
+}
+
 /**
  * Detecção de altura por autocorrelação (ACF) com interpolação parabólica
- * para refinar o período estimado. Retorna -1 quando o sinal está fraco
+ * para refinar o período estimado. Retorna null quando o sinal está fraco
  * demais (silêncio) ou não tem periodicidade clara para não travar num
  * valor errado.
  */
-function autoCorrelate(buf: Float32Array, sampleRate: number): number {
+function autoCorrelate(buf: Float32Array, sampleRate: number): PitchSample | null {
   const SIZE = buf.length
   let rms = 0
   for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i]
   rms = Math.sqrt(rms / SIZE)
-  if (rms < 0.01) return -1
+  if (rms < 0.01) return null
 
   // corta o silêncio das pontas antes de correlacionar
   let start = 0
@@ -28,7 +41,7 @@ function autoCorrelate(buf: Float32Array, sampleRate: number): number {
   while (end > SIZE / 2 && Math.abs(buf[end]) < thresh) end--
   const trimmed = buf.slice(start, end)
   const n = trimmed.length
-  if (n < 8) return -1
+  if (n < 8) return null
 
   const c = new Float32Array(n)
   for (let lag = 0; lag < n; lag++) {
@@ -45,7 +58,7 @@ function autoCorrelate(buf: Float32Array, sampleRate: number): number {
   for (let i = d; i < n; i++) {
     if (c[i] > maxVal) { maxVal = c[i]; maxPos = i }
   }
-  if (maxPos <= 0) return -1
+  if (maxPos <= 0) return null
 
   // interpolação parabólica pra precisão sub-amostra
   const x1 = c[maxPos - 1] ?? c[maxPos]
@@ -54,8 +67,20 @@ function autoCorrelate(buf: Float32Array, sampleRate: number): number {
   const a = (x1 + x3 - 2 * x2) / 2
   const b = (x3 - x1) / 2
   const refined = a ? maxPos - b / (2 * a) : maxPos
+  if (refined <= 0) return null
 
-  return refined > 0 ? sampleRate / refined : -1
+  // clareza do pico em relação à energia total (lag 0) — um tom limpo e
+  // sustentado chega perto de 1; ruído ou o instante do ataque da corda
+  // (mais rico em harmônicos e menos periódico) fica bem abaixo disso
+  const clarity = c[0] > 0 ? maxVal / c[0] : 0
+
+  return { freq: sampleRate / refined, clarity }
+}
+
+function median(nums: number[]): number {
+  const sorted = [...nums].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
 }
 
 interface Reading {
@@ -90,6 +115,12 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
   const streamRef = useRef<MediaStream | null>(null)
   const audioCtxRef = useRef<AudioContext | null>(null)
   const rafRef = useRef(0)
+  // suaviza a leitura entre quadros: sem isso, ruído e erros de oitava da
+  // autocorrelação (comuns num sinal rico em harmônicos como o de uma corda
+  // dedilhada) faziam o ponteiro saltar mesmo numa nota sustentada e estável
+  const historyRef = useRef<number[]>([])
+  const smoothedRef = useRef<number | null>(null)
+  const lastAcceptedAtRef = useRef(0)
 
   useEffect(() => {
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -98,6 +129,9 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
     }
     let cancelled = false
     setStatus('starting')
+    historyRef.current = []
+    smoothedRef.current = null
+    lastAcceptedAtRef.current = 0
     void navigator.mediaDevices
       .getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
       .then((stream) => {
@@ -113,8 +147,33 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
         setStatus('listening')
         const tick = () => {
           analyser.getFloatTimeDomainData(buf)
-          const freq = autoCorrelate(buf, ctx.sampleRate)
-          if (freq > 60 && freq < 1500) setReading(freqToReading(freq))
+          const sample = autoCorrelate(buf, ctx.sampleRate)
+          if (sample && sample.freq > 60 && sample.freq < 1500 && sample.clarity >= CLARITY_THRESHOLD) {
+            let freq = sample.freq
+            const prevSmoothed = smoothedRef.current
+            const now = performance.now()
+            // uma pausa longa (troca de corda/nota) descarta o histórico —
+            // sem isso a suavização "puxa" a leitura nova pra trás por um instante
+            if (now - lastAcceptedAtRef.current > 400) {
+              historyRef.current = []
+              smoothedRef.current = null
+            }
+            lastAcceptedAtRef.current = now
+            if (prevSmoothed) {
+              // erro de oitava: a autocorrelação às vezes prende no dobro/metade
+              // do período real quando um harmônico é mais forte que a fundamental
+              const ratio = freq / prevSmoothed
+              if (ratio > 1.85 && ratio < 2.15) freq /= 2
+              else if (ratio > 0.46 && ratio < 0.54) freq *= 2
+            }
+            const hist = historyRef.current
+            hist.push(freq)
+            if (hist.length > PITCH_HISTORY_SIZE) hist.shift()
+            const med = median(hist)
+            const next = smoothedRef.current === null ? med : smoothedRef.current + (med - smoothedRef.current) * PITCH_SMOOTHING
+            smoothedRef.current = next
+            setReading(freqToReading(next))
+          }
           rafRef.current = requestAnimationFrame(tick)
         }
         tick()

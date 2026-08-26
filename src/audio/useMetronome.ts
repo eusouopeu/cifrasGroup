@@ -16,8 +16,13 @@ export function useMetronome(rhythm: Rhythm | null, bpm: number, playPattern: bo
   const ref = useRef<Metronome | null>(null)
 
   // O compasso sem batida escolhida ainda precisa de uma referência de pulso.
+  // Sem isso, com só 1 tempo de passos (steps.length === subdivision) o laço
+  // reinicia a cada tempo e todo clique cai no índice 0 — ou seja, o primeiro
+  // tempo de cada compasso nunca se distinguia dos outros quando nenhuma
+  // batida estava selecionada (o caso mais comum). 4 tempos (compasso 4/4
+  // "padrão") dão ao menos um ciclo de verdade pra acentuar o primeiro.
   const subdivision = rhythm?.subdivision ?? 4
-  const steps = rhythm ? rhythmSteps(rhythm) : Array.from({ length: 4 }, () => ({ kind: 'rest' as const }))
+  const steps = rhythm ? rhythmSteps(rhythm) : Array.from({ length: subdivision * 4 }, () => ({ kind: 'rest' as const }))
 
   // onStep é fixado na construção do Metronome; guardamos os valores mais
   // recentes em refs para decidir a vibração sem recriar o metrônomo.

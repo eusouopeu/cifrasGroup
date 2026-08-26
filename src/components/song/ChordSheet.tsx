@@ -5,34 +5,46 @@
  * enchia a tela de diagramas quase iguais e empurrava para baixo o que o usuário
  * abriu a ficha para fazer — trocar o acorde. Uma por vez também deixa cada
  * diagrama grande o bastante para ser lido a um braço de distância.
+ *
+ * "Versões mais fáceis" e "Trocar manualmente" vivem em abas da mesma pílula,
+ * não uma embaixo da outra: eram duas listas de botões empilhadas que
+ * sobrecarregavam a tela de uma vez só. Escolher uma opção em qualquer uma
+ * das duas não fecha a ficha — dá pra comparar mais de uma antes de decidir.
  */
 import { useState } from 'react'
-import { ArrowUturnLeftIcon, ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { ArrowUturnLeftIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { chordQualityName, chordSpelling, parseChord } from '../../theory/chord'
 import { nameOf } from '../../theory/notes'
 import { simplifyChord } from '../../theory/simplify'
 import type { Tuning } from '../../theory/tunings'
-import { allVoicings } from '../../theory/voicings'
+import { allVoicings, voicingFingerprint } from '../../theory/voicings'
 import { GuitarDiagram, PianoDiagram } from '../ChordDiagram'
 
 /** Quantas digitações o carrossel oferece — mais que isso vira repetição de formas quase iguais. */
 const MAX_VOICINGS = 12
 
-export function ChordSheet({ symbol, instrument, threshold, tuning, isOverridden, onPick, onReset, onClose }: {
+type Tab = 'facil' | 'manual'
+
+export function ChordSheet({ symbol, instrument, threshold, tuning, isOverridden, preferredFingerprint, onPick, onReset, onPreferVoicing, onClose }: {
   symbol: string
   instrument: 'guitar' | 'piano'
   threshold: number
   tuning: Tuning
   /** true quando este acorde já foi trocado à mão — só então faz sentido desfazer */
   isOverridden: boolean
+  /** impressão digital (voicingFingerprint) da digitação escolhida para a faixa de acordes desta música, se houver */
+  preferredFingerprint?: string
   onPick: (s: string) => void
   onReset: () => void
+  /** marca uma digitação como a que a faixa de acordes deve mostrar para este acorde, só nesta música */
+  onPreferVoicing: (fingerprint: string) => void
   onClose: () => void
 }) {
   const chord = parseChord(symbol)
   const voicings = allVoicings(symbol, MAX_VOICINGS, tuning.strings)
   const sub = simplifyChord(symbol, threshold)
   const spelling = chord ? chordSpelling(chord) : []
+  const [tab, setTab] = useState<Tab>(sub ? 'facil' : 'manual')
   // "construção mais simples" é redundante nesta seção — o card já mostra o
   // acorde mais simples por definição; o motivo só interessa quando é sobre
   // dificuldade no violão ou mudança do baixo
@@ -64,12 +76,23 @@ export function ChordSheet({ symbol, instrument, threshold, tuning, isOverridden
       {instrument === 'piano' ? (
         <div className="sheet-piano"><PianoDiagram symbol={symbol} size={1.4} /></div>
       ) : (
-        <VoicingCarousel key={`voicing-${symbol}`} symbol={symbol} voicings={voicings} tuning={tuning} />
+        <VoicingCarousel
+          key={`voicing-${symbol}`}
+          symbol={symbol}
+          voicings={voicings}
+          tuning={tuning}
+          preferredFingerprint={preferredFingerprint}
+          onPreferVoicing={onPreferVoicing}
+        />
       )}
 
-      {sub && (
-        <>
-          <h4>Versões mais fáceis</h4>
+      <div className="toggle chordsheet-tabs">
+        <button className={tab === 'facil' ? 'on' : ''} onClick={() => setTab('facil')}>Versões mais fáceis</button>
+        <button className={tab === 'manual' ? 'on' : ''} onClick={() => setTab('manual')}>Trocar manualmente</button>
+      </div>
+
+      {tab === 'facil' && (
+        sub ? (
           <div className="altlist">
             <button className="alt" onClick={() => onPick(sub.to)}>
               <span className="mono">{sub.to}</span>
@@ -96,21 +119,38 @@ export function ChordSheet({ symbol, instrument, threshold, tuning, isOverridden
               </button>
             ))}
           </div>
-        </>
+        ) : (
+          <p className="hint small">Nenhuma troca sugerida para este acorde neste limiar de semelhança.</p>
+        )
       )}
 
-      <h4>Trocar manualmente</h4>
-      <ManualPicker key={`manual-${symbol}`} current={symbol} isOverridden={isOverridden} onPick={onPick} onReset={onReset} />
+      {tab === 'manual' && (
+        <ManualPicker key={`manual-${symbol}`} current={symbol} isOverridden={isOverridden} onPick={onPick} onReset={onReset} />
+      )}
     </div>
   )
 }
 
-/** Digitações uma a uma, com setas — a ordem já é da mais fácil para a mais difícil. */
-function VoicingCarousel({ symbol, voicings, tuning }: { symbol: string; voicings: Voicings; tuning: Tuning }) {
-  const [idx, setIdx] = useState(0)
+/**
+ * Digitações uma a uma, com setas — a ordem já é da mais fácil para a mais
+ * difícil. Tocar na própria digitação a marca como a que a faixa de acordes
+ * deve mostrar para este acorde nesta música (não muda nada em outras músicas).
+ */
+function VoicingCarousel({ symbol, voicings, tuning, preferredFingerprint, onPreferVoicing }: {
+  symbol: string
+  voicings: Voicings
+  tuning: Tuning
+  preferredFingerprint?: string
+  onPreferVoicing: (fingerprint: string) => void
+}) {
+  const preferredIdx = preferredFingerprint ? voicings.findIndex((v) => voicingFingerprint(v) === preferredFingerprint) : -1
+  const [idx, setIdx] = useState(Math.max(0, preferredIdx))
   if (voicings.length === 0) return <p className="hint">Nenhuma digitação viável dentro das restrições de mão.</p>
   const safe = Math.min(idx, voicings.length - 1)
   const v = voicings[safe]
+  const fingerprint = voicingFingerprint(v)
+  const isPreferred = fingerprint === preferredFingerprint
+
   return (
     <div className="voicing-carousel">
       <button
@@ -123,9 +163,23 @@ function VoicingCarousel({ symbol, voicings, tuning }: { symbol: string; voicing
       </button>
       <div className="voicing-carousel-main">
         <span className="voicing-carousel-count">{safe + 1} de {voicings.length}</span>
-        <GuitarDiagram symbol={symbol} voicing={v} size={1.3} tuning={tuning} />
+        <button
+          className={`voicing-pick${isPreferred ? ' preferred' : ''}`}
+          onClick={() => onPreferVoicing(fingerprint)}
+          aria-label="Usar esta digitação na faixa de acordes desta música"
+          title="Usar esta digitação na faixa de acordes desta música"
+        >
+          <GuitarDiagram symbol={symbol} voicing={v} size={1.3} tuning={tuning} />
+        </button>
         <span className="voicing-meta">
           {v.barre !== null ? `pestana na ${v.barre}ª casa` : 'sem pestana'} · {v.open} solta{v.open === 1 ? '' : 's'} · {v.muted} muda{v.muted === 1 ? '' : 's'}
+        </span>
+        <span className="voicing-prefer-hint">
+          {isPreferred ? (
+            <><CheckIcon /> usada na faixa de acordes</>
+          ) : (
+            'toque na digitação para usá-la na faixa de acordes'
+          )}
         </span>
       </div>
       <button

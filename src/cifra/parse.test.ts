@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chordSequence, parseCifra, renderChordLine, uniqueChords } from './parse'
+import { chordSequence, isTabLikeLine, parseCifra, renderChordLine, uniqueChords } from './parse'
 
 describe('parseCifra — reconhecimento de linhas', () => {
   it('separa linha de acordes da linha de letra', () => {
@@ -100,5 +100,33 @@ describe('renderChordLine', () => {
     const out = renderChordLine(p.lines[0], (s) => (s === 'C' ? 'C7M(9)' : s))
     expect(out.startsWith('C7M(9)')).toBe(true)
     expect(out).not.toContain('C7M(9)G')
+  })
+})
+
+describe('isTabLikeLine', () => {
+  it('tablatura ASCII de verdade sempre conta como tablatura', () => {
+    const p = parseCifra('e|--0--2--\nB|--1--3--')
+    expect(isTabLikeLine(p.lines, 0)).toBe(true)
+  })
+
+  it('"parte 1 de 2" é tratado como tablatura mesmo sendo texto comum', () => {
+    const p = parseCifra('Parte 1 de 2\nc|--0--2--')
+    expect(p.lines[0].kind).toBe('lyrics')
+    expect(isTabLikeLine(p.lines, 0)).toBe(true)
+  })
+
+  it('acordes com letra logo abaixo não contam como tablatura', () => {
+    const p = parseCifra('C           G\numa letra qualquer')
+    expect(isTabLikeLine(p.lines, 0)).toBe(false)
+  })
+
+  it('acordes isolados (riff/lick, sem letra abaixo) contam como tablatura', () => {
+    const p = parseCifra('[Intro]\nC   G   Am   F\n\n[Verso]\nC\numa letra')
+    // a linha de acordes do Intro não tem letra logo abaixo (a próxima é branco)
+    const introChords = p.lines.findIndex((l) => l.kind === 'chords')
+    expect(isTabLikeLine(p.lines, introChords)).toBe(true)
+    // já a do Verso tem letra colada embaixo
+    const versoChords = p.lines.findIndex((l, i) => l.kind === 'chords' && i > introChords)
+    expect(isTabLikeLine(p.lines, versoChords)).toBe(false)
   })
 })

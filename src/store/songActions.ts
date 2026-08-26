@@ -39,6 +39,7 @@ export type SongAction =
   | { type: 'overrideChord'; original: string; symbol: string }
   | { type: 'clearOverride'; original: string }
   | { type: 'clearAllOverrides' }
+  | { type: 'setPreferredVoicing'; symbol: string; fingerprint: string }
 
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, Number.isFinite(n) ? n : min))
 
@@ -93,6 +94,8 @@ export function songSettingsPatch(s: SongSettings, action: SongAction): Partial<
     }
     case 'clearAllOverrides':
       return { overrides: {} }
+    case 'setPreferredVoicing':
+      return { preferredVoicings: { ...s.preferredVoicings, [action.symbol]: action.fingerprint } }
   }
 }
 

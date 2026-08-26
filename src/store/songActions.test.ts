@@ -43,6 +43,14 @@ describe('songSettingsPatch', () => {
     expect(songSettingsPatch(base({ capo: 2 }), { type: 'setKey', semitones: 1 })).toEqual({ transpose: 1, capo: 2 })
     expect(songSettingsPatch(base({ transpose: 4, capo: 2 }), { type: 'resetKey' })).toEqual({ transpose: 0, capo: 0 })
   })
+
+  it('a digitação preferida de um acorde não apaga a de outro, e é só desta música', () => {
+    const s = base({ preferredVoicings: { Em7: '0-2-2-0-0-0' } })
+    expect(songSettingsPatch(s, { type: 'setPreferredVoicing', symbol: 'C', fingerprint: '0-3-2-0-1-0' }))
+      .toEqual({ preferredVoicings: { Em7: '0-2-2-0-0-0', C: '0-3-2-0-1-0' } })
+    // o objeto original não pode ser mutado
+    expect(s.preferredVoicings).toEqual({ Em7: '0-2-2-0-0-0' })
+  })
 })
 
 describe('changesKeyManually', () => {

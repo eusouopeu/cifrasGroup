@@ -33,6 +33,13 @@ export interface SongSettings {
   instrument: 'guitar' | 'piano'
   /** id do catálogo em theory/tunings.ts */
   tuning: string
+  /**
+   * Digitação preferida por acorde, só para a faixa de acordes desta música —
+   * chave é o símbolo exibido, valor é a "impressão digital" da digitação
+   * (theory/voicings.ts#voicingFingerprint). Não afeta outras músicas nem o
+   * grid de "construção dos acordes".
+   */
+  preferredVoicings: Record<string, string>
 }
 
 export interface Song {
@@ -85,6 +92,7 @@ export const DEFAULT_SETTINGS: SongSettings = {
   hideTabs: true,
   instrument: 'guitar',
   tuning: 'standard',
+  preferredVoicings: {},
 }
 
 function emptyDB(): DB {

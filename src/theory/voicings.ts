@@ -212,6 +212,15 @@ export function allVoicings(symbol: string, max = 6, tuning: number[] = STANDARD
   return vs
 }
 
+/**
+ * Identidade estável de uma digitação (independente de ordem de busca), usada
+ * para lembrar "o usuário escolheu esta forma" mesmo que o resultado de
+ * allVoicings mude de posição entre chamadas.
+ */
+export function voicingFingerprint(v: Voicing): string {
+  return v.frets.map((f) => (f === null ? 'x' : f)).join('-')
+}
+
 /** Rótulos "T / 3 / 5 / b7" por corda, para exibir a construção no diagrama. */
 export function voicingDegrees(v: Voicing, rootPc: number, tuning: number[] = STANDARD_TUNING): (string | null)[] {
   const labels: Record<number, string> = {

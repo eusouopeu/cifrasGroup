@@ -149,6 +149,27 @@ export function parseCifra(raw: string, meta?: { title?: string; artist?: string
   return { title, artist, declaredKey, capo, lines }
 }
 
+const PART_LABEL_RE = /^\s*parte\s+\d+\s*(de|\/)\s*\d+\s*$/i
+
+/**
+ * Uma linha "conta como tablatura" para fins de esconder/mostrar quando:
+ *  - já é uma tablatura ASCII de fato (kind 'tab');
+ *  - é um texto "parte 1 de 2" (CifraClub costuma dividir tablaturas longas
+ *    assim — é cabeçalho de tablatura, não letra);
+ *  - é uma linha de acordes sem letra logo abaixo — um lick/riff isolado,
+ *    mais próximo de uma indicação de tablatura do que de algo pra cantar.
+ */
+export function isTabLikeLine(lines: CifraLine[], index: number): boolean {
+  const line = lines[index]
+  if (line.kind === 'tab') return true
+  if (PART_LABEL_RE.test(line.text)) return true
+  if (line.kind === 'chords') {
+    const next = lines[index + 1]
+    return !next || next.kind !== 'lyrics'
+  }
+  return false
+}
+
 /** Todos os símbolos de acorde na ordem em que aparecem (com repetições). */
 export function chordSequence(parsed: ParsedCifra): string[] {
   const out: string[] = []

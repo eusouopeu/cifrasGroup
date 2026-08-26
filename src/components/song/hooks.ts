@@ -5,7 +5,7 @@
  * Estavam todos dentro de SongView.tsx, misturados com o JSX de sete painéis.
  * Separados, cada um pode ser lido (e mudado) sem esbarrar nos outros.
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import type { SongSettings } from '../../store/db'
 import { changesKeyManually, songSettingsPatch, type SongAction } from '../../store/songActions'
@@ -155,21 +155,6 @@ export function useCountIn(bpm: number, metronome: UseMetronome): { countIn: num
   }
 
   return { countIn, play }
-}
-
-/** Modo apresentação: tela cheia no elemento da tela da música. */
-export function useFullscreen(rootRef: RefObject<HTMLElement | null>): { fullscreen: boolean; toggle: () => void } {
-  const [fullscreen, setFullscreen] = useState(false)
-  useEffect(() => {
-    const onChange = () => setFullscreen(document.fullscreenElement === rootRef.current)
-    document.addEventListener('fullscreenchange', onChange)
-    return () => document.removeEventListener('fullscreenchange', onChange)
-  }, [rootRef])
-  const toggle = useCallback(() => {
-    if (document.fullscreenElement) void document.exitFullscreen()
-    else if (rootRef.current?.requestFullscreen) void rootRef.current.requestFullscreen()
-  }, [rootRef])
-  return { fullscreen, toggle }
 }
 
 /** Atalhos de teclado: espaço toca/pausa, ←→ transpõem, ↑↓ ajustam a rolagem. */

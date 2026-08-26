@@ -211,6 +211,17 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .panel-sheet .panel { max-height: none; overflow: visible; border-bottom: none; padding: 0; }
 .panel-sheet .panel h3 { position: static; margin: 0 0 .5rem; padding: 0; background: none; }
 .panel-sheet-close { position: absolute; top: .3rem; right: .3rem; z-index: 1; }
+
+/* notas e tags: popup centralizado na tela, não a folha do rodapé dos outros painéis.
+   Selector composto (não só .centered-backdrop) pra vencer align-items: flex-end
+   de .sheet-backdrop não importa a ordem das regras no arquivo. */
+.sheet-backdrop.centered-backdrop { align-items: center; justify-content: center; padding: 1rem; }
+.centered-sheet {
+  position: relative; width: 100%; max-width: 480px; max-height: 82vh;
+  border-radius: 14px; margin: 0; padding-top: 2.2rem;
+}
+.centered-sheet .panel { max-height: none; overflow: visible; border-bottom: none; padding: 0; background: none; }
+.centered-sheet .panel h3 { position: static; margin: 0 0 .5rem; padding: 0; background: none; }
 .row { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; margin: .5rem 0; }
 .row.tight { gap: .4rem; margin: .2rem 0; }
 .row.center { justify-content: center; }
@@ -299,17 +310,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* ---------- cifra ---------- */
 .cifra-area { position: relative; flex: 1; min-height: 0; display: flex; }
 .cifra-scroll { flex: 1; overflow-y: auto; padding: .8rem 1rem 6rem; scroll-behavior: auto; }
-/* modo apresentação: zonas de toque nas bordas para trocar de música do
-   repertório sem precisar sair da tela cheia nem rolar até a setlistbar */
-.edge-nav {
-  position: fixed; top: 12%; bottom: 12%; z-index: 4; width: 15vw; max-width: 90px;
-  background: none; border: none; color: var(--dim);
-  display: flex; align-items: center; opacity: .35; transition: opacity .15s, background .15s;
-}
-.edge-nav svg { width: 32px; height: 32px; }
-.edge-nav:hover, .edge-nav:active { opacity: .9; background: linear-gradient(to var(--edge-fade-dir, right), rgba(0,0,0,.12), transparent); }
-.edge-nav-left { left: 0; justify-content: flex-start; padding-left: .3rem; }
-.edge-nav-right { right: 0; justify-content: flex-end; padding-right: .3rem; --edge-fade-dir: left; }
 .cifra { font-family: var(--mono); white-space: pre; }
 .cifra-line { min-height: 1em; }
 .cifra-line.lyrics { color: var(--fg); }
@@ -487,6 +487,16 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .recorditem-meta strong { font-size: .78rem; }
 .recorditem-meta span { font-size: .68rem; color: var(--dim); }
 .recorditem audio { flex: 1; min-width: 160px; height: 32px; }
+.recorditem-video { flex: 1; min-width: 160px; max-width: 260px; max-height: 160px; border-radius: 6px; background: #000; }
+.recorditem-layered { color: var(--accent2); }
+
+.recmode { margin-bottom: .6rem; }
+.recmode button { display: inline-flex; align-items: center; gap: .3rem; }
+.recmode svg { width: 15px; height: 15px; }
+.layerpicker { background: var(--bg3); border: 1px solid var(--line); border-radius: 9px; padding: .5rem .6rem; margin-bottom: .6rem; }
+.layerlist { display: flex; flex-direction: column; gap: .3rem; margin-top: .3rem; }
+.layeritem { display: flex; align-items: center; gap: .4rem; font-size: .8rem; }
+.recorder-preview { width: 100%; max-height: 260px; border-radius: 9px; background: #000; margin-bottom: .6rem; object-fit: cover; }
 
 .listpick { display: flex; flex-direction: column; }
 .empty { padding: 2rem; text-align: center; }
@@ -539,6 +549,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .voicing-carousel-count { font-size: .7rem; color: var(--dim); }
 .voicing-carousel .voicing-meta { max-width: none; white-space: nowrap; }
 .voicing-carousel .icon:disabled { opacity: .25; }
+.voicing-pick { background: none; border: 2px solid transparent; border-radius: 10px; padding: .2rem; line-height: 0; }
+.voicing-pick.preferred { border-color: var(--accent2); background: color-mix(in srgb, var(--accent2) 10%, transparent); }
+.voicing-prefer-hint { font-size: .62rem; color: var(--dim); display: flex; align-items: center; gap: .2rem; text-align: center; }
+.voicing-prefer-hint svg { width: 12px; height: 12px; color: var(--accent2); }
+
+/* abas "versões mais fáceis" / "trocar manualmente" na ficha do acorde */
+.chordsheet-tabs { display: flex; width: 100%; margin: .7rem 0 .6rem; }
+.chordsheet-tabs button { flex: 1; }
 .undo-override:disabled { opacity: .3; }
 .undo-override { color: var(--dim); }
 
@@ -631,6 +649,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .tuner-freq { font-family: var(--mono); font-size: 1.35rem; color: var(--accent); line-height: 1; }
 .tuner-display.in-tune .tuner-freq { color: var(--accent2); }
 .tuner-gauge { width: 100%; max-width: 320px; height: auto; }
+/* na aba "Afinação" há a tela inteira disponível — o gráfico pode crescer bem mais que no popup */
+.tuner-embedded .tuner-gauge { max-width: 460px; }
+.tuner-embedded .tuner-note { font-size: 3.6rem; }
+.tuner-embedded .tuner-freq { font-size: 1.6rem; }
 .g-tick { stroke: var(--line); stroke-width: 2; }
 .g-tick.center { stroke: var(--dim); stroke-width: 2.5; }
 .g-side { fill: var(--dim); font-size: 20px; text-anchor: middle; }
