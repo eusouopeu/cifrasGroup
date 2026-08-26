@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ChevronDownIcon, ChevronRightIcon, PlusIcon } from '@heroicons/react/24/outline'
 import type { DB, SongList } from '../store/db'
 import { SongCard } from './SongCard'
+import { ThemeToggleButton } from './ThemeControls'
 
 export function ListsView({ db, onOpen, onCreateList, onDeleteList, onRemoveFromList, onDuplicateSong, onReorderSong }: {
   db: DB
@@ -18,6 +19,7 @@ export function ListsView({ db, onOpen, onCreateList, onDeleteList, onRemoveFrom
     <div className="library">
       <header className="apphead">
         <h1>Listas</h1>
+        <ThemeToggleButton />
       </header>
 
       {db.lists.map((list) => (

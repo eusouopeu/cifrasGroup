@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { Tuner } from './Tuner'
+import { ThemeToggleButton } from './ThemeControls'
 import { TuningBuilder } from './song/TuningBuilder'
 import { TUNINGS, tuningById, type Tuning } from '../theory/tunings'
 
@@ -17,6 +18,7 @@ export function TunerTab({ customTunings, onSaveCustomTuning, onDeleteCustomTuni
     <div className="library">
       <header className="apphead">
         <h1>Afinação</h1>
+        <ThemeToggleButton />
       </header>
 
       <span className="fieldlabel">Afinação</span>

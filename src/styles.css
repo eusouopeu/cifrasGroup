@@ -1,3 +1,28 @@
+/* Montserrat local (sem depender de rede) — só os 3 pesos que o app usa
+   (normal/semibold/bold) e só o subconjunto latino, que já cobre os
+   acentos do português (ç, ã, é...). Mantém a promessa de rodar sem servidor. */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./assets/fonts/montserrat-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./assets/fonts/montserrat-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./assets/fonts/montserrat-700.woff2') format('woff2');
+}
+
 :root {
   --bg: #0e1014;
   --bg2: #161a21;
@@ -13,7 +38,7 @@
   --genre-b: #9b7cf0;
   --genre-d: #d1a13a;
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --sans: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 /* segue o sistema quando não há preferência explícita (data-theme ausente) */
@@ -40,12 +65,18 @@
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
 body {
-  background: var(--bg); color: var(--fg); font-family: var(--sans);
+  background: var(--bg); color: var(--fg); font-family: var(--sans); line-height: 1.25;
   -webkit-text-size-adjust: 100%;
   /* sem atraso de 300ms no toque e sem zoom acidental por duplo-toque */
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
+}
+/* texto corrido justificado onde faz sentido — não em botões, rótulos,
+   cabeçalhos ou na cifra (o alinhamento monoespaçado dos acordes quebraria) */
+p, .hint, li {
+  text-align: justify;
+  text-align-last: left;
 }
 /* alvos de toque: nada abaixo de 40px de altura no celular */
 button, select, input[type=file] + * { touch-action: manipulation; }
@@ -128,8 +159,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .newlist { display: flex; gap: .5rem; margin-top: .75rem; }
 .newlist input { flex: 1; padding: .5rem .7rem; border-radius: 8px; border: 1px solid var(--line); background: var(--bg2); color: var(--fg); }
 .settingsection { margin-bottom: 1.5rem; }
-.settheme { display: flex; align-items: center; gap: .5rem; }
-.settheme svg { width: 18px; height: 18px; }
+.theme-pill { display: flex; width: 100%; max-width: 220px; }
+.theme-pill button { flex: 1; display: flex; align-items: center; justify-content: center; padding: .5rem 0; }
+.theme-pill svg { width: 18px; height: 18px; }
 
 /* ---------- estrutura de abas ---------- */
 .app-shell { display: flex; flex-direction: column; height: 100%; }
@@ -139,10 +171,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
   padding-bottom: env(safe-area-inset-bottom); flex: 0 0 auto;
 }
 .tabbar-item {
-  flex: 1; display: flex; flex-direction: column; align-items: center; gap: .15rem;
-  padding: .5rem 0 .4rem; background: none; border: none; color: var(--dim); font-size: .65rem;
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: .7rem 0; background: none; border: none; color: var(--dim);
 }
-.tabbar-item svg { width: 22px; height: 22px; }
+.tabbar-item svg { width: 26px; height: 26px; }
 .tabbar-item.on { color: var(--accent); }
 
 /* ---------- importação ---------- */
@@ -328,32 +360,32 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* ---------- barra de transporte (metrônomo + rolagem) ---------- */
 .transport {
   position: sticky; bottom: 0; z-index: 5;
-  display: flex; align-items: center; gap: .5rem;
-  padding: .4rem .6rem calc(.4rem + env(safe-area-inset-bottom));
+  display: flex; align-items: center; gap: .7rem;
+  padding: .5rem .7rem calc(.5rem + env(safe-area-inset-bottom));
   background: var(--bg2); border-top: 1px solid var(--line);
   box-shadow: 0 -4px 16px rgba(0, 0, 0, .18);
 }
 .transport-play {
-  flex: 0 0 auto; width: 44px; height: 44px; border-radius: 50%;
+  flex: 0 0 auto; width: 52px; height: 52px; border-radius: 50%;
   border: 1px solid var(--line); background: var(--bg3);
   display: grid; place-items: center;
 }
-.transport-play svg { width: 18px; height: 18px; }
+.transport-play svg { width: 22px; height: 22px; }
 .transport-play.on { background: var(--accent); border-color: var(--accent); color: #14161a; }
 .transport-play.counting { background: var(--bg3); border-color: var(--accent2); color: var(--accent2); font-weight: 700; font-size: 1.1rem; }
 .transport-bpm {
   flex: 0 0 auto; background: none; border: none; text-align: left;
-  display: flex; flex-direction: column; line-height: 1.15; padding: .2rem .1rem; min-height: 44px; justify-content: center;
+  display: flex; flex-direction: column; line-height: 1.15; padding: .2rem .15rem; min-height: 52px; justify-content: center;
 }
-.transport-bpm strong { font-size: 1rem; }
-.transport-bpm span { font-size: .66rem; color: var(--dim); max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.transport-bpm strong { font-size: 1.1rem; }
+.transport-bpm span { font-size: .7rem; color: var(--dim); max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .transport-steps { flex: 1; min-width: 0; overflow: hidden; }
-.transport-actions { display: flex; align-items: center; gap: .65rem; flex: 0 0 auto; }
+.transport-actions { display: flex; align-items: center; gap: .9rem; flex: 0 0 auto; }
 .transport-icon {
-  flex: 0 0 auto; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line);
+  flex: 0 0 auto; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line);
   background: var(--bg3); color: var(--dim); display: grid; place-items: center;
 }
-.transport-icon svg { width: 17px; height: 17px; }
+.transport-icon svg { width: 19px; height: 19px; }
 .transport-icon.on { background: color-mix(in srgb, var(--accent) 16%, var(--bg3)); border-color: var(--accent); color: var(--accent); }
 .record-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); display: inline-block; flex-shrink: 0; }
 
@@ -480,7 +512,15 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .tagchip-remove { background: none; border: none; color: var(--dim); font-size: .9rem; padding: 0 .3rem; line-height: 1; display: inline-flex; align-items: center; }
 .tagchip-remove svg { width: 12px; height: 12px; }
 .tagchip-remove:hover { color: var(--danger); }
-.icon.primary { background: var(--accent); color: #14161a; border-radius: 50%; }
+/* botão flutuante de importar cifra, aba Início — fica por cima da rolagem
+   da lista, sempre alcançável com o polegar */
+.fab {
+  position: fixed; right: 1.1rem; bottom: calc(4.6rem + env(safe-area-inset-bottom));
+  z-index: 6; width: 56px; height: 56px; border-radius: 50%;
+  background: var(--accent); color: #14161a; border: none;
+  display: grid; place-items: center; box-shadow: 0 4px 14px rgba(0, 0, 0, .3);
+}
+.fab svg { width: 26px; height: 26px; }
 .tageditor input { flex: 1; background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; color: var(--fg); padding: .45rem .6rem; font-size: .85rem; }
 /* ---------- gravador de prática ---------- */
 .btn.recording { background: var(--danger); border-color: var(--danger); color: #fff; font-weight: 600; }
@@ -576,12 +616,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .scrollbar-mark { font-size: .95rem; line-height: 1; opacity: .75; }
 
 /* +/- de bpm ao lado do valor, na barra de transporte */
-.transport-bpmbox { display: flex; align-items: center; gap: .1rem; flex: 0 0 auto; }
+.transport-bpmbox { display: flex; align-items: center; gap: .3rem; flex: 0 0 auto; }
 .transport-step {
-  width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line);
+  width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line);
   background: var(--bg3); color: var(--fg); display: grid; place-items: center; padding: 0;
 }
-.transport-step svg { width: 14px; height: 14px; }
+.transport-step svg { width: 16px; height: 16px; }
 
 /* editor do texto da cifra */
 .rawedit { width: 100%; min-height: 40vh; white-space: pre; overflow-wrap: normal; overflow-x: auto; font-size: .8rem; line-height: 1.45; }
@@ -622,17 +662,20 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .scrollbar-slider { min-height: 32px; }
 
   /* seis ações + play + bpm não cabem em 360px com os tamanhos do desktop:
-     tudo encolhe um pouco em vez de o último botão sair da tela */
-  .transport { gap: .25rem; padding: .35rem .35rem calc(.35rem + env(safe-area-inset-bottom)); }
-  .transport-play { width: 40px; height: 40px; }
+     tudo encolhe um pouco em vez de o último botão sair da tela — mas ainda
+     maior e mais espaçado que o tamanho mínimo original */
+  .transport { gap: .35rem; padding: .4rem .4rem calc(.4rem + env(safe-area-inset-bottom)); }
+  .transport-play { width: 46px; height: 46px; }
+  .transport-play svg { width: 20px; height: 20px; }
   .transport-bpm { padding: .2rem 0; }
-  .transport-bpm strong { font-size: .92rem; }
-  .transport-bpm span { max-width: 56px; font-size: .6rem; }
-  .transport-step { width: 26px; height: 26px; }
-  .transport-step svg { width: 12px; height: 12px; }
-  .transport-actions { gap: .4rem; }
-  .transport-icon { width: 32px; height: 32px; }
-  .transport-icon svg { width: 15px; height: 15px; }
+  .transport-bpm strong { font-size: 1rem; }
+  .transport-bpm span { max-width: 62px; font-size: .64rem; }
+  .transport-bpmbox { gap: .2rem; }
+  .transport-step { width: 30px; height: 30px; }
+  .transport-step svg { width: 14px; height: 14px; }
+  .transport-actions { gap: .55rem; }
+  .transport-icon { width: 38px; height: 38px; }
+  .transport-icon svg { width: 17px; height: 17px; }
   .songhead { padding: calc(.4rem + env(safe-area-inset-top)) .5rem .4rem; }
 }
 

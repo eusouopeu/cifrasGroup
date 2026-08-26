@@ -4,6 +4,7 @@ import type { DB } from '../store/db'
 import type { Difficulty } from '../cifra/meta'
 import { rhythmById } from '../data/rhythms'
 import { SongCard } from './SongCard'
+import { ThemeToggleButton } from './ThemeControls'
 
 export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }: {
   db: DB
@@ -58,7 +59,7 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
     <div className="library">
       <header className="apphead">
         <h1>cifras<span>Group</span></h1>
-        <button className="icon primary" onClick={onNew} aria-label="Importar cifra" title="Importar cifra"><PlusIcon /></button>
+        <ThemeToggleButton />
       </header>
 
       <div className="searchrow">
@@ -134,6 +135,10 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
           <SongCard key={s.id} song={s} onOpen={() => onOpen(s.id)} onDelete={() => onDeleteSong(s.id)} onDuplicate={() => onDuplicateSong(s.id)} />
         ))}
       </div>
+
+      <button className="fab" onClick={onNew} aria-label="Importar cifra" title="Importar cifra">
+        <PlusIcon />
+      </button>
     </div>
   )
 }

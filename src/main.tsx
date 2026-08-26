@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
 import { ToastProvider } from './components/Toast'
+import { ThemeProvider } from './components/ThemeControls'
 import { applyTheme, getTheme } from './store/theme'
 import './styles.css'
 
@@ -10,9 +11,11 @@ applyTheme(getTheme())
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ToastProvider>
-      <App />
-    </ToastProvider>
+    <ThemeProvider>
+      <ToastProvider>
+        <App />
+      </ToastProvider>
+    </ThemeProvider>
   </StrictMode>,
 )
 

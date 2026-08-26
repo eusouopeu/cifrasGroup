@@ -1,6 +1,8 @@
 /** Preferência de tema: 'system' segue o SO, os outros dois forçam um lado. */
 export type ThemePref = 'system' | 'light' | 'dark'
 
+export const THEME_OPTIONS: ThemePref[] = ['system', 'light', 'dark']
+
 const KEY = 'cifrasgroup:theme'
 
 export function getTheme(): ThemePref {

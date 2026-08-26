@@ -1,13 +1,8 @@
 import { useState } from 'react'
-import { ComputerDesktopIcon, MoonIcon, SunIcon } from '@heroicons/react/24/outline'
 import { useToast } from './Toast'
-import { getTheme, setTheme, type ThemePref } from '../store/theme'
+import { ThemePillPicker, ThemeToggleButton } from './ThemeControls'
 import { getDisplayDefaults, setDisplayDefaults, type DisplayDefaults } from '../store/defaults'
 import { TUNINGS, type Tuning } from '../theory/tunings'
-
-const THEME_CYCLE: ThemePref[] = ['system', 'light', 'dark']
-const THEME_ICON: Record<ThemePref, typeof SunIcon> = { system: ComputerDesktopIcon, light: SunIcon, dark: MoonIcon }
-const THEME_LABEL: Record<ThemePref, string> = { system: 'sistema', light: 'claro', dark: 'escuro' }
 
 export function SettingsTab({ customTunings, onExport, onImport }: {
   customTunings: Tuning[]
@@ -15,16 +10,9 @@ export function SettingsTab({ customTunings, onExport, onImport }: {
   onExport: () => void | Promise<void>
   onImport: (json: string) => void
 }) {
-  const [theme, setThemeState] = useState<ThemePref>(getTheme)
   const [exporting, setExporting] = useState(false)
   const [defaults, setDefaults] = useState<DisplayDefaults>(getDisplayDefaults)
   const showToast = useToast()
-  const cycleTheme = () => {
-    const next = THEME_CYCLE[(THEME_CYCLE.indexOf(theme) + 1) % THEME_CYCLE.length]
-    setTheme(next)
-    setThemeState(next)
-  }
-  const Icon = THEME_ICON[theme]
 
   const patchDefaults = (patch: Partial<DisplayDefaults>) => setDefaults(setDisplayDefaults(patch))
 
@@ -32,13 +20,12 @@ export function SettingsTab({ customTunings, onExport, onImport }: {
     <div className="library">
       <header className="apphead">
         <h1>Configurações</h1>
+        <ThemeToggleButton />
       </header>
 
       <section className="settingsection">
         <h4>Tema</h4>
-        <button className="btn wide settheme" onClick={cycleTheme}>
-          <Icon /> Tema: {THEME_LABEL[theme]}
-        </button>
+        <ThemePillPicker />
       </section>
 
       <section className="settingsection">
