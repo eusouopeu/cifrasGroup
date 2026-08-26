@@ -115,8 +115,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .filterbar { display: flex; flex-wrap: wrap; gap: .8rem; margin: .6rem 0; align-items: center; }
 .filterfield { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: var(--dim); }
 .filterfield select, .filterfield input { background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; color: var(--fg); padding: .4rem .6rem; font-size: .8rem; }
-.numinput { width: 80px; }
-.numinput.small { width: 64px; }
+/* !important porque .numinput precisa vencer o width:100% de ".field input"
+   (regra genérica de campo) não importa em que estrutura/wrapper apareça */
+.numinput { width: 80px !important; }
+.numinput.small { width: 64px !important; }
 .filterbar-tags { margin: -.2rem 0 .8rem; }
 .tagchip.filterchip { cursor: pointer; }
 .tagchip.filterchip.on { background: var(--accent); border-color: var(--accent); color: #14161a; font-weight: 600; }
@@ -157,7 +159,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .field.checkbox { flex-direction: row; align-items: center; gap: .5rem; color: var(--dim); font-size: .9rem; }
 .field.checkbox input[type=checkbox] { accent-color: var(--accent); width: 18px; height: 18px; }
 .fieldlabel { display: block; font-size: .8rem; color: var(--dim); margin-bottom: .3rem; }
-.field input[type=text], .field input:not([type]), .field textarea, .field select, .importform input, .importform textarea {
+.field input:not([type=checkbox]), .field textarea, .field select, .importform input, .importform textarea {
   background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; color: var(--fg); padding: .55rem .7rem; font-size: .9rem; width: 100%;
 }
 .importform textarea { font-family: var(--mono); font-size: .82rem; line-height: 1.45; white-space: pre; overflow-x: auto; }
@@ -346,7 +348,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .transport-bpm strong { font-size: 1rem; }
 .transport-bpm span { font-size: .66rem; color: var(--dim); max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .transport-steps { flex: 1; min-width: 0; overflow: hidden; }
-.transport-actions { display: flex; align-items: center; gap: .3rem; flex: 0 0 auto; }
+.transport-actions { display: flex; align-items: center; gap: .65rem; flex: 0 0 auto; }
 .transport-icon {
   flex: 0 0 auto; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line);
   background: var(--bg3); color: var(--dim); display: grid; place-items: center;
@@ -366,7 +368,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 /* ---------- afinações personalizadas ---------- */
 .tuningrow { flex-wrap: nowrap; }
-.tuningselect { flex: 1; min-width: 0; }
+.tuningselect {
+  flex: 1; min-width: 0;
+  background: var(--bg2); border: 1px solid var(--line); border-radius: 8px;
+  color: var(--fg); padding: .55rem .7rem; font-size: .85rem;
+}
 .icon.active { border: 1px solid var(--accent); color: var(--accent); border-radius: 8px; }
 .panel-title-row { display: inline-flex; align-items: center; gap: .5rem; }
 .panel-title-extra { display: inline-flex; }
@@ -393,7 +399,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .chordgrid > * { flex: 0 0 auto; scroll-snap-align: start; }
 .chordgrid::-webkit-scrollbar { height: 4px; }
 .chordgrid::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
-.chordslot { position: relative; background: none; border: none; padding: 0; color: inherit; font: inherit; text-align: inherit; }
+.chordslot { position: relative; background: none; border: none; padding: 0; color: inherit; font: inherit; text-align: inherit; cursor: pointer; }
 .overridden-dot {
   position: absolute; top: -3px; right: -3px; z-index: 1;
   width: 9px; height: 9px; border-radius: 50%;
@@ -624,7 +630,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .transport-bpm span { max-width: 56px; font-size: .6rem; }
   .transport-step { width: 26px; height: 26px; }
   .transport-step svg { width: 12px; height: 12px; }
-  .transport-actions { gap: .12rem; }
+  .transport-actions { gap: .4rem; }
   .transport-icon { width: 32px; height: 32px; }
   .transport-icon svg { width: 15px; height: 15px; }
   .songhead { padding: calc(.4rem + env(safe-area-inset-top)) .5rem .4rem; }

@@ -186,7 +186,7 @@ export function SongView({
             <span>{song.artist || '—'}</span>
           </button>
         )}
-        <button className="icon" onClick={() => setMenuOpen(true)} aria-label="Mais opções"><EllipsisHorizontalIcon /></button>
+        <button className="icon" onClick={onSaveToList} aria-label="Salvar em lista"><PlusIcon /></button>
         <button
           className={`icon${panel === 'letra' ? ' active' : ''}`}
           onClick={() => togglePanel('letra')}
@@ -195,7 +195,7 @@ export function SongView({
         >
           <DocumentTextIcon />
         </button>
-        <button className="icon" onClick={onSaveToList} aria-label="Salvar em lista"><PlusIcon /></button>
+        <button className="icon" onClick={() => setMenuOpen(true)} aria-label="Mais opções"><EllipsisHorizontalIcon /></button>
       </header>
 
       {menuOpen && (
@@ -206,6 +206,9 @@ export function SongView({
               <button className="icon" onClick={() => setMenuOpen(false)} aria-label="Fechar"><XMarkIcon /></button>
             </div>
             <div className="listpick">
+              <button className="btn wide" onClick={() => { setPanel('acordes'); setMenuOpen(false) }}>
+                construção dos acordes (instrumento, afinação)
+              </button>
               <button className="btn wide" onClick={() => { setPanel('texto'); setMenuOpen(false) }}>
                 configurações de exibição (fonte, rolagem, tablatura)
               </button>
@@ -232,7 +235,6 @@ export function SongView({
         } flash={level2JustOff} />
         <ToolButton active={panel === 'cor'} onClick={() => togglePanel('cor')} label="Emoção" value={PALETTES.find((p) => p.id === s.paletteId)?.name ?? 'Original'} />
         <ToolButton active={panel === 'ritmo'} onClick={() => togglePanel('ritmo')} label="Ritmo" value={rhythm?.name ?? 'nenhum'} />
-        <ToolButton active={panel === 'acordes'} onClick={() => togglePanel('acordes')} label="Instrumento" value={s.instrument === 'guitar' ? 'violão' : 'piano'} />
       </nav>
 
       {stripOpen && (
@@ -414,7 +416,7 @@ export function SongView({
         <div className="transport-bpmbox">
           <button className="transport-step" onClick={() => dispatch({ type: 'bpmBy', delta: -1 })} aria-label="Diminuir 1 bpm"><MinusIcon /></button>
           <button className="transport-bpm" onClick={() => togglePanel('ritmo')} aria-label="Abrir painel de ritmo">
-            <strong>{s.bpm}</strong> bpm
+            <span className="transport-bpm-value"><strong>{s.bpm}</strong> bpm</span>
             <span>{rhythm ? rhythm.name : 'só o pulso'}</span>
           </button>
           <button className="transport-step" onClick={() => dispatch({ type: 'bpmBy', delta: 1 })} aria-label="Aumentar 1 bpm"><PlusIcon /></button>

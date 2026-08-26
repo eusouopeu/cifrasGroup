@@ -22,6 +22,8 @@ import { LevelButton, Panel, TagEditor } from './parts'
 import { TuningBuilder } from './TuningBuilder'
 import type { SongDispatch } from './hooks'
 
+type KeyTab = 'tom' | 'analise'
+
 export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey, onAnalysisKey }: {
   s: SongSettings
   view: CifraView
@@ -30,8 +32,11 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
   guessedAnalysisKey: number
   onAnalysisKey: (pc: number | null) => void
 }) {
+  const [tab, setTab] = useState<KeyTab>('tom')
   const currentSemitones = ((view.effectiveTranspose % 12) + 12) % 12
   const currentKeyOption = view.keyRanking.find((k) => k.semitones === currentSemitones)
+  const modulations = view.sectionKeys.filter((k) => k.differsFromGlobal)
+
   return (
     <Panel
       title="Tom e capotraste"
@@ -41,89 +46,103 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
         </button>
       }
     >
-      <div className="row" style={{ marginTop: '1rem', marginBottom: '1.2rem' }}>
-        <button className="icon" onClick={() => dispatch({ type: 'transposeBy', semitones: -1 })} aria-label="−1 semitom"><MinusIcon /></button>
-        <div className="keydisplay">
-          {view.displayedChords[0] ? <span className="mono">{view.displayedChords.slice(0, 4).map((c) => c.symbol).join('  ')}</span> : '—'}
-        </div>
-        <button className="icon" onClick={() => dispatch({ type: 'transposeBy', semitones: 1 })} aria-label="+1 semitom"><PlusIcon /></button>
+      <div className="toggle chordsheet-tabs">
+        <button className={tab === 'tom' ? 'on' : ''} onClick={() => setTab('tom')}>Tom</button>
+        <button className={tab === 'analise' ? 'on' : ''} onClick={() => setTab('analise')}>Análise funcional</button>
       </div>
-      <div className="row" style={{ marginBottom: '1.2rem' }}>
-        <label className="field inline">
-          Capotraste
-          <input
-            type="number" min={0} max={CAPO_MAX} className="numinput small"
-            value={s.capo}
-            onChange={(e) => dispatch({ type: 'setCapo', capo: Number(e.target.value) })}
-          />
-        </label>
-      </div>
-      {currentKeyOption && (
-        <p className="hint">Facilidade do tom atual: <strong>{currentKeyOption.ease}/100</strong>. Acorde mais difícil: <span className="mono">{currentKeyOption.hardest}</span>.</p>
-      )}
-      <h4>5 tons mais fáceis</h4>
-      <div className="keylist">
-        {view.keyRanking.slice(0, 5).map((k) => (
-          <button
-            key={k.semitones}
-            className={`keyrow${k.semitones === currentSemitones ? ' current' : ''}`}
-            onClick={() => dispatch({ type: 'setKey', semitones: k.semitones, capo: k.capo })}
-          >
-            <span className="keyrow-shift">{k.semitones === 0 ? '0' : `${k.semitones > 0 ? '+' : ''}${k.semitones}`}</span>
-            <span className="bar"><i style={{ width: `${k.ease}%` }} /></span>
-            <span className="keyrow-ease">{k.ease}</span>
-            <span className="keyrow-capo">{k.capo > 0 ? `capo ${k.capo}ª` : '—'}</span>
-            <span className="keyrow-chords mono">{k.chords.slice(0, 5).join(' ')}</span>
-          </button>
-        ))}
-      </div>
-      <p className="hint small">
-        A coluna “capo” mostra em que casa pôr o capotraste para a música continuar soando no tom original,
-        mesmo tocando as formas mais fáceis.
-      </p>
 
-      {view.sectionKeys.some((k) => k.differsFromGlobal) && (
+      {tab === 'tom' && (
         <>
-          <h4>Por trecho — possível modulação</h4>
-          <div className="sublist">
-            {view.sectionKeys.filter((k) => k.differsFromGlobal).map((k) => (
-              <div key={k.label} className="subrow section-key">
-                <span className="mono from">{k.label}</span>
-                <ArrowRightIcon className="arrow-icon" />
-                <span className="mono to">
-                  {k.best.semitones === 0 ? 'original' : `${k.best.semitones > 0 ? '+' : ''}${k.best.semitones}`}
-                </span>
-                <span className="score">{k.best.ease}/100 fácil</span>
-                <span className="reason">{k.best.capo > 0 ? `capo na ${k.best.capo}ª casa` : 'sem capo'}</span>
+          <div className="panel-section">
+            <div className="row">
+              <button className="icon" onClick={() => dispatch({ type: 'transposeBy', semitones: -1 })} aria-label="−1 semitom"><MinusIcon /></button>
+              <div className="keydisplay">
+                {view.displayedChords[0] ? <span className="mono">{view.displayedChords.slice(0, 4).map((c) => c.symbol).join('  ')}</span> : '—'}
               </div>
-            ))}
+              <button className="icon" onClick={() => dispatch({ type: 'transposeBy', semitones: 1 })} aria-label="+1 semitom"><PlusIcon /></button>
+            </div>
+            <label className="field inline" style={{ marginTop: '.7rem' }}>
+              Capotraste
+              <input
+                type="number" min={0} max={CAPO_MAX} className="numinput small"
+                value={s.capo}
+                onChange={(e) => dispatch({ type: 'setCapo', capo: Number(e.target.value) })}
+              />
+            </label>
+            {currentKeyOption && (
+              <p className="hint small" style={{ marginTop: '.5rem' }}>
+                Facilidade <strong>{currentKeyOption.ease}/100</strong> · mais difícil <span className="mono">{currentKeyOption.hardest}</span>
+              </p>
+            )}
           </div>
+
+          <div className="panel-section">
+            <h4>5 tons mais fáceis</h4>
+            <div className="keylist">
+              {view.keyRanking.slice(0, 5).map((k) => (
+                <button
+                  key={k.semitones}
+                  className={`keyrow${k.semitones === currentSemitones ? ' current' : ''}`}
+                  onClick={() => dispatch({ type: 'setKey', semitones: k.semitones, capo: k.capo })}
+                >
+                  <span className="keyrow-shift">{k.semitones === 0 ? '0' : `${k.semitones > 0 ? '+' : ''}${k.semitones}`}</span>
+                  <span className="bar"><i style={{ width: `${k.ease}%` }} /></span>
+                  <span className="keyrow-ease">{k.ease}</span>
+                  <span className="keyrow-capo">{k.capo > 0 ? `capo ${k.capo}ª` : '—'}</span>
+                  <span className="keyrow-chords mono">{k.chords.slice(0, 5).join(' ')}</span>
+                </button>
+              ))}
+            </div>
+            <p className="hint small">“Capo” = casa que mantém o tom original tocando a forma fácil.</p>
+          </div>
+
+          {modulations.length > 0 && (
+            <div className="panel-section">
+              <h4>Possível modulação por trecho</h4>
+              <div className="sublist">
+                {modulations.map((k) => (
+                  <div key={k.label} className="subrow section-key">
+                    <span className="mono from">{k.label}</span>
+                    <ArrowRightIcon className="arrow-icon" />
+                    <span className="mono to">
+                      {k.best.semitones === 0 ? 'original' : `${k.best.semitones > 0 ? '+' : ''}${k.best.semitones}`}
+                    </span>
+                    <span className="score">{k.best.ease}/100 fácil</span>
+                    <span className="reason">{k.best.capo > 0 ? `capo na ${k.best.capo}ª casa` : 'sem capo'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
 
-      <h4>Análise funcional</h4>
-      <p className="hint small">Cada acorde como grau da tônica escolhida — I, ii, V7… A tônica sugerida é a mais provável desta versão, mas dá pra trocar.</p>
-      <div className="rootrow">
-        {Array.from({ length: 12 }, (_, i) => (
-          <button
-            key={i}
-            className={`rootbtn${analysisKeyPc === i ? ' on' : ''}`}
-            aria-pressed={analysisKeyPc === i}
-            onClick={() => onAnalysisKey(i === guessedAnalysisKey ? null : i)}
-          >
-            {nameOf(i)}
-          </button>
-        ))}
-      </div>
-      <div className="sublist">
-        {view.displayedChords.map((c) => (
-          <div key={c.symbol} className="subrow">
-            <span className="mono from">{c.symbol}</span>
-            <ArrowRightIcon className="arrow-icon" />
-            <span className="mono to">{romanNumeral(c.symbol, analysisKeyPc) ?? '?'}</span>
+      {tab === 'analise' && (
+        <div className="panel-section">
+          <p className="hint small">Toque numa nota para trocar a tônica.</p>
+          <div className="rootrow">
+            {Array.from({ length: 12 }, (_, i) => (
+              <button
+                key={i}
+                className={`rootbtn${analysisKeyPc === i ? ' on' : ''}`}
+                aria-pressed={analysisKeyPc === i}
+                onClick={() => onAnalysisKey(i === guessedAnalysisKey ? null : i)}
+              >
+                {nameOf(i)}
+              </button>
+            ))}
           </div>
-        ))}
-      </div>
+          <div className="sublist" style={{ marginTop: '.7rem' }}>
+            {view.displayedChords.map((c) => (
+              <div key={c.symbol} className="subrow">
+                <span className="mono from">{c.symbol}</span>
+                <ArrowRightIcon className="arrow-icon" />
+                <span className="mono to">{romanNumeral(c.symbol, analysisKeyPc) ?? '?'}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </Panel>
   )
 }
@@ -354,15 +373,20 @@ export function ChordsPanel({ s, view, dispatch, customTunings, onSaveCustomTuni
       )}
       <div className="chordgrid">
         {view.displayedChords.map((c) => (
-          <button
+          // div (não button): o cartão compacto já tem os próprios botões de
+          // ciclar digitação — um <button> dentro de outro é HTML inválido
+          <div
             key={c.symbol}
+            role="button"
+            tabIndex={0}
             className={`chordslot${overriddenSymbols.has(c.symbol) ? ' overridden' : ''}`}
             onClick={() => onInspect(c.symbol)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onInspect(c.symbol) } }}
             aria-label={`Ver ficha do acorde ${c.symbol}`}
           >
             {overriddenSymbols.has(c.symbol) && <span className="overridden-dot" title="Troca manual" />}
             <ChordCard symbol={c.symbol} instrument={s.instrument} compact tuning={tuningById(s.tuning, customTunings)} />
-          </button>
+          </div>
         ))}
       </div>
       <p className="hint small">Toque em um acorde para ver todas as digitações e a construção nota a nota. <span className="overridden-dot inline" /> marca acordes trocados manualmente.</p>
