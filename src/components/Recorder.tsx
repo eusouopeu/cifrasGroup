@@ -45,10 +45,13 @@ function formatDuration(ms: number): string {
 }
 
 type Status = 'idle' | 'starting' | 'recording' | 'denied' | 'unsupported'
+/** câmera "sempre ligada" enquanto o modo vídeo está selecionado — mesmo antes de apertar gravar */
+type CameraStatus = 'idle' | 'starting' | 'ready' | 'denied'
 
 export function Recorder({ songId, mode }: { songId: string; mode: RecordingKind }) {
   const [recordings, setRecordings] = useState<Recording[] | null>(null)
   const [status, setStatus] = useState<Status>('idle')
+  const [cameraStatus, setCameraStatus] = useState<CameraStatus>('idle')
   const [elapsedMs, setElapsedMs] = useState(0)
   const [listOpen, setListOpen] = useState(false)
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -60,6 +63,9 @@ export function Recorder({ songId, mode }: { songId: string; mode: RecordingKind
   const startTimeRef = useRef(0)
   const timerRef = useRef<number | null>(null)
   const videoPreviewRef = useRef<HTMLVideoElement>(null)
+  // stream da câmera aberta assim que o modo vídeo é escolhido — a gravação
+  // reaproveita esse mesmo stream em vez de pedir a câmera de novo
+  const videoStreamRef = useRef<MediaStream | null>(null)
   // o modo pode mudar (mic/câmera) enquanto este componente segue montado;
   // uma gravação em andamento deve continuar no modo em que começou
   const activeModeRef = useRef<RecordingKind>(mode)
@@ -70,11 +76,47 @@ export function Recorder({ songId, mode }: { songId: string; mode: RecordingKind
     return () => { cancelled = true }
   }, [songId])
 
+  // modo vídeo = câmera ligada e visível na hora, sem esperar o botão de
+  // gravar — é a ação de tocar no ícone de vídeo que autoriza o acesso, não
+  // um som qualquer captado passivamente. Só reage à troca de modo (não ao
+  // status de gravação): se dependesse do status também, o instante em que
+  // "gravar" muda o status já dispararia a limpeza deste efeito e derrubaria
+  // o stream que a própria gravação está usando.
+  useEffect(() => {
+    if (mode !== 'video') return
+    if (!navigator.mediaDevices?.getUserMedia) { setCameraStatus('denied'); return }
+    let cancelled = false
+    setCameraStatus('starting')
+    void navigator.mediaDevices
+      .getUserMedia({ video: { facingMode: 'user' }, audio: AUDIO_CONSTRAINTS })
+      .then((stream) => {
+        if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return }
+        videoStreamRef.current = stream
+        if (videoPreviewRef.current) {
+          videoPreviewRef.current.srcObject = stream
+          void videoPreviewRef.current.play().catch(() => {})
+        }
+        setCameraStatus('ready')
+      })
+      .catch(() => { if (!cancelled) setCameraStatus('denied') })
+    return () => {
+      cancelled = true
+      // uma gravação em andamento continua com o stream até parar sozinha —
+      // trocar de modo no meio de uma gravação não deve cortar o áudio/vídeo
+      if (mediaRecorderRef.current?.state === 'recording') return
+      videoStreamRef.current?.getTracks().forEach((t) => t.stop())
+      videoStreamRef.current = null
+      if (videoPreviewRef.current) videoPreviewRef.current.srcObject = null
+      setCameraStatus('idle')
+    }
+  }, [mode])
+
   // encerra microfone/câmera e gravação em andamento se a música mudar ou o gravador fechar
   useEffect(() => () => {
     if (timerRef.current) window.clearInterval(timerRef.current)
     if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop()
     streamRef.current?.getTracks().forEach((t) => t.stop())
+    videoStreamRef.current?.getTracks().forEach((t) => t.stop())
     mixRef.current?.stop()
   }, [])
 
@@ -98,15 +140,10 @@ export function Recorder({ songId, mode }: { songId: string; mode: RecordingKind
     setStatus('starting')
     try {
       if (mode === 'video') {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user' },
-          audio: AUDIO_CONSTRAINTS,
-        })
-        streamRef.current = stream
-        if (videoPreviewRef.current) {
-          videoPreviewRef.current.srcObject = stream
-          void videoPreviewRef.current.play().catch(() => {})
-        }
+        // reaproveita o stream da câmera já ligada pelo modo vídeo — pedir de
+        // novo aqui piscaria o preview e poderia disparar outro prompt de permissão
+        const stream = videoStreamRef.current
+        if (!stream) { setStatus('denied'); return }
         const mime = pickMime(['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'])
         const mr = mime
           ? new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: VIDEO_BITRATE, audioBitsPerSecond: AUDIO_BITRATE })
@@ -141,11 +178,14 @@ export function Recorder({ songId, mode }: { songId: string; mode: RecordingKind
     mr.onstop = () => {
       const blob = new Blob(chunksRef.current, { type: mr.mimeType || (kind === 'video' ? 'video/webm' : 'audio/webm') })
       const durationMs = Date.now() - startTimeRef.current
-      streamRef.current?.getTracks().forEach((t) => t.stop())
-      streamRef.current = null
+      // no modo vídeo o stream é o preview compartilhado (câmera continua
+      // ligada depois de parar); no modo áudio é um stream só da gravação
+      if (kind === 'audio') {
+        streamRef.current?.getTracks().forEach((t) => t.stop())
+        streamRef.current = null
+      }
       mixRef.current?.stop()
       mixRef.current = null
-      if (videoPreviewRef.current) videoPreviewRef.current.srcObject = null
       void saveRecording(songId, blob, durationMs, kind, layered).then(setRecordings)
     }
     mediaRecorderRef.current = mr
@@ -170,7 +210,7 @@ export function Recorder({ songId, mode }: { songId: string; mode: RecordingKind
 
   return (
     <div className="record-float-wrap">
-      {activeModeRef.current === 'video' && (status === 'recording' || status === 'starting') && (
+      {mode === 'video' && (
         <video ref={videoPreviewRef} className="record-preview-float" muted playsInline />
       )}
 
@@ -210,7 +250,7 @@ export function Recorder({ songId, mode }: { songId: string; mode: RecordingKind
         <div className="record-pill">
           <button
             className="record-pill-btn record"
-            disabled={status === 'recording' || status === 'starting'}
+            disabled={status === 'recording' || status === 'starting' || (mode === 'video' && cameraStatus !== 'ready')}
             onClick={() => void startRecording()}
             aria-label={status === 'starting' ? 'Preparando…' : `Gravar ${mode === 'video' ? 'vídeo' : 'áudio'}`}
           >
@@ -235,6 +275,12 @@ export function Recorder({ songId, mode }: { songId: string; mode: RecordingKind
       </div>
 
       {status === 'recording' && <span className="record-elapsed mono">{formatDuration(elapsedMs)}</span>}
+      {status === 'idle' && mode === 'video' && cameraStatus === 'starting' && (
+        <p className="hint record-denied">Ligando a câmera…</p>
+      )}
+      {status === 'idle' && mode === 'video' && cameraStatus === 'denied' && (
+        <p className="hint danger record-denied">Não consegui acessar a câmera/microfone. Confira a permissão nas configurações do navegador ou do app.</p>
+      )}
       {status === 'denied' && (
         <p className="hint danger record-denied">
           Não consegui acessar {mode === 'video' ? 'o microfone e/ou a câmera' : 'o microfone'}. Confira a permissão nas

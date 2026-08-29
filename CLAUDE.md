@@ -34,6 +34,30 @@ Notas:
 - Sempre revise `git status`/`git diff` antes de commitar para não incluir
   arquivos indesejados (ex.: artefatos de build, `.env`, etc.).
 
+## Cuidado com UX/UI ao implementar telas novas
+
+Feedback direto do usuário (29/08/2026): uma leva de mudanças de UI (reorganização
+da tela de música, gravador flutuante, abas novas) saiu com cores/formas fora do
+padrão visual do resto do app e sem cuidado básico com funções de microfone. Antes
+de desenhar uma tela nova ou componente novo:
+
+- **Acione a skill `identidade-visual-apps`** antes de estilizar qualquer tela ou
+  componente novo (e ao revisar algo que "não bate com o resto do app"). Não
+  invente linguagem visual nova (sombras, formas, paleta) sem antes checar essa
+  skill e os padrões já existentes em `src/styles.css` — reaproveite classes e
+  variáveis (`--bg2`, `--bg3`, `--line`, `--accent`, `--accent2`, `.icon`, `.btn`,
+  `.chip`, `.sheet`, `.panel-section`, `.sublist`/`.subrow` etc.) em vez de criar
+  padrões paralelos.
+- **Toda função que escuta o microfone continuamente** (não é uma captura única
+  disparada por um toque, tipo "ouvir acorde") precisa de um botão explícito de
+  "começar a escutar/parar", nunca pode ligar o microfone e já ficar reagindo a
+  qualquer som assim que a tela abre — isso pega ruído de fundo, TV, conversa
+  etc. como se fosse entrada válida. Pense como o usuário final: o que aconteceria
+  se essa tela ficasse aberta sem ninguém tocando/cantando de propósito?
+- De modo geral, antes de considerar uma feature de UI pronta, revise mentalmente
+  pela perspectiva de quem vai usar no dia a dia — não só se compila e funciona,
+  mas se o comportamento e a aparência fazem sentido no contexto do app.
+
 ## Uso de agentes em segundo plano
 
 Para tarefas independentes e bem simples (ex.: investigar um arquivo específico,

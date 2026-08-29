@@ -9,61 +9,74 @@ import { analyzeVoiceFrame, getEssentia, type VoiceReading } from '../../audio/a
 
 const ANALYSIS_INTERVAL_MS = 180
 
-type Status = 'starting' | 'listening' | 'denied' | 'unsupported'
+type Status = 'idle' | 'starting' | 'listening' | 'denied' | 'unsupported'
 
 export function VoiceLabTab() {
-  const [status, setStatus] = useState<Status>('starting')
+  const [status, setStatus] = useState<Status>('idle')
   const [reading, setReading] = useState<VoiceReading | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const audioCtxRef = useRef<AudioContext | null>(null)
   const timerRef = useRef<number | null>(null)
 
-  useEffect(() => {
-    if (!navigator.mediaDevices?.getUserMedia) { setStatus('unsupported'); return }
-    let cancelled = false
-    setStatus('starting')
+  const stopListening = () => {
+    if (timerRef.current) { window.clearInterval(timerRef.current); timerRef.current = null }
+    streamRef.current?.getTracks().forEach((t) => t.stop())
+    streamRef.current = null
+    void audioCtxRef.current?.close()
+    audioCtxRef.current = null
+    setReading(null)
+    setStatus('idle')
+  }
 
-    void (async () => {
-      try {
-        const [essentia, stream] = await Promise.all([
-          getEssentia(),
-          navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }),
-        ])
-        if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return }
-        streamRef.current = stream
-        const ctx = new AudioContext()
-        audioCtxRef.current = ctx
-        const source = ctx.createMediaStreamSource(stream)
-        const analyser = ctx.createAnalyser()
-        analyser.fftSize = 4096
-        source.connect(analyser)
-        const buf = new Float32Array(analyser.fftSize)
-        setStatus('listening')
-        timerRef.current = window.setInterval(() => {
-          analyser.getFloatTimeDomainData(buf)
-          const r = analyzeVoiceFrame(essentia, buf, ctx.sampleRate)
-          if (r) setReading(r)
-        }, ANALYSIS_INTERVAL_MS)
-      } catch {
-        if (!cancelled) setStatus('denied')
-      }
-    })()
-
-    return () => {
-      cancelled = true
-      if (timerRef.current) window.clearInterval(timerRef.current)
-      streamRef.current?.getTracks().forEach((t) => t.stop())
-      void audioCtxRef.current?.close()
-    }
+  // encerra o microfone se o usuário sair da aba com a escuta ligada
+  useEffect(() => () => {
+    if (timerRef.current) window.clearInterval(timerRef.current)
+    streamRef.current?.getTracks().forEach((t) => t.stop())
+    void audioCtxRef.current?.close()
   }, [])
+
+  const startListening = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) { setStatus('unsupported'); return }
+    setStatus('starting')
+    try {
+      const [essentia, stream] = await Promise.all([
+        getEssentia(),
+        navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }),
+      ])
+      streamRef.current = stream
+      const ctx = new AudioContext()
+      audioCtxRef.current = ctx
+      const source = ctx.createMediaStreamSource(stream)
+      const analyser = ctx.createAnalyser()
+      analyser.fftSize = 4096
+      source.connect(analyser)
+      const buf = new Float32Array(analyser.fftSize)
+      setStatus('listening')
+      timerRef.current = window.setInterval(() => {
+        analyser.getFloatTimeDomainData(buf)
+        const r = analyzeVoiceFrame(essentia, buf, ctx.sampleRate)
+        if (r) setReading(r)
+      }, ANALYSIS_INTERVAL_MS)
+    } catch {
+      setStatus('denied')
+    }
+  }
 
   return (
     <div className="panel-section">
       <p className="hint small">Cante uma nota sustentada, num ambiente silencioso, e observe o retrato do timbre em tempo real.</p>
 
+      {(status === 'idle' || status === 'starting') && (
+        <button className="btn primary wide" disabled={status === 'starting'} onClick={() => void startListening()}>
+          {status === 'starting' ? 'carregando…' : 'começar a escutar'}
+        </button>
+      )}
+      {status === 'listening' && (
+        <button className="btn ghost wide" onClick={stopListening}>parar de escutar</button>
+      )}
+
       {status === 'unsupported' && <p className="hint danger">Este navegador não dá acesso ao microfone.</p>}
       {status === 'denied' && <p className="hint danger">Não consegui acessar o microfone. Confira a permissão do app/navegador.</p>}
-      {status === 'starting' && <p className="hint">Carregando análise…</p>}
 
       {status === 'listening' && !reading && <p className="hint">Cante uma nota para começar.</p>}
 

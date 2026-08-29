@@ -542,20 +542,26 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .fab svg { width: 26px; height: 26px; }
 .tageditor input { flex: 1; background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; color: var(--fg); padding: .45rem .6rem; font-size: .85rem; }
-/* ---------- gravador de prática (flutuante) ---------- */
-.record-float-wrap { position: fixed; right: .8rem; bottom: 86px; z-index: 15; display: flex; flex-direction: column; align-items: flex-end; gap: .5rem; }
-.record-preview-float { width: 150px; height: 200px; border-radius: 12px; background: #000; object-fit: cover; box-shadow: 0 4px 18px rgba(0,0,0,.4); }
+/* ---------- gravador de prática (flutuante) ----------
+   mesma "família" visual do .fab (raio, sombra, cor sólida de destaque) —
+   é a outra peça flutuante que já existe no app, então reaproveita os
+   mesmos valores em vez de inventar uma nova elevação. */
+.record-float-wrap {
+  position: fixed; right: 1.1rem; bottom: calc(4.6rem + env(safe-area-inset-bottom));
+  z-index: 15; display: flex; flex-direction: column; align-items: flex-end; gap: .5rem;
+}
+.record-preview-float { width: 150px; height: 200px; border-radius: 12px; background: #000; object-fit: cover; box-shadow: 0 4px 14px rgba(0, 0, 0, .3); }
 .record-cluster { display: flex; align-items: center; gap: .5rem; }
-.record-pill { display: flex; background: var(--bg2); border: 1px solid var(--line); border-radius: 24px; overflow: hidden; box-shadow: 0 4px 18px rgba(0,0,0,.35); }
+.record-pill { display: flex; background: var(--bg2); border: 1px solid var(--line); border-radius: 24px; overflow: hidden; box-shadow: 0 4px 14px rgba(0, 0, 0, .3); }
 .record-pill-btn { width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--fg); }
 .record-pill-btn svg { width: 18px; height: 18px; }
 .record-pill-btn:disabled { opacity: .35; }
 .record-pill-btn.stop { color: var(--danger); border-left: 1px solid var(--line); }
-.record-folder { width: 46px; height: 46px; border-radius: 50%; background: var(--accent); color: #14161a; border: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 18px rgba(0,0,0,.35); }
+.record-folder { width: 46px; height: 46px; border-radius: 50%; background: var(--accent); color: #14161a; border: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0, 0, 0, .3); }
 .record-folder svg { width: 20px; height: 20px; }
 .record-folder.on { background: color-mix(in srgb, var(--accent) 70%, #000); }
 .record-elapsed { background: var(--bg2); border: 1px solid var(--line); border-radius: 20px; padding: .2rem .7rem; font-size: .78rem; color: var(--danger); }
-.record-denied { max-width: 260px; text-align: right; background: var(--bg2); border-radius: 8px; padding: .4rem .6rem; }
+.record-denied { max-width: 260px; text-align: right; background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; padding: .4rem .6rem; }
 
 .record-list-float {
   width: min(370px, calc(100vw - 1.6rem));
@@ -565,7 +571,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: .7rem .8rem;
-  box-shadow: 0 8px 28px rgba(0,0,0,.4);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .35);
 }
 .record-list-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .4rem; }
 .record-list-items { display: flex; flex-direction: column; gap: .4rem; }
