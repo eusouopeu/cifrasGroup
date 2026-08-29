@@ -32,6 +32,13 @@ const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
 }
 const AUDIO_BITRATE = 192_000
 const VIDEO_BITRATE = 2_500_000
+/** vertical 9:16 — pronto para postar em reels/TikTok/shorts sem cortar depois */
+const VIDEO_CONSTRAINTS: MediaTrackConstraints = {
+  facingMode: 'user',
+  aspectRatio: { ideal: 9 / 16 },
+  width: { ideal: 1080 },
+  height: { ideal: 1920 },
+}
 
 function pickMime(candidates: string[]): string {
   return candidates.find((m) => MediaRecorder.isTypeSupported(m)) ?? ''
@@ -88,7 +95,7 @@ export function Recorder({ songId, mode }: { songId: string; mode: RecordingKind
     let cancelled = false
     setCameraStatus('starting')
     void navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: 'user' }, audio: AUDIO_CONSTRAINTS })
+      .getUserMedia({ video: VIDEO_CONSTRAINTS, audio: AUDIO_CONSTRAINTS })
       .then((stream) => {
         if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return }
         videoStreamRef.current = stream

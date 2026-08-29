@@ -444,6 +444,15 @@ export function SongView({
         </div>
       )}
 
+      {rhythm && !editingRaw && (
+        <div className="rhythmbar">
+          <span className="rhythmbar-name">{rhythm.name}</span>
+          <div className="rhythmbar-grid">
+            <RhythmGrid rhythm={rhythm} activeStep={metronome.step} />
+          </div>
+        </div>
+      )}
+
       {/* barra de transporte: fica no rodapé, ao alcance do polegar — durante a
           edição da cifra vira só os botões de cancelar/salvar */}
       {editingRaw ? (
@@ -468,28 +477,23 @@ export function SongView({
             <button className="transport-step" onClick={() => dispatch({ type: 'bpmBy', delta: -1 })} aria-label="Diminuir 1 bpm"><MinusIcon /></button>
             <button className="transport-step" onClick={() => dispatch({ type: 'bpmBy', delta: 1 })} aria-label="Aumentar 1 bpm"><PlusIcon /></button>
           </div>
-          <div className="transport-steps">
-            {rhythm && <RhythmGrid rhythm={rhythm} activeStep={metronome.step} />}
-          </div>
           <div className="transport-actions">
-            <div className="toggle recmode-toggle">
-              <button
-                className={panel === 'gravar' && recordMode === 'audio' ? 'on' : ''}
-                onClick={() => openRecorder('audio')}
-                aria-label="Gravar áudio"
-                title="Gravar áudio"
-              >
-                <MicrophoneIcon />
-              </button>
-              <button
-                className={panel === 'gravar' && recordMode === 'video' ? 'on' : ''}
-                onClick={() => openRecorder('video')}
-                aria-label="Gravar vídeo"
-                title="Gravar vídeo"
-              >
-                <VideoCameraIcon />
-              </button>
-            </div>
+            <button
+              className={`transport-icon${panel === 'gravar' && recordMode === 'audio' ? ' on' : ''}`}
+              onClick={() => openRecorder('audio')}
+              aria-label="Gravar áudio"
+              title="Gravar áudio"
+            >
+              <MicrophoneIcon />
+            </button>
+            <button
+              className={`transport-icon${panel === 'gravar' && recordMode === 'video' ? ' on' : ''}`}
+              onClick={() => openRecorder('video')}
+              aria-label="Gravar vídeo"
+              title="Gravar vídeo"
+            >
+              <VideoCameraIcon />
+            </button>
             <button className={`transport-icon${panel === 'notas' ? ' on' : ''}`} onClick={() => togglePanel('notas')} aria-label="Notas">
               <PencilSquareIcon />
             </button>

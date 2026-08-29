@@ -374,7 +374,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* ---------- barra de transporte (metrônomo + rolagem) ---------- */
 .transport {
   position: sticky; bottom: 0; z-index: 5;
-  display: flex; align-items: center; gap: .7rem;
+  display: flex; align-items: center; justify-content: space-between; gap: .7rem;
   padding: .5rem .7rem calc(.5rem + env(safe-area-inset-bottom));
   background: var(--bg2); border-top: 1px solid var(--line);
   box-shadow: 0 -4px 16px rgba(0, 0, 0, .18);
@@ -395,7 +395,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .transport-bpm strong { font-size: 1.1rem; }
 .transport-bpm span { font-size: .7rem; color: var(--dim); max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.transport-steps { flex: 1; min-width: 0; overflow: hidden; }
 .transport-actions { display: flex; align-items: center; gap: .9rem; flex: 0 0 auto; }
 .transport-icon {
   flex: 0 0 auto; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line);
@@ -404,10 +403,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .transport-icon svg { width: 19px; height: 19px; }
 .transport-icon.on { background: color-mix(in srgb, var(--accent) 16%, var(--bg3)); border-color: var(--accent); color: var(--accent); }
 .record-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); display: inline-block; flex-shrink: 0; }
-.recmode-toggle { flex: 0 0 auto; }
-.recmode-toggle button { display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; padding: 0; border-radius: 0; }
-.recmode-toggle button svg { width: 18px; height: 18px; }
-.recmode-toggle button.on { background: var(--accent2); color: #14161a; }
 
 .bpmbox { background: var(--bg3); border: 1px solid var(--line); border-radius: 10px; padding: .6rem .7rem; margin-bottom: .8rem; }
 .bpmbox input[type=range] { width: 100%; margin: .5rem 0 .4rem; }
@@ -550,7 +545,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   position: fixed; right: 1.1rem; bottom: calc(4.6rem + env(safe-area-inset-bottom));
   z-index: 15; display: flex; flex-direction: column; align-items: flex-end; gap: .5rem;
 }
-.record-preview-float { width: 150px; height: 200px; border-radius: 12px; background: #000; object-fit: cover; box-shadow: 0 4px 14px rgba(0, 0, 0, .3); }
+.record-preview-float { width: 150px; aspect-ratio: 9 / 16; border-radius: 12px; background: #000; object-fit: cover; box-shadow: 0 4px 14px rgba(0, 0, 0, .3); }
 .record-cluster { display: flex; align-items: center; gap: .5rem; }
 .record-pill { display: flex; background: var(--bg2); border: 1px solid var(--line); border-radius: 24px; overflow: hidden; box-shadow: 0 4px 14px rgba(0, 0, 0, .3); }
 .record-pill-btn { width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--fg); }
@@ -649,8 +644,21 @@ button.recrow { display: flex; align-items: center; gap: .5rem; }
 .voicing-prefer-hint svg { width: 12px; height: 12px; color: var(--accent2); }
 
 /* abas "versões mais fáceis" / "trocar manualmente" na ficha do acorde */
-.chordsheet-tabs { display: flex; width: 100%; margin: .7rem 0 .6rem; }
+.chordsheet-tabs { display: flex; width: 100%; }
 .chordsheet-tabs button { flex: 1; }
+
+/* pílulas da aba Acordes presas embaixo do painel (não em cima do conteúdo)
+   pra não pular de lugar quando o conteúdo de cada aba muda de altura —
+   a folha (.sheet) é quem rola; isto fica grudado no fundo dela */
+.chordspanel-content { min-height: 120px; }
+.chordspanel-footer {
+  position: sticky; bottom: -1rem; z-index: 1;
+  display: flex; flex-direction: column; gap: .5rem;
+  margin: .8rem -1rem -1rem; padding: .6rem 1rem;
+  background: var(--bg2); border-top: 1px solid var(--line);
+}
+.chordspanel-footer .toggle { width: 100%; }
+.chordspanel-footer .toggle button { flex: 1; }
 .undo-override:disabled { opacity: .3; }
 .undo-override { color: var(--dim); }
 
@@ -692,6 +700,16 @@ button.recrow { display: flex; align-items: center; gap: .5rem; }
 }
 .scrollbar-slider { flex: 1; min-width: 0; accent-color: var(--accent); }
 .scrollbar-mark { font-size: .95rem; line-height: 1; opacity: .75; }
+
+/* ---------- indicador da batida ativa (acima da barra inferior) ---------- */
+.rhythmbar {
+  position: sticky; bottom: 0; z-index: 6;
+  display: flex; align-items: center; gap: .6rem;
+  padding: .3rem .6rem; background: var(--bg3); border-top: 1px solid var(--line);
+  overflow: hidden;
+}
+.rhythmbar-name { flex: 0 0 auto; font-size: .72rem; color: var(--dim); max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rhythmbar-grid { flex: 1; min-width: 0; overflow: hidden; }
 
 /* +/- de bpm ao lado do valor, na barra de transporte */
 .transport-bpmbox { display: flex; align-items: center; gap: .3rem; flex: 0 0 auto; }

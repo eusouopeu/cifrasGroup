@@ -361,63 +361,70 @@ export function ChordsPanel({ s, view, dispatch, customTunings, onSaveCustomTuni
 
   return (
     <Panel title="Acordes">
-      <div className="toggle chordsheet-tabs">
-        <button className={tab === 'afinacao' ? 'on' : ''} onClick={() => setTab('afinacao')}>Afinação</button>
-        <button className={tab === 'conferencia' ? 'on' : ''} onClick={() => setTab('conferencia')}>Conferência</button>
-        <button className={tab === 'voz' ? 'on' : ''} onClick={() => setTab('voz')}>Voz</button>
+      {/* conteúdo primeiro, pílulas por último — presas embaixo (ver
+          .chordspanel-footer) pra não pular de lugar quando o conteúdo de
+          cada aba muda de altura */}
+      <div className="chordspanel-content">
+        {tab === 'afinacao' && (
+          <>
+            {s.instrument === 'guitar' && (
+              <TuningPicker
+                value={s.tuning}
+                onChange={(id) => dispatch({ type: 'setTuning', id })}
+                customTunings={customTunings}
+                onSaveCustomTuning={onSaveCustomTuning}
+                onDeleteCustomTuning={(id) => {
+                  onDeleteCustomTuning(id)
+                  if (s.tuning === id) dispatch({ type: 'setTuning', id: 'standard' })
+                }}
+                onOpenTuner={onOpenTuner}
+              />
+            )}
+            <div className="chordgrid">
+              {view.displayedChords.map((c) => (
+                // div (não button): o cartão compacto já tem os próprios botões de
+                // ciclar digitação — um <button> dentro de outro é HTML inválido
+                <div
+                  key={c.symbol}
+                  role="button"
+                  tabIndex={0}
+                  className={`chordslot${overriddenSymbols.has(c.symbol) ? ' overridden' : ''}`}
+                  onClick={() => onInspect(c.symbol)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onInspect(c.symbol) } }}
+                  aria-label={`Ver ficha do acorde ${c.symbol}`}
+                >
+                  {overriddenSymbols.has(c.symbol) && <span className="overridden-dot" title="Troca manual" />}
+                  <ChordCard symbol={c.symbol} instrument={s.instrument} compact tuning={tuning} />
+                </div>
+              ))}
+            </div>
+            <p className="hint small">Toque em um acorde para ver todas as digitações e a construção nota a nota. <span className="overridden-dot inline" /> marca acordes trocados manualmente.</p>
+            {s.capo > 0 && <p className="hint small">Diagramas relativos ao capotraste na {s.capo}ª casa.</p>}
+            {overriddenSymbols.size > 0 && (
+              <button className="btn ghost wide" onClick={onRestoreAllOverrides}>
+                restaurar todos os acordes trocados manualmente ({Object.keys(s.overrides).length})
+              </button>
+            )}
+          </>
+        )}
+
+        {tab === 'conferencia' && <ChordConferenceTab tuning={tuning} />}
+        {tab === 'voz' && <VoiceLabTab />}
       </div>
 
-      {tab === 'afinacao' && (
-        <>
-          <div className="row">
-            <div className="toggle">
-              <button className={s.instrument === 'guitar' ? 'on' : ''} onClick={() => dispatch({ type: 'setInstrument', value: 'guitar' })}>Violão</button>
-              <button className={s.instrument === 'piano' ? 'on' : ''} onClick={() => dispatch({ type: 'setInstrument', value: 'piano' })}>Piano</button>
-            </div>
-            {s.capo > 0 && <span className="hint small">Diagramas relativos ao capotraste na {s.capo}ª casa.</span>}
+      <div className="chordspanel-footer">
+        {tab === 'afinacao' && (
+          <div className="toggle">
+            <button className={s.instrument === 'guitar' ? 'on' : ''} onClick={() => dispatch({ type: 'setInstrument', value: 'guitar' })}>Violão</button>
+            <button className={s.instrument === 'piano' ? 'on' : ''} onClick={() => dispatch({ type: 'setInstrument', value: 'piano' })}>Piano</button>
           </div>
-          {s.instrument === 'guitar' && (
-            <TuningPicker
-              value={s.tuning}
-              onChange={(id) => dispatch({ type: 'setTuning', id })}
-              customTunings={customTunings}
-              onSaveCustomTuning={onSaveCustomTuning}
-              onDeleteCustomTuning={(id) => {
-                onDeleteCustomTuning(id)
-                if (s.tuning === id) dispatch({ type: 'setTuning', id: 'standard' })
-              }}
-              onOpenTuner={onOpenTuner}
-            />
-          )}
-          <div className="chordgrid">
-            {view.displayedChords.map((c) => (
-              // div (não button): o cartão compacto já tem os próprios botões de
-              // ciclar digitação — um <button> dentro de outro é HTML inválido
-              <div
-                key={c.symbol}
-                role="button"
-                tabIndex={0}
-                className={`chordslot${overriddenSymbols.has(c.symbol) ? ' overridden' : ''}`}
-                onClick={() => onInspect(c.symbol)}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onInspect(c.symbol) } }}
-                aria-label={`Ver ficha do acorde ${c.symbol}`}
-              >
-                {overriddenSymbols.has(c.symbol) && <span className="overridden-dot" title="Troca manual" />}
-                <ChordCard symbol={c.symbol} instrument={s.instrument} compact tuning={tuning} />
-              </div>
-            ))}
-          </div>
-          <p className="hint small">Toque em um acorde para ver todas as digitações e a construção nota a nota. <span className="overridden-dot inline" /> marca acordes trocados manualmente.</p>
-          {overriddenSymbols.size > 0 && (
-            <button className="btn ghost wide" onClick={onRestoreAllOverrides}>
-              restaurar todos os acordes trocados manualmente ({Object.keys(s.overrides).length})
-            </button>
-          )}
-        </>
-      )}
-
-      {tab === 'conferencia' && <ChordConferenceTab tuning={tuning} />}
-      {tab === 'voz' && <VoiceLabTab />}
+        )}
+        <div className="toggle chordsheet-tabs">
+          <button className={tab === 'afinacao' ? 'on' : ''} onClick={() => setTab('afinacao')}>Afinação</button>
+          <button className={tab === 'conferencia' ? 'on' : ''} onClick={() => setTab('conferencia')}>Conferência</button>
+          <button className={tab === 'voz' ? 'on' : ''} onClick={() => setTab('voz')}>Voz</button>
+        </div>
+      </div>
     </Panel>
   )
 }
