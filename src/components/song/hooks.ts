@@ -1,6 +1,6 @@
 /**
  * Comportamentos da tela da música que não são desenho: rolagem automática,
- * loop de trecho, contagem de entrada, tela cheia e atalhos de teclado.
+ * loop de trecho, tela cheia e atalhos de teclado.
  *
  * Estavam todos dentro de SongView.tsx, misturados com o JSX de sete painéis.
  * Separados, cada um pode ser lido (e mudado) sem esbarrar nos outros.
@@ -9,7 +9,6 @@ import { useEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import type { SongSettings } from '../../store/db'
 import { changesKeyManually, songSettingsPatch, type SongAction } from '../../store/songActions'
-import type { UseMetronome } from '../../audio/useMetronome'
 
 export type SongDispatch = (action: SongAction) => void
 
@@ -124,38 +123,6 @@ export function useSectionLoop(
   return { active, toggle }
 }
 
-/**
- * Contagem visual de um compasso antes de o metrônomo tocar, para dar tempo de
- * se preparar em vez de o áudio começar de supetão.
- */
-export function useCountIn(bpm: number, metronome: UseMetronome): { countIn: number | null; play: () => void } {
-  const [countIn, setCountIn] = useState<number | null>(null)
-  const timer = useRef<number | null>(null)
-  useEffect(() => () => { if (timer.current) window.clearInterval(timer.current) }, [])
-
-  const play = () => {
-    if (metronome.running) { metronome.toggle(); return }
-    if (countIn !== null) {
-      if (timer.current) window.clearInterval(timer.current)
-      setCountIn(null)
-      return
-    }
-    let n = 4
-    setCountIn(n)
-    timer.current = window.setInterval(() => {
-      n -= 1
-      if (n <= 0) {
-        if (timer.current) window.clearInterval(timer.current)
-        setCountIn(null)
-        metronome.toggle()
-      } else {
-        setCountIn(n)
-      }
-    }, 60000 / bpm)
-  }
-
-  return { countIn, play }
-}
 
 /**
  * Uma "sessão de prática" é o tempo com o metrônomo ligado. Reportada ao

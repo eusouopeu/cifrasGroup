@@ -5,6 +5,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   MinusIcon,
+  MusicalNoteIcon,
   PencilIcon,
   PencilSquareIcon,
   PlusIcon,
@@ -42,7 +43,6 @@ import {
 } from './song/panels'
 import {
   useAutoScroll,
-  useCountIn,
   usePracticeTracking,
   useSectionLoop,
   useSongSettings,
@@ -131,7 +131,7 @@ export function SongView({
   )
   const rhythm = rhythmById(s.rhythmId)
   const metronome = useMetronome(rhythm, s.bpm, s.playPattern, s.playClick)
-  const { countIn, play } = useCountIn(s.bpm, metronome)
+  const play = metronome.toggle
   const loop = useSectionLoop(scrollRef, showToast)
   useAutoScroll(scrollRef, s.scrollSpeed)
   useSongShortcuts(play, dispatch)
@@ -460,8 +460,16 @@ export function SongView({
         </div>
       )}
 
-      {rhythm && !editingRaw && (
+      {rhythm && metronome.running && !editingRaw && (
         <div className="rhythmbar">
+          <button
+            className={`icon${s.playPattern ? ' active' : ''}`}
+            onClick={() => dispatch({ type: 'togglePattern' })}
+            aria-label={s.playPattern ? 'Não tocar a batida por cima do metrônomo' : 'Tocar a batida por cima do metrônomo'}
+            title={s.playPattern ? 'Batida tocando — toque para silenciar' : 'Tocar a batida por cima do metrônomo'}
+          >
+            <MusicalNoteIcon />
+          </button>
           <span className="rhythmbar-name">{rhythm.name}</span>
           <div className="rhythmbar-grid">
             <RhythmGrid rhythm={rhythm} activeStep={metronome.step} />
@@ -479,11 +487,11 @@ export function SongView({
       ) : (
         <div className="transport">
           <button
-            className={`transport-play${metronome.running ? ' on' : ''}${countIn !== null ? ' counting' : ''}`}
+            className={`transport-play${metronome.running ? ' on' : ''}`}
             onClick={play}
-            aria-label={metronome.running ? 'Parar metrônomo' : countIn !== null ? 'Cancelar contagem' : 'Iniciar metrônomo'}
+            aria-label={metronome.running ? 'Parar metrônomo' : 'Iniciar metrônomo'}
           >
-            {countIn !== null ? countIn : metronome.running ? <StopIcon /> : <PlayIcon />}
+            {metronome.running ? <StopIcon /> : <PlayIcon />}
           </button>
           <div className="transport-bpmbox">
             <button className="transport-bpm" onClick={() => togglePanel('ritmo')} aria-label="Abrir painel de ritmo">

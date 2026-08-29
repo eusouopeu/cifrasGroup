@@ -46,6 +46,7 @@ export function FontSizeToggleButton() {
 }
 
 const INSTRUMENT_LABEL: Record<DisplayDefaults['instrument'], string> = { guitar: 'Violão', piano: 'Piano' }
+const INSTRUMENT_EMOJI: Record<DisplayDefaults['instrument'], string> = { guitar: '🎸', piano: '🎹' }
 
 /** Cicla violão ↔ piano — vale pros diagramas de acorde em qualquer música. */
 export function InstrumentToggleButton() {
@@ -53,12 +54,12 @@ export function InstrumentToggleButton() {
   const next: DisplayDefaults['instrument'] = defaults.instrument === 'guitar' ? 'piano' : 'guitar'
   return (
     <button
-      className="icon labeltoggle"
+      className="icon labeltoggle emoji"
       onClick={() => patch({ instrument: next })}
       aria-label={`Instrumento: ${INSTRUMENT_LABEL[defaults.instrument]} — toque para trocar para ${INSTRUMENT_LABEL[next]}`}
       title={`Instrumento: ${INSTRUMENT_LABEL[defaults.instrument]}`}
     >
-      {defaults.instrument === 'guitar' ? 'Vlão' : 'Piano'}
+      {INSTRUMENT_EMOJI[defaults.instrument]}
     </button>
   )
 }

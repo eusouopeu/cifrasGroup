@@ -113,6 +113,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* botões "meio-toggle" de cabeçalho que mostram texto em vez de ícone
    (tamanho do texto, instrumento) — mesmo lugar/comportamento do tema */
 .labeltoggle { font-size: .68rem; font-weight: 700; font-family: var(--mono); min-width: 30px; color: var(--dim); }
+.labeltoggle.emoji { font-size: 1.15rem; font-family: initial; font-weight: normal; min-width: auto; }
 .inlinebtn { background: var(--bg3); border: 1px solid var(--line); border-radius: 5px; padding: 0 .35rem; margin: 0 .15rem; font-size: .75rem; }
 
 /* ---------- biblioteca ---------- */
@@ -391,7 +392,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .transport-play svg { width: 22px; height: 22px; }
 .transport-play.on { background: var(--accent); border-color: var(--accent); color: #14161a; }
-.transport-play.counting { background: var(--bg3); border-color: var(--accent2); color: var(--accent2); font-weight: 700; font-size: 1.1rem; }
 .transport-bpm {
   flex: 0 0 auto; background: none; border: none; text-align: left;
   display: flex; flex-direction: column; line-height: 1.15; padding: .2rem .15rem; min-height: 52px; justify-content: center;
