@@ -51,6 +51,12 @@ function normalizeSuffix(raw: string): string {
   // "Cm(7M)" chega aqui como "m7M" e precisa virar "mmaj7".
   s = s.replace(/7M/g, 'maj7')
   s = s.replace(/M7/g, 'maj7')
+  // "M" sozinho seguido de tensão é o mesmo que "maj" + a tensão ("CM9" =
+  // "Cmaj9" = maj7 com 9ª) — convenção comum quando o "7" fica implícito.
+  // "M" totalmente solto (sem nada depois) é só uma marca redundante de
+  // "maior" — o acorde já é maior por padrão — e é descartada.
+  s = s.replace(/^M(?=[0-9])/, 'maj7')
+  if (s === 'M') s = ''
   s = s.replace(/^7\+(?![0-9])/, 'maj7')
   s = s.replace(/^maj(?!7)/, 'maj7') // "Cmaj" isolado é raro; trata como maj7
   s = s.replace(/^minmaj7/, 'mmaj7')
@@ -78,6 +84,12 @@ export function parseChord(raw: string): Chord | null {
   if (!m) return null
   const rootPc = pcOf(m[1] + m[2].replace('♯', '#').replace('♭', 'b'))
   if (rootPc === null) return null
+
+  // "EM" solto (sem nada depois) colide com a preposição "em" do português —
+  // diferente de "AM", "CM" etc., que não são palavras reais, aceitar esse
+  // caso específico arriscaria transformar letra em acorde. Fica de fora até
+  // existir um mecanismo de verificação mais esperto (contexto da linha).
+  if (m[1] === 'E' && m[2] === '' && m[3] === 'M') return null
 
   let rest = m[3].replace(/6\s*\/\s*9/g, '69') // "C6/9" é sufixo, não inversão
   let bassPc: number | null = null

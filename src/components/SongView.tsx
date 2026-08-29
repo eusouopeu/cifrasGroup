@@ -13,10 +13,11 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline'
 import { ArrowDownIcon, ArrowPathIcon, MicrophoneIcon, PauseIcon, PlayIcon, StopIcon } from '@heroicons/react/24/solid'
-import { chordSequence, guessKeyFromSymbols } from '../cifra/parse'
+import { chordSequence, guessKeyFromSymbols, guessKeyModeFromSymbols } from '../cifra/parse'
 import { buildView, viewToText } from '../cifra/view'
 import { rhythmById } from '../data/rhythms'
-import { PALETTES } from '../theory/palettes'
+import { nameOf, preferFlatsForKey } from '../theory/notes'
+import { guessPaletteFromSymbols, PALETTES } from '../theory/palettes'
 import { tuningById, type Tuning } from '../theory/tunings'
 import type { Song, SongSettings } from '../store/db'
 import { SCROLL_MAX } from '../store/songActions'
@@ -192,6 +193,17 @@ export function SongView({
   const guessedAnalysisKey = useMemo(() => guessKeyFromSymbols(displayedSeq) ?? 0, [displayedSeq])
   const analysisKeyPc = manualAnalysisKey ?? guessedAnalysisKey
 
+  // tom e "emoção" originais — só usados pra rotular a barra de ferramentas
+  // quando nada foi mudado à mão (transpose 0 / paleta "original"); sempre a
+  // partir dos acordes tal como vieram na cifra, nunca da versão exibida
+  const originalSeq = useMemo(() => chordSequence(view.parsed), [view.parsed])
+  const detectedKey = useMemo(() => guessKeyModeFromSymbols(originalSeq), [originalSeq])
+  const guessedPaletteId = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const sym of originalSeq) counts.set(sym, (counts.get(sym) ?? 0) + 1)
+    return guessPaletteFromSymbols([...counts.entries()].map(([symbol, count]) => ({ symbol, count })))
+  }, [originalSeq])
+
   const togglePanel = (p: Panel) => setPanel(panel === p ? null : p)
   const tuning = tuningById(s.tuning, customTunings)
 
@@ -252,10 +264,14 @@ export function SongView({
 
       <nav className="toolbar">
         <ToolButton active={panel === 'tom'} onClick={() => togglePanel('tom')} label="Tom" value={
-          view.effectiveTranspose === 0 ? 'Original' : (view.effectiveTranspose > 0 ? '+' : '') + view.effectiveTranspose
+          view.effectiveTranspose === 0
+            ? (detectedKey ? nameOf(detectedKey.pc, preferFlatsForKey(detectedKey.pc)) + (detectedKey.minor ? 'm' : '') : 'Original')
+            : (view.effectiveTranspose > 0 ? '+' : '') + view.effectiveTranspose
         } />
         <ToolButton active={panel === 'simplificar'} onClick={() => togglePanel('simplificar')} label="Nível" value={String(s.simplifyLevel)} flash={level2JustOff} />
-        <ToolButton active={panel === 'cor'} onClick={() => togglePanel('cor')} label="Emoção" value={PALETTES.find((p) => p.id === s.paletteId)?.name ?? 'Original'} />
+        <ToolButton active={panel === 'cor'} onClick={() => togglePanel('cor')} label="Emoção" value={
+          PALETTES.find((p) => p.id === (s.paletteId === 'original' ? guessedPaletteId : s.paletteId))?.name ?? 'Original'
+        } />
         <ToolButton active={panel === 'ritmo'} onClick={() => togglePanel('ritmo')} label="Ritmo" value={rhythm?.name ?? 'Nenhum'} />
       </nav>
 

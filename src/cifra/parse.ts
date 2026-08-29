@@ -208,6 +208,32 @@ export function guessKey(parsed: ParsedCifra): number | null {
   return guessKeyFromSymbols(chordSequence(parsed))
 }
 
+export interface KeyGuess {
+  pc: number
+  /** true quando o acorde de tônica detectado é menor (ex.: "Am") */
+  minor: boolean
+}
+
+/**
+ * Igual a `guessKeyFromSymbols`, mas também decide maior/menor: entre as
+ * ocorrências do pitch class vencedor, o modo é o que a maioria das
+ * ocorrências realmente toca (tríade maior vs. menor) — não um palpite pela
+ * armadura, já que a cifra não declara isso em lugar nenhum.
+ */
+export function guessKeyModeFromSymbols(seq: string[]): KeyGuess | null {
+  const pc = guessKeyFromSymbols(seq)
+  if (pc === null) return null
+  let majorCount = 0
+  let minorCount = 0
+  for (const s of seq) {
+    const c = parseChord(s)
+    if (!c || c.rootPc !== pc) continue
+    if (c.triad === 'min' || c.triad === 'dim') minorCount++
+    else majorCount++
+  }
+  return { pc, minor: minorCount > majorCount }
+}
+
 /**
  * Reconstrói a linha de acordes com símbolos novos, preservando o alinhamento
  * com a letra sempre que o texto novo couber.

@@ -89,6 +89,31 @@ export function paletteById(id: string): Palette {
   return PALETTES.find((p) => p.id === id) ?? PALETTES[0]
 }
 
+/**
+ * A qual paleta nomeada os acordes ORIGINAIS da música (sem nenhuma
+ * transformação aplicada) já mais se parecem — usado para mostrar algo além
+ * de "Original" na barra de ferramentas quando nenhuma paleta foi escolhida
+ * à mão. Cada paleta candidata "vota" o quanto dos acordes ela reproduziria
+ * sem mudar nada (`applyPalette` devolvendo o próprio símbolo); a que mais
+ * bate, ponderada pela frequência de cada acorde na música, vence.
+ */
+export function guessPaletteFromSymbols(chords: { symbol: string; count: number }[]): string {
+  const total = chords.reduce((sum, c) => sum + c.count, 0)
+  if (total === 0) return 'original'
+  let best = 'original'
+  let bestScore = -1
+  for (const p of PALETTES) {
+    if (p.id === 'original') continue
+    let matched = 0
+    for (const { symbol, count } of chords) {
+      if (applyPalette(symbol, p) === symbol) matched += count
+    }
+    const score = matched / total
+    if (score > bestScore) { bestScore = score; best = p.id }
+  }
+  return best
+}
+
 /** Aplica a paleta a um símbolo. Retorna o próprio símbolo se não houver regra. */
 export function applyPalette(symbol: string, palette: Palette): string {
   if (!palette.map || Object.keys(palette.map).length === 0) return symbol
