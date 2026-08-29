@@ -9,20 +9,63 @@ import { PlayIcon, StopIcon } from '@heroicons/react/24/solid'
 import type { CifraView } from '../../cifra/view'
 import { RHYTHMS, type Rhythm } from '../../data/rhythms'
 import { romanNumeral } from '../../theory/functional'
-import { nameOf } from '../../theory/notes'
+import { nameOf, pcOf } from '../../theory/notes'
+import { captureMicPCM, detectKey } from '../../audio/analysis'
 import { PALETTES, applyPalette } from '../../theory/palettes'
 import { tuningById, type Tuning } from '../../theory/tunings'
 import type { Song, SongSettings } from '../../store/db'
-import { CAPO_MAX, SCROLL_MAX } from '../../store/songActions'
+import { CAPO_MAX } from '../../store/songActions'
 import type { UseMetronome } from '../../audio/useMetronome'
 import { ChordCard } from '../ChordDiagram'
 import { RhythmCard } from '../RhythmView'
-import { Recorder } from '../Recorder'
 import { TuningPicker } from '../TuningPicker'
-import { LevelButton, Panel, SizePicker, TagEditor } from './parts'
+import { LevelButton, Panel, TagEditor } from './parts'
+import { ChordConferenceTab } from './ChordConference'
+import { VoiceLabTab } from './VoiceLab'
 import type { SongDispatch } from './hooks'
 
 type KeyTab = 'tom' | 'analise'
+
+const KEY_DETECT_MS = 4000
+
+type DetectStatus = 'idle' | 'listening' | 'analyzing' | 'error'
+
+/** Detecta a tonalidade tocando/cantando no microfone (Essentia KeyExtractor) e preenche a tônica de análise. */
+function KeyDetectButton({ onDetected }: { onDetected: (pc: number | null) => void }) {
+  const [status, setStatus] = useState<DetectStatus>('idle')
+  const [result, setResult] = useState<{ key: string; scale: string; strength: number } | null>(null)
+
+  const detect = async () => {
+    setStatus('listening')
+    setResult(null)
+    try {
+      const audio = await captureMicPCM(KEY_DETECT_MS)
+      setStatus('analyzing')
+      const r = await detectKey(audio)
+      const pc = pcOf(r.key)
+      if (pc !== null) onDetected(pc)
+      setResult({ key: r.key, scale: r.scale, strength: r.strength })
+      setStatus('idle')
+    } catch {
+      setStatus('error')
+    }
+  }
+
+  return (
+    <div className="keydetect">
+      <button className="btn ghost" disabled={status === 'listening' || status === 'analyzing'} onClick={() => void detect()}>
+        {status === 'listening' ? 'ouvindo…' : status === 'analyzing' ? 'analisando…' : 'detectar tom pelo microfone'}
+      </button>
+      {status === 'error' && <p className="hint danger">Não consegui acessar o microfone.</p>}
+      {result && (
+        <p className="hint small">
+          Detectado: <strong className="mono">{result.key} {result.scale === 'major' ? 'maior' : 'menor'}</strong>
+          {' '}(confiança {Math.round(result.strength * 100)}%)
+        </p>
+      )}
+    </div>
+  )
+}
 
 export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey, onAnalysisKey }: {
   s: SongSettings
@@ -119,7 +162,8 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
 
       {tab === 'analise' && (
         <div className="panel-section">
-          <p className="hint small">Toque numa nota para trocar a tônica.</p>
+          <p className="hint small">Toque numa nota para trocar a tônica, ou detecte automaticamente cantando/tocando a música.</p>
+          <KeyDetectButton onDetected={onAnalysisKey} />
           <div className="rootrow">
             {Array.from({ length: 12 }, (_, i) => (
               <button
@@ -298,6 +342,8 @@ export function RhythmPanel({ s, rhythm, dispatch, metronome, onPlay }: {
   )
 }
 
+type ChordsTab = 'afinacao' | 'conferencia' | 'voz'
+
 export function ChordsPanel({ s, view, dispatch, customTunings, onSaveCustomTuning, onDeleteCustomTuning, overriddenSymbols, onInspect, onOpenTuner, onRestoreAllOverrides }: {
   s: SongSettings
   view: CifraView
@@ -310,83 +356,68 @@ export function ChordsPanel({ s, view, dispatch, customTunings, onSaveCustomTuni
   onOpenTuner: () => void
   onRestoreAllOverrides: () => void
 }) {
+  const [tab, setTab] = useState<ChordsTab>('afinacao')
+  const tuning = tuningById(s.tuning, customTunings)
+
   return (
-    <Panel title="Construção dos acordes">
-      <div className="row">
-        <div className="toggle">
-          <button className={s.instrument === 'guitar' ? 'on' : ''} onClick={() => dispatch({ type: 'setInstrument', value: 'guitar' })}>Violão</button>
-          <button className={s.instrument === 'piano' ? 'on' : ''} onClick={() => dispatch({ type: 'setInstrument', value: 'piano' })}>Piano</button>
-        </div>
-        {s.capo > 0 && <span className="hint small">Diagramas relativos ao capotraste na {s.capo}ª casa.</span>}
+    <Panel title="Acordes">
+      <div className="toggle chordsheet-tabs">
+        <button className={tab === 'afinacao' ? 'on' : ''} onClick={() => setTab('afinacao')}>Afinação</button>
+        <button className={tab === 'conferencia' ? 'on' : ''} onClick={() => setTab('conferencia')}>Conferência</button>
+        <button className={tab === 'voz' ? 'on' : ''} onClick={() => setTab('voz')}>Voz</button>
       </div>
-      {s.instrument === 'guitar' && (
-        <TuningPicker
-          value={s.tuning}
-          onChange={(id) => dispatch({ type: 'setTuning', id })}
-          customTunings={customTunings}
-          onSaveCustomTuning={onSaveCustomTuning}
-          onDeleteCustomTuning={(id) => {
-            onDeleteCustomTuning(id)
-            if (s.tuning === id) dispatch({ type: 'setTuning', id: 'standard' })
-          }}
-          onOpenTuner={onOpenTuner}
-        />
-      )}
-      <div className="chordgrid">
-        {view.displayedChords.map((c) => (
-          // div (não button): o cartão compacto já tem os próprios botões de
-          // ciclar digitação — um <button> dentro de outro é HTML inválido
-          <div
-            key={c.symbol}
-            role="button"
-            tabIndex={0}
-            className={`chordslot${overriddenSymbols.has(c.symbol) ? ' overridden' : ''}`}
-            onClick={() => onInspect(c.symbol)}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onInspect(c.symbol) } }}
-            aria-label={`Ver ficha do acorde ${c.symbol}`}
-          >
-            {overriddenSymbols.has(c.symbol) && <span className="overridden-dot" title="Troca manual" />}
-            <ChordCard symbol={c.symbol} instrument={s.instrument} compact tuning={tuningById(s.tuning, customTunings)} />
+
+      {tab === 'afinacao' && (
+        <>
+          <div className="row">
+            <div className="toggle">
+              <button className={s.instrument === 'guitar' ? 'on' : ''} onClick={() => dispatch({ type: 'setInstrument', value: 'guitar' })}>Violão</button>
+              <button className={s.instrument === 'piano' ? 'on' : ''} onClick={() => dispatch({ type: 'setInstrument', value: 'piano' })}>Piano</button>
+            </div>
+            {s.capo > 0 && <span className="hint small">Diagramas relativos ao capotraste na {s.capo}ª casa.</span>}
           </div>
-        ))}
-      </div>
-      <p className="hint small">Toque em um acorde para ver todas as digitações e a construção nota a nota. <span className="overridden-dot inline" /> marca acordes trocados manualmente.</p>
-      {overriddenSymbols.size > 0 && (
-        <button className="btn ghost wide" onClick={onRestoreAllOverrides}>
-          restaurar todos os acordes trocados manualmente ({Object.keys(s.overrides).length})
-        </button>
+          {s.instrument === 'guitar' && (
+            <TuningPicker
+              value={s.tuning}
+              onChange={(id) => dispatch({ type: 'setTuning', id })}
+              customTunings={customTunings}
+              onSaveCustomTuning={onSaveCustomTuning}
+              onDeleteCustomTuning={(id) => {
+                onDeleteCustomTuning(id)
+                if (s.tuning === id) dispatch({ type: 'setTuning', id: 'standard' })
+              }}
+              onOpenTuner={onOpenTuner}
+            />
+          )}
+          <div className="chordgrid">
+            {view.displayedChords.map((c) => (
+              // div (não button): o cartão compacto já tem os próprios botões de
+              // ciclar digitação — um <button> dentro de outro é HTML inválido
+              <div
+                key={c.symbol}
+                role="button"
+                tabIndex={0}
+                className={`chordslot${overriddenSymbols.has(c.symbol) ? ' overridden' : ''}`}
+                onClick={() => onInspect(c.symbol)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onInspect(c.symbol) } }}
+                aria-label={`Ver ficha do acorde ${c.symbol}`}
+              >
+                {overriddenSymbols.has(c.symbol) && <span className="overridden-dot" title="Troca manual" />}
+                <ChordCard symbol={c.symbol} instrument={s.instrument} compact tuning={tuning} />
+              </div>
+            ))}
+          </div>
+          <p className="hint small">Toque em um acorde para ver todas as digitações e a construção nota a nota. <span className="overridden-dot inline" /> marca acordes trocados manualmente.</p>
+          {overriddenSymbols.size > 0 && (
+            <button className="btn ghost wide" onClick={onRestoreAllOverrides}>
+              restaurar todos os acordes trocados manualmente ({Object.keys(s.overrides).length})
+            </button>
+          )}
+        </>
       )}
-    </Panel>
-  )
-}
 
-export function DisplayPanel({ s, dispatch }: { s: SongSettings; dispatch: SongDispatch }) {
-  return (
-    <Panel title="Configurações">
-      <div className="panel-section">
-        <h4>Tamanho do texto</h4>
-        <SizePicker value={s.fontSize} onChange={(px) => dispatch({ type: 'setFontSize', value: px })} />
-      </div>
-
-      <div className="panel-section">
-        <h4>Rolagem automática</h4>
-        <div className="row tight">
-          <input
-            type="number" min={0} max={SCROLL_MAX} className="numinput small"
-            aria-label="Velocidade da rolagem automática"
-            value={s.scrollSpeed}
-            onChange={(e) => dispatch({ type: 'setScrollSpeed', value: Number(e.target.value) })}
-          />
-          <span className="hint small">{s.scrollSpeed === 0 ? 'parada' : `velocidade ${s.scrollSpeed}`}</span>
-        </div>
-      </div>
-
-      <div className="panel-section">
-        <label className="field wide checkbox">
-          <input type="checkbox" checked={s.hideTabs} onChange={(e) => dispatch({ type: 'setHideTabs', value: e.target.checked })} />
-          Esconder tablaturas
-        </label>
-      </div>
+      {tab === 'conferencia' && <ChordConferenceTab tuning={tuning} />}
+      {tab === 'voz' && <VoiceLabTab />}
     </Panel>
   )
 }
@@ -426,14 +457,6 @@ export function NotesPanel({ song, onNotesChange, onTagsChange }: {
       </label>
       <h4>Tags</h4>
       <TagEditor tags={song.tags} onChange={onTagsChange} />
-    </Panel>
-  )
-}
-
-export function RecordPanel({ songId }: { songId: string }) {
-  return (
-    <Panel title="Gravação de prática">
-      <Recorder songId={songId} />
     </Panel>
   )
 }

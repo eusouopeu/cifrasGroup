@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  AdjustmentsHorizontalIcon,
   ArrowDownTrayIcon,
   ArrowLeftIcon,
-  ArrowPathIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   MinusIcon,
@@ -11,9 +9,10 @@ import {
   PencilSquareIcon,
   PlusIcon,
   Squares2X2Icon,
+  VideoCameraIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline'
-import { ArrowDownIcon, PauseIcon, PlayIcon, StopIcon } from '@heroicons/react/24/solid'
+import { ArrowDownIcon, ArrowPathIcon, MicrophoneIcon, PauseIcon, PlayIcon, StopIcon } from '@heroicons/react/24/solid'
 import { chordSequence, guessKeyFromSymbols } from '../cifra/parse'
 import { buildView, viewToText } from '../cifra/view'
 import { rhythmById } from '../data/rhythms'
@@ -21,7 +20,9 @@ import { PALETTES } from '../theory/palettes'
 import { tuningById, type Tuning } from '../theory/tunings'
 import type { Song, SongSettings } from '../store/db'
 import { SCROLL_MAX } from '../store/songActions'
+import { getDisplayDefaults } from '../store/defaults'
 import { CifraText } from './CifraText'
+import { Recorder } from './Recorder'
 import { RhythmGrid } from './RhythmView'
 import { Tuner } from './Tuner'
 import { useMetronome } from '../audio/useMetronome'
@@ -32,11 +33,9 @@ import { ChordStrip } from './song/ChordStrip'
 import { EditTitle, ToolButton } from './song/parts'
 import {
   ChordsPanel,
-  DisplayPanel,
   KeyPanel,
   NotesPanel,
   PalettePanel,
-  RecordPanel,
   RhythmPanel,
   SimplifyPanel,
 } from './song/panels'
@@ -48,8 +47,9 @@ import {
   useSongSettings,
   useSongShortcuts,
 } from './song/hooks'
+import type { RecordingKind } from '../store/recordings'
 
-type Panel = null | 'tom' | 'simplificar' | 'cor' | 'ritmo' | 'acordes' | 'texto' | 'notas' | 'gravar'
+type Panel = null | 'tom' | 'simplificar' | 'cor' | 'ritmo' | 'acordes' | 'notas' | 'gravar'
 
 const LAST_SCROLL_SPEED_KEY = 'cifrasgroup:lastScrollSpeed'
 
@@ -100,6 +100,10 @@ export function SongView({
   const [rawDraft, setRawDraft] = useState(song.raw)
   const [tunerOpen, setTunerOpen] = useState(false)
   const [manualAnalysisKey, setManualAnalysisKey] = useState<number | null>(null)
+  const [recordMode, setRecordMode] = useState<RecordingKind>('audio')
+  // tamanho do texto e tablatura são preferências globais agora (aba
+  // Configurações) — lidas uma vez, já que trocar de aba desmonta esta tela
+  const [display] = useState(getDisplayDefaults)
   useEffect(() => {
     setManualAnalysisKey(null)
     setChordStrip(null)
@@ -191,6 +195,14 @@ export function SongView({
   const togglePanel = (p: Panel) => setPanel(panel === p ? null : p)
   const tuning = tuningById(s.tuning, customTunings)
 
+  // o mesmo toggle escolhe o modo (áudio/vídeo) e abre/fecha o gravador —
+  // tocar de novo no modo já ativo fecha, tocar no outro modo troca e mantém aberto
+  const openRecorder = (mode: RecordingKind) => {
+    if (panel === 'gravar' && recordMode === mode) { setPanel(null); return }
+    setRecordMode(mode)
+    setPanel('gravar')
+  }
+
   // tocar num acorde da letra abre a faixa de acordes (e destaca o tocado);
   // a ficha completa fica a um toque, a partir da faixa
   const onChordInText = (displayed: string) => setChordStrip({ focus: displayed })
@@ -223,8 +235,8 @@ export function SongView({
         <button
           className={`icon${panel === 'acordes' ? ' active' : ''}`}
           onClick={() => togglePanel('acordes')}
-          aria-label="Construção dos acordes"
-          title="Construção dos acordes (instrumento, afinação)"
+          aria-label="Acordes"
+          title="Acordes (afinação, conferência, voz)"
         >
           <Squares2X2Icon />
         </button>
@@ -236,25 +248,15 @@ export function SongView({
         >
           <ArrowDownTrayIcon />
         </button>
-        <button
-          className={`icon${panel === 'texto' ? ' active' : ''}`}
-          onClick={() => togglePanel('texto')}
-          aria-label="Configurações de exibição"
-          title="Configurações de exibição (fonte, rolagem, tablatura)"
-        >
-          <AdjustmentsHorizontalIcon />
-        </button>
       </header>
 
       <nav className="toolbar">
         <ToolButton active={panel === 'tom'} onClick={() => togglePanel('tom')} label="Tom" value={
-          view.effectiveTranspose === 0 ? 'original' : (view.effectiveTranspose > 0 ? '+' : '') + view.effectiveTranspose
+          view.effectiveTranspose === 0 ? 'Original' : (view.effectiveTranspose > 0 ? '+' : '') + view.effectiveTranspose
         } />
-        <ToolButton active={panel === 'simplificar'} onClick={() => togglePanel('simplificar')} label="Simplificar" value={
-          s.simplifyLevel === 0 ? 'off' : s.simplifyLevel === 1 ? 'nível 1' : 'nível 2'
-        } flash={level2JustOff} />
+        <ToolButton active={panel === 'simplificar'} onClick={() => togglePanel('simplificar')} label="Nível" value={String(s.simplifyLevel)} flash={level2JustOff} />
         <ToolButton active={panel === 'cor'} onClick={() => togglePanel('cor')} label="Emoção" value={PALETTES.find((p) => p.id === s.paletteId)?.name ?? 'Original'} />
-        <ToolButton active={panel === 'ritmo'} onClick={() => togglePanel('ritmo')} label="Ritmo" value={rhythm?.name ?? 'nenhum'} />
+        <ToolButton active={panel === 'ritmo'} onClick={() => togglePanel('ritmo')} label="Ritmo" value={rhythm?.name ?? 'Nenhum'} />
       </nav>
 
       {chordStrip && (
@@ -270,7 +272,7 @@ export function SongView({
         />
       )}
 
-      {panel && panel !== 'notas' && (
+      {panel && panel !== 'notas' && panel !== 'gravar' && (
         <div className="sheet-backdrop panel-backdrop" onClick={() => setPanel(null)}>
           <div className="sheet panel-sheet" onClick={(e) => e.stopPropagation()}>
             <button className="icon panel-sheet-close" onClick={() => setPanel(null)} aria-label="Fechar painel"><XMarkIcon /></button>
@@ -304,8 +306,6 @@ export function SongView({
                 }}
               />
             )}
-            {panel === 'texto' && <DisplayPanel s={s} dispatch={dispatch} />}
-            {panel === 'gravar' && <RecordPanel songId={song.id} />}
           </div>
         </div>
       )}
@@ -353,7 +353,7 @@ export function SongView({
               value={rawDraft}
               spellCheck={false}
               autoFocus
-              style={{ fontSize: `${s.fontSize}px` }}
+              style={{ fontSize: `${display.fontSize}px` }}
               onChange={(e) => setRawDraft(e.target.value)}
             />
           ) : (
@@ -361,8 +361,8 @@ export function SongView({
               <CifraText
                 parsed={view.parsed}
                 map={mapSymbol}
-                fontSize={s.fontSize}
-                hideTabs={s.hideTabs}
+                fontSize={display.fontSize}
+                hideTabs={display.hideTabs}
                 highlight={chordStrip ? chordStrip.focus : null}
                 onChordClick={(_, displayed) => onChordInText(displayed)}
                 transposed={view.effectiveTranspose !== 0}
@@ -410,6 +410,14 @@ export function SongView({
           >
             {s.scrollSpeed > 0 ? <PauseIcon /> : <PlayIcon />}
           </button>
+          <button
+            className={`icon${loop.active ? ' active' : ''}`}
+            onClick={loop.toggle}
+            aria-label={loop.active ? 'Desativar loop do trecho' : 'Ativar loop do trecho selecionado na cifra'}
+            title={loop.active ? 'Loop ativo — toque para desativar' : 'Selecione um trecho da letra e toque para repeti-lo em loop'}
+          >
+            <ArrowPathIcon />
+          </button>
           <span className="scrollbar-mark" aria-hidden="true">🐢</span>
           <input
             className="scrollbar-slider"
@@ -455,26 +463,33 @@ export function SongView({
           <div className="transport-bpmbox">
             <button className="transport-bpm" onClick={() => togglePanel('ritmo')} aria-label="Abrir painel de ritmo">
               <span className="transport-bpm-value"><strong>{s.bpm}</strong> bpm</span>
-              <span>{rhythm ? rhythm.name : 'só o pulso'}</span>
+              <span>{rhythm ? rhythm.name : 'só pulso'}</span>
             </button>
-            <button className="transport-step" onClick={() => dispatch({ type: 'bpmBy', delta: 1 })} aria-label="Aumentar 1 bpm"><PlusIcon /></button>
             <button className="transport-step" onClick={() => dispatch({ type: 'bpmBy', delta: -1 })} aria-label="Diminuir 1 bpm"><MinusIcon /></button>
+            <button className="transport-step" onClick={() => dispatch({ type: 'bpmBy', delta: 1 })} aria-label="Aumentar 1 bpm"><PlusIcon /></button>
           </div>
           <div className="transport-steps">
             {rhythm && <RhythmGrid rhythm={rhythm} activeStep={metronome.step} />}
           </div>
           <div className="transport-actions">
-            <button className={`transport-icon${panel === 'gravar' ? ' on' : ''}`} onClick={() => togglePanel('gravar')} aria-label="Gravar prática">
-              <span className="record-dot" />
-            </button>
-            <button
-              className={`transport-icon${loop.active ? ' on' : ''}`}
-              onClick={loop.toggle}
-              aria-label={loop.active ? 'Desativar loop do trecho' : 'Ativar loop do trecho selecionado na cifra'}
-              title={loop.active ? 'Loop ativo — toque para desativar' : 'Selecione um trecho da letra e toque para repeti-lo em loop'}
-            >
-              <ArrowPathIcon />
-            </button>
+            <div className="toggle recmode-toggle">
+              <button
+                className={panel === 'gravar' && recordMode === 'audio' ? 'on' : ''}
+                onClick={() => openRecorder('audio')}
+                aria-label="Gravar áudio"
+                title="Gravar áudio"
+              >
+                <MicrophoneIcon />
+              </button>
+              <button
+                className={panel === 'gravar' && recordMode === 'video' ? 'on' : ''}
+                onClick={() => openRecorder('video')}
+                aria-label="Gravar vídeo"
+                title="Gravar vídeo"
+              >
+                <VideoCameraIcon />
+              </button>
+            </div>
             <button className={`transport-icon${panel === 'notas' ? ' on' : ''}`} onClick={() => togglePanel('notas')} aria-label="Notas">
               <PencilSquareIcon />
             </button>
@@ -488,6 +503,8 @@ export function SongView({
           </div>
         </div>
       )}
+
+      {panel === 'gravar' && !editingRaw && <Recorder songId={song.id} mode={recordMode} />}
 
       {tunerOpen && <Tuner onClose={() => setTunerOpen(false)} tuning={tuning} />}
     </div>

@@ -1,9 +1,13 @@
 /**
- * Padrões de exibição para músicas novas (importadas ou duplicadas) —
- * separados do `DEFAULT_SETTINGS` de store/db.ts, que continua sendo o
- * "reset de fábrica" usado para preencher campos ausentes em backups antigos.
- * Guardados no localStorage (não no IndexedDB): são poucos valores pequenos
- * e precisam estar disponíveis de forma síncrona ao criar uma música.
+ * Preferências de exibição globais, guardadas no localStorage (não no
+ * IndexedDB): são poucos valores pequenos e precisam estar disponíveis de
+ * forma síncrona.
+ *
+ * `fontSize` e `hideTabs` são configurações únicas para o app inteiro — não
+ * há mais um valor por música (ver aba Configurações). `instrument` e
+ * `tuning` continuam sendo só o ponto de partida de cada música nova
+ * (importada ou duplicada); depois disso cada música guarda o próprio valor
+ * em `SongSettings` (store/db.ts).
  */
 
 export interface DisplayDefaults {

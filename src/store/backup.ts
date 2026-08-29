@@ -21,6 +21,7 @@ interface SerializedRecording {
   kind?: RecordingKind
   pinned?: boolean
   layeredOver?: string[]
+  title?: string
   mime: string
   /** conteúdo do áudio/vídeo em base64 */
   data: string
@@ -72,6 +73,7 @@ export async function buildBackup(db: DB): Promise<string> {
         kind: r.kind,
         pinned: r.pinned,
         layeredOver: r.layeredOver,
+        title: r.title,
         mime: r.blob.type || (r.kind === 'video' ? 'video/webm' : 'audio/webm'),
         data: await blobToBase64(r.blob),
       })),
@@ -102,6 +104,7 @@ export function parseBackup(json: string): Backup | null {
         kind: r.kind ?? 'audio',
         pinned: r.pinned,
         layeredOver: r.layeredOver,
+        title: r.title,
         blob: base64ToBlob(r.data, r.mime),
       }))
     }

@@ -3,6 +3,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline'
 import { DEMO_RAW } from './data/demo'
 import { LibraryHome } from './components/LibraryHome'
 import { ListsView } from './components/ListsView'
+import { RecordingsTab } from './components/RecordingsTab'
 import { SettingsTab } from './components/SettingsTab'
 import { TunerTab } from './components/TunerTab'
 import { TabBar, type LibraryTab } from './components/TabBar'
@@ -20,9 +21,10 @@ import type { Tuning } from './theory/tunings'
 
 type Route = { view: 'library' } | { view: 'import' } | { view: 'song'; id: string; listId?: string }
 
-/** Padrões de exibição escolhidos pelo usuário em Configurações, por cima do reset de fábrica. */
+/** Padrões escolhidos pelo usuário em Configurações, por cima do reset de fábrica. */
 function newSongSettings(): SongSettings {
-  return { ...DEFAULT_SETTINGS, ...getDisplayDefaults() }
+  const { instrument, tuning } = getDisplayDefaults()
+  return { ...DEFAULT_SETTINGS, instrument, tuning }
 }
 
 function withDemoSong(loaded: DB): DB {
@@ -360,6 +362,7 @@ export default function App() {
             onDeleteCustomTuning={handleDeleteCustomTuning}
           />
         )}
+        {libraryTab === 'gravacoes' && <RecordingsTab songs={db.songs} />}
         {libraryTab === 'config' && (
           <SettingsTab
             customTunings={customTunings}

@@ -28,8 +28,6 @@ export interface SongSettings {
   /** trocas manuais feitas pelo usuário: símbolo original -> símbolo escolhido */
   overrides: Record<string, string>
   scrollSpeed: number
-  fontSize: number
-  hideTabs: boolean
   instrument: 'guitar' | 'piano'
   /** id do catálogo em theory/tunings.ts */
   tuning: string
@@ -97,8 +95,6 @@ export const DEFAULT_SETTINGS: SongSettings = {
   playClick: true,
   overrides: {},
   scrollSpeed: 0,
-  fontSize: 15,
-  hideTabs: true,
   instrument: 'guitar',
   tuning: 'standard',
   preferredVoicings: {},

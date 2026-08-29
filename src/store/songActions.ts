@@ -12,8 +12,6 @@ import type { SongSettings } from './db'
 
 export const BPM_MIN = 30
 export const BPM_MAX = 240
-export const FONT_MIN = 10
-export const FONT_MAX = 30
 export const SCROLL_MAX = 20
 export const CAPO_MAX = 12
 
@@ -47,8 +45,6 @@ export type SongAction =
   | { type: 'toggleClick' }
   | { type: 'setScrollSpeed'; value: number }
   | { type: 'scrollSpeedBy'; delta: number }
-  | { type: 'setFontSize'; value: number }
-  | { type: 'setHideTabs'; value: boolean }
   | { type: 'setInstrument'; value: 'guitar' | 'piano' }
   | { type: 'setTuning'; id: string }
   | { type: 'overrideChord'; original: string; symbol: string }
@@ -92,10 +88,6 @@ export function songSettingsPatch(s: SongSettings, action: SongAction): Partial<
     case 'scrollSpeedBy':
       // subir a partir de "parada" começa numa velocidade já perceptível
       return { scrollSpeed: clamp(s.scrollSpeed === 0 && action.delta > 0 ? 6 : s.scrollSpeed + action.delta, 0, SCROLL_MAX) }
-    case 'setFontSize':
-      return { fontSize: clamp(Math.round(action.value), FONT_MIN, FONT_MAX) }
-    case 'setHideTabs':
-      return { hideTabs: action.value }
     case 'setInstrument':
       return { instrument: action.value }
     case 'setTuning':

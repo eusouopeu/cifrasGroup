@@ -31,7 +31,7 @@ export function SettingsTab({ customTunings, onExport, onImport }: {
       </section>
 
       <section className="settingsection">
-        <h4>Padrões para músicas novas</h4>
+        <h4>Leitura da cifra</h4>
         <div className="row tight">
           <span className="fieldlabel">Tamanho do texto</span>
         </div>
@@ -40,6 +40,10 @@ export function SettingsTab({ customTunings, onExport, onImport }: {
           <input type="checkbox" checked={defaults.hideTabs} onChange={(e) => patchDefaults({ hideTabs: e.target.checked })} />
           Esconder tablaturas
         </label>
+      </section>
+
+      <section className="settingsection">
+        <h4>Padrões para músicas novas</h4>
         <div className="row">
           <div className="toggle">
             <button className={defaults.instrument === 'guitar' ? 'on' : ''} onClick={() => patchDefaults({ instrument: 'guitar' })}>Violão</button>

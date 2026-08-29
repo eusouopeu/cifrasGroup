@@ -404,6 +404,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .transport-icon svg { width: 19px; height: 19px; }
 .transport-icon.on { background: color-mix(in srgb, var(--accent) 16%, var(--bg3)); border-color: var(--accent); color: var(--accent); }
 .record-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); display: inline-block; flex-shrink: 0; }
+.recmode-toggle { flex: 0 0 auto; }
+.recmode-toggle button { display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; padding: 0; border-radius: 0; }
+.recmode-toggle button svg { width: 18px; height: 18px; }
+.recmode-toggle button.on { background: var(--accent2); color: #14161a; }
 
 .bpmbox { background: var(--bg3); border: 1px solid var(--line); border-radius: 10px; padding: .6rem .7rem; margin-bottom: .8rem; }
 .bpmbox input[type=range] { width: 100%; margin: .5rem 0 .4rem; }
@@ -538,27 +542,49 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .fab svg { width: 26px; height: 26px; }
 .tageditor input { flex: 1; background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; color: var(--fg); padding: .45rem .6rem; font-size: .85rem; }
-/* ---------- gravador de prática ---------- */
-.btn.recording { background: var(--danger); border-color: var(--danger); color: #fff; font-weight: 600; }
-.recordbtn { display: inline-flex; align-items: center; gap: .45rem; }
-.btn.recording { background: color-mix(in srgb, var(--danger) 16%, var(--bg3)); border-color: var(--danger); color: var(--danger); display: inline-flex; align-items: center; gap: .35rem; }
-.btn.recording svg { width: 16px; height: 16px; }
-.recordlist { display: flex; flex-direction: column; gap: .5rem; margin-top: .5rem; }
-.recorditem { display: flex; align-items: center; gap: .6rem; background: var(--bg3); border: 1px solid var(--line); border-radius: 9px; padding: .5rem .6rem; flex-wrap: wrap; }
-.recorditem-meta { display: flex; flex-direction: column; line-height: 1.2; min-width: 84px; }
-.recorditem-meta strong { font-size: .78rem; }
-.recorditem-meta span { font-size: .68rem; color: var(--dim); }
-.recorditem audio { flex: 1; min-width: 160px; height: 32px; }
-.recorditem-video { flex: 1; min-width: 160px; max-width: 260px; max-height: 160px; border-radius: 6px; background: #000; }
-.recorditem-layered { color: var(--accent2); }
+/* ---------- gravador de prática (flutuante) ---------- */
+.record-float-wrap { position: fixed; right: .8rem; bottom: 86px; z-index: 15; display: flex; flex-direction: column; align-items: flex-end; gap: .5rem; }
+.record-preview-float { width: 150px; height: 200px; border-radius: 12px; background: #000; object-fit: cover; box-shadow: 0 4px 18px rgba(0,0,0,.4); }
+.record-cluster { display: flex; align-items: center; gap: .5rem; }
+.record-pill { display: flex; background: var(--bg2); border: 1px solid var(--line); border-radius: 24px; overflow: hidden; box-shadow: 0 4px 18px rgba(0,0,0,.35); }
+.record-pill-btn { width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--fg); }
+.record-pill-btn svg { width: 18px; height: 18px; }
+.record-pill-btn:disabled { opacity: .35; }
+.record-pill-btn.stop { color: var(--danger); border-left: 1px solid var(--line); }
+.record-folder { width: 46px; height: 46px; border-radius: 50%; background: var(--accent); color: #14161a; border: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 18px rgba(0,0,0,.35); }
+.record-folder svg { width: 20px; height: 20px; }
+.record-folder.on { background: color-mix(in srgb, var(--accent) 70%, #000); }
+.record-elapsed { background: var(--bg2); border: 1px solid var(--line); border-radius: 20px; padding: .2rem .7rem; font-size: .78rem; color: var(--danger); }
+.record-denied { max-width: 260px; text-align: right; background: var(--bg2); border-radius: 8px; padding: .4rem .6rem; }
 
-.recmode { margin-bottom: .6rem; }
-.recmode button { display: inline-flex; align-items: center; gap: .3rem; }
-.recmode svg { width: 15px; height: 15px; }
-.layerpicker { background: var(--bg3); border: 1px solid var(--line); border-radius: 9px; padding: .5rem .6rem; margin-bottom: .6rem; }
-.layerlist { display: flex; flex-direction: column; gap: .3rem; margin-top: .3rem; }
-.layeritem { display: flex; align-items: center; gap: .4rem; font-size: .8rem; }
-.recorder-preview { width: 100%; max-height: 260px; border-radius: 9px; background: #000; margin-bottom: .6rem; object-fit: cover; }
+.record-list-float {
+  width: min(370px, calc(100vw - 1.6rem));
+  max-height: 60vh;
+  overflow-y: auto;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: .7rem .8rem;
+  box-shadow: 0 8px 28px rgba(0,0,0,.4);
+}
+.record-list-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .4rem; }
+.record-list-items { display: flex; flex-direction: column; gap: .4rem; }
+
+.recrow { background: var(--bg3); border: 1px solid var(--line); border-radius: 9px; padding: .5rem .6rem; text-align: left; width: 100%; }
+.recrow.pinned { border-color: var(--accent2); }
+button.recrow { display: flex; align-items: center; gap: .5rem; }
+.recrow-main { display: flex; flex-direction: column; gap: .1rem; background: none; border: none; padding: 0; text-align: left; color: inherit; font: inherit; flex: 1; min-width: 0; }
+.recrow-main strong { font-size: .82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recrow-pin { width: 14px; height: 14px; color: var(--accent2); flex-shrink: 0; }
+.recrow-expanded { display: flex; flex-direction: column; gap: .4rem; }
+.recrow-head { display: flex; align-items: center; gap: .4rem; }
+.recrow-rename { flex: 1; min-width: 0; background: var(--bg2); border: 1px solid var(--accent); border-radius: 6px; color: var(--fg); padding: .3rem .5rem; font-size: .82rem; }
+.recrow-video { width: 100%; max-height: 200px; border-radius: 8px; background: #000; }
+.recrow-player { display: flex; align-items: center; gap: .4rem; }
+.recrow-scrub { flex: 1; min-width: 0; accent-color: var(--accent); }
+.recrow-time { min-width: 34px; text-align: right; }
+.recrow-actions { display: flex; justify-content: flex-end; gap: .15rem; }
+.recrow-actions .icon.small.active { color: var(--accent2); }
 
 .listpick { display: flex; flex-direction: column; }
 .empty { padding: 2rem; text-align: center; }
@@ -622,6 +648,36 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .undo-override:disabled { opacity: .3; }
 .undo-override { color: var(--dim); }
 
+/* detectar tom pelo microfone (aba Tom → Análise funcional) */
+.keydetect { margin: .5rem 0 .8rem; }
+.inline-icon { width: 16px; height: 16px; vertical-align: -3px; margin-right: .3rem; }
+
+/* modo conferência de acordes (aba Acordes → Conferência) */
+.conference-result { margin-top: .8rem; }
+.conference-symbol { color: var(--accent); font-size: 1.6rem; margin-bottom: .1rem; }
+.conference-diagram { display: flex; justify-content: center; padding: .4rem 0; }
+.scalefit-row, .stringbreak-row { grid-template-columns: 1fr auto auto; }
+
+/* aba de voz (aba Acordes → Voz) */
+.voicelab { display: flex; flex-direction: column; gap: .7rem; margin-top: .5rem; }
+.voicelab-head { display: flex; align-items: baseline; gap: .6rem; }
+.voicelab-note { font-size: 1.6rem; color: var(--accent); }
+.voicelab-bands { display: flex; flex-direction: column; gap: .4rem; }
+.voicelab-band { display: grid; grid-template-columns: 130px 1fr 40px; align-items: center; gap: .5rem; font-size: .78rem; }
+.voicelab-band-label { color: var(--dim); }
+.voicelab-band-value { text-align: right; color: var(--accent2); }
+.voicelab-meta { display: flex; flex-direction: column; gap: .2rem; font-size: .78rem; color: var(--dim); }
+.voicelab-tips ul { margin: .3rem 0 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: .3rem; font-size: .82rem; }
+
+/* aba "Gravações": accordion por música */
+.recaccordion { display: flex; flex-direction: column; gap: .5rem; margin-top: .6rem; }
+.recaccordion-item { background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.recaccordion-head { width: 100%; display: flex; align-items: center; gap: .5rem; padding: .7rem .8rem; background: none; border: none; color: inherit; text-align: left; }
+.recaccordion-chevron { width: 16px; height: 16px; color: var(--dim); flex-shrink: 0; }
+.recaccordion-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .1rem; }
+.recaccordion-title strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recaccordion-body { padding: 0 .8rem .8rem; display: flex; flex-direction: column; gap: .5rem; }
+
 /* ---------- controle de rolagem automática (acima da barra inferior) ---------- */
 .scrollbar-control {
   position: sticky; bottom: 0; z-index: 6;
@@ -641,10 +697,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 /* editor do texto da cifra */
 .rawedit { width: 100%; min-height: 40vh; white-space: pre; overflow-wrap: normal; overflow-x: auto; font-size: .8rem; line-height: 1.45; }
-
-/* gravações guardadas */
-.recorditem.pinned { border-color: var(--accent2); }
-.recorditem .icon.small.active { color: var(--accent2); }
 
 /* ---------- ajustes de celular ---------- */
 @media (max-width: 620px) {

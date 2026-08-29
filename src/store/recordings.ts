@@ -22,6 +22,8 @@ export interface Recording {
   pinned?: boolean
   /** ids das gravações de áudio que tocaram junto durante esta captura (empilhamento) */
   layeredOver?: string[]
+  /** nome dado pelo usuário — sem isso a lista mostra a data da captura */
+  title?: string
 }
 
 function keyFor(songId: string): string {
@@ -71,6 +73,22 @@ export async function togglePinned(songId: string, id: string): Promise<Recordin
   const next = (await listRecordings(songId)).map((r) => (r.id === id ? { ...r, pinned: !r.pinned } : r))
   await idbSet(keyFor(songId), next)
   return next
+}
+
+/** Renomeia uma gravação — título vazio volta a mostrar só a data. */
+export async function renameRecording(songId: string, id: string, title: string): Promise<Recording[]> {
+  const trimmed = title.trim()
+  const next = (await listRecordings(songId)).map((r) => (r.id === id ? { ...r, title: trimmed || undefined } : r))
+  await idbSet(keyFor(songId), next)
+  return next
+}
+
+/** Todas as gravações de várias músicas de uma vez, indexadas por id da música — usado na aba "Gravações". */
+export async function listAllRecordings(songIds: string[]): Promise<Record<string, Recording[]>> {
+  const entries = await Promise.all(songIds.map(async (id) => [id, await listRecordings(id)] as const))
+  const out: Record<string, Recording[]> = {}
+  for (const [id, list] of entries) if (list.length > 0) out[id] = list
+  return out
 }
 
 /** Apaga todas as gravações da música — usado quando a música em si é apagada. */

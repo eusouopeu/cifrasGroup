@@ -4,77 +4,23 @@ import { ArrowPathIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { nameOf, SHARP_NAMES } from '../theory/notes'
 import { stringFrequencies, tuningById, type Tuning } from '../theory/tunings'
 import { pluckNote } from '../audio/pluck'
+import { getEssentia, pitchFromBuffer } from '../audio/analysis'
 
 const STANDARD_TUNING = tuningById('standard')
 
-/** abaixo disso, o pico de autocorrelação é fraco/ambíguo demais pra confiar */
+/** abaixo disso, a confiança do PitchYin é fraca/ambígua demais pra confiar */
 const CLARITY_THRESHOLD = 0.4
 /** quantas leituras recentes entram na mediana que amortece os saltos */
 const PITCH_HISTORY_SIZE = 6
 /** o quanto a leitura suavizada anda em direção à mediana a cada quadro (0..1) */
 const PITCH_SMOOTHING = 0.35
+/** abaixo disso o sinal é silêncio — nem vale rodar a detecção de altura */
+const RMS_THRESHOLD = 0.01
 
-interface PitchSample {
-  freq: number
-  /** o quão "limpo" é o pico de autocorrelação (0..~1) — baixo indica ruído ou erro de oitava */
-  clarity: number
-}
-
-/**
- * Detecção de altura por autocorrelação (ACF) com interpolação parabólica
- * para refinar o período estimado. Retorna null quando o sinal está fraco
- * demais (silêncio) ou não tem periodicidade clara para não travar num
- * valor errado.
- */
-function autoCorrelate(buf: Float32Array, sampleRate: number): PitchSample | null {
-  const SIZE = buf.length
-  let rms = 0
-  for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i]
-  rms = Math.sqrt(rms / SIZE)
-  if (rms < 0.01) return null
-
-  // corta o silêncio das pontas antes de correlacionar
-  let start = 0
-  let end = SIZE - 1
-  const thresh = 0.2
-  while (start < SIZE / 2 && Math.abs(buf[start]) < thresh) start++
-  while (end > SIZE / 2 && Math.abs(buf[end]) < thresh) end--
-  const trimmed = buf.slice(start, end)
-  const n = trimmed.length
-  if (n < 8) return null
-
-  const c = new Float32Array(n)
-  for (let lag = 0; lag < n; lag++) {
-    let sum = 0
-    for (let i = 0; i < n - lag; i++) sum += trimmed[i] * trimmed[i + lag]
-    c[lag] = sum
-  }
-
-  // primeiro mínimo antes do primeiro pico relevante — evita achar lag 0
-  let d = 0
-  while (d < n - 1 && c[d] > c[d + 1]) d++
-  let maxVal = -1
-  let maxPos = -1
-  for (let i = d; i < n; i++) {
-    if (c[i] > maxVal) { maxVal = c[i]; maxPos = i }
-  }
-  if (maxPos <= 0) return null
-
-  // interpolação parabólica pra precisão sub-amostra
-  const x1 = c[maxPos - 1] ?? c[maxPos]
-  const x2 = c[maxPos]
-  const x3 = c[maxPos + 1] ?? c[maxPos]
-  const a = (x1 + x3 - 2 * x2) / 2
-  const b = (x3 - x1) / 2
-  const refined = a ? maxPos - b / (2 * a) : maxPos
-  if (refined <= 0) return null
-
-  // clareza do pico em relação à energia total (lag 0) — um tom limpo e
-  // sustentado chega perto de 1; ruído ou o instante do ataque da corda
-  // (mais rico em harmônicos e menos periódico) fica bem abaixo disso
-  const clarity = c[0] > 0 ? maxVal / c[0] : 0
-
-  return { freq: sampleRate / refined, clarity }
+function rmsOf(buf: Float32Array): number {
+  let sum = 0
+  for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i]
+  return Math.sqrt(sum / buf.length)
 }
 
 function median(nums: number[]): number {
@@ -132,9 +78,11 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
     historyRef.current = []
     smoothedRef.current = null
     lastAcceptedAtRef.current = 0
-    void navigator.mediaDevices
-      .getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
-      .then((stream) => {
+    void Promise.all([
+      getEssentia(),
+      navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }),
+    ])
+      .then(([essentia, stream]) => {
         if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return }
         streamRef.current = stream
         const ctx = new AudioContext()
@@ -145,34 +93,43 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
         source.connect(analyser)
         const buf = new Float32Array(analyser.fftSize)
         setStatus('listening')
+        // a detecção de altura (chamada WASM) roda a cada 2 quadros — a
+        // 60fps isso ainda dá ~30 leituras/s, de sobra pro olho perceber, e
+        // poupa metade das chamadas num celular mais fraco
+        let frame = 0
         const tick = () => {
-          analyser.getFloatTimeDomainData(buf)
-          const sample = autoCorrelate(buf, ctx.sampleRate)
-          if (sample && sample.freq > 60 && sample.freq < 1500 && sample.clarity >= CLARITY_THRESHOLD) {
-            let freq = sample.freq
-            const prevSmoothed = smoothedRef.current
-            const now = performance.now()
-            // uma pausa longa (troca de corda/nota) descarta o histórico —
-            // sem isso a suavização "puxa" a leitura nova pra trás por um instante
-            if (now - lastAcceptedAtRef.current > 400) {
-              historyRef.current = []
-              smoothedRef.current = null
+          frame++
+          if (frame % 2 === 0) {
+            analyser.getFloatTimeDomainData(buf)
+            if (rmsOf(buf) >= RMS_THRESHOLD) {
+              const sample = pitchFromBuffer(essentia, buf, ctx.sampleRate)
+              if (sample && sample.frequency > 60 && sample.frequency < 1500 && sample.confidence >= CLARITY_THRESHOLD) {
+                let freq = sample.frequency
+                const prevSmoothed = smoothedRef.current
+                const now = performance.now()
+                // uma pausa longa (troca de corda/nota) descarta o histórico —
+                // sem isso a suavização "puxa" a leitura nova pra trás por um instante
+                if (now - lastAcceptedAtRef.current > 400) {
+                  historyRef.current = []
+                  smoothedRef.current = null
+                }
+                lastAcceptedAtRef.current = now
+                if (prevSmoothed) {
+                  // erro de oitava: o detector às vezes prende no dobro/metade
+                  // do período real quando um harmônico é mais forte que a fundamental
+                  const ratio = freq / prevSmoothed
+                  if (ratio > 1.85 && ratio < 2.15) freq /= 2
+                  else if (ratio > 0.46 && ratio < 0.54) freq *= 2
+                }
+                const hist = historyRef.current
+                hist.push(freq)
+                if (hist.length > PITCH_HISTORY_SIZE) hist.shift()
+                const med = median(hist)
+                const next = smoothedRef.current === null ? med : smoothedRef.current + (med - smoothedRef.current) * PITCH_SMOOTHING
+                smoothedRef.current = next
+                setReading(freqToReading(next))
+              }
             }
-            lastAcceptedAtRef.current = now
-            if (prevSmoothed) {
-              // erro de oitava: a autocorrelação às vezes prende no dobro/metade
-              // do período real quando um harmônico é mais forte que a fundamental
-              const ratio = freq / prevSmoothed
-              if (ratio > 1.85 && ratio < 2.15) freq /= 2
-              else if (ratio > 0.46 && ratio < 0.54) freq *= 2
-            }
-            const hist = historyRef.current
-            hist.push(freq)
-            if (hist.length > PITCH_HISTORY_SIZE) hist.shift()
-            const med = median(hist)
-            const next = smoothedRef.current === null ? med : smoothedRef.current + (med - smoothedRef.current) * PITCH_SMOOTHING
-            smoothedRef.current = next
-            setReading(freqToReading(next))
           }
           rafRef.current = requestAnimationFrame(tick)
         }

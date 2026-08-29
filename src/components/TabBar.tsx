@@ -1,22 +1,25 @@
 import {
   Cog6ToothIcon as Cog6ToothOutline,
+  FolderIcon as FolderOutline,
   HomeIcon as HomeOutline,
   ListBulletIcon as ListBulletOutline,
   MusicalNoteIcon as MusicalNoteOutline,
 } from '@heroicons/react/24/outline'
 import {
   Cog6ToothIcon as Cog6ToothSolid,
+  FolderIcon as FolderSolid,
   HomeIcon as HomeSolid,
   ListBulletIcon as ListBulletSolid,
   MusicalNoteIcon as MusicalNoteSolid,
 } from '@heroicons/react/24/solid'
 
-export type LibraryTab = 'inicio' | 'listas' | 'afinacao' | 'config'
+export type LibraryTab = 'inicio' | 'listas' | 'afinacao' | 'gravacoes' | 'config'
 
 const TABS: { id: LibraryTab; label: string; outline: typeof HomeOutline; solid: typeof HomeSolid }[] = [
   { id: 'inicio', label: 'Início', outline: HomeOutline, solid: HomeSolid },
   { id: 'listas', label: 'Listas', outline: ListBulletOutline, solid: ListBulletSolid },
   { id: 'afinacao', label: 'Afinação', outline: MusicalNoteOutline, solid: MusicalNoteSolid },
+  { id: 'gravacoes', label: 'Gravações', outline: FolderOutline, solid: FolderSolid },
   { id: 'config', label: 'Configurações', outline: Cog6ToothOutline, solid: Cog6ToothSolid },
 ]
 

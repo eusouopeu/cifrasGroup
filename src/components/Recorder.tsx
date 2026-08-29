@@ -1,37 +1,28 @@
+/**
+ * Gravador de prática flutuante: fica sobre a cifra (não a esconde) enquanto
+ * grava áudio ou vídeo. O modo (mic/câmera) é escolhido na barra de
+ * transporte, que também abre/fecha este componente — aqui só cabem os
+ * controles de gravar/parar, o preview de vídeo e o popup com a lista de
+ * gravações desta música.
+ */
 import { useEffect, useRef, useState } from 'react'
-import { BookmarkIcon, TrashIcon, VideoCameraIcon } from '@heroicons/react/24/outline'
-import { BookmarkIcon as BookmarkSolidIcon, MicrophoneIcon, StopIcon } from '@heroicons/react/24/solid'
+import { FolderIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { StopIcon } from '@heroicons/react/24/solid'
 import {
   deleteRecording,
-  formatBytes,
   listRecordings,
+  renameRecording,
   saveRecording,
   togglePinned,
   type Recording,
   type RecordingKind,
 } from '../store/recordings'
 import { startMixSession, type MixSession } from '../audio/recordMix'
+import { RecordingRow } from './song/RecordingRow'
 
-function formatDuration(ms: number): string {
-  const totalSec = Math.round(ms / 1000)
-  const m = Math.floor(totalSec / 60)
-  const sec = totalSec % 60
-  return `${m}:${String(sec).padStart(2, '0')}`
-}
-
-function formatDate(ts: number): string {
-  return new Date(ts).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
-}
-
-/** Melhor combinação de codec/contêiner suportada pelo navegador, da mais desejada pra mais compatível. */
-function pickMime(candidates: string[]): string {
-  return candidates.find((m) => MediaRecorder.isTypeSupported(m)) ?? ''
-}
-
-// desliga o processamento pensado pra chamada de voz (cancelamento de eco,
-// supressão de ruído, ganho automático): eles comprimem e "lavam" o som,
-// péssimo pra violão/canto. Bitrate bem acima do padrão do navegador (que
-// costuma ficar na casa de 32-50kbps) é o resto do ganho de qualidade.
+/** desliga o processamento de chamada de voz (eco/ruído/ganho automático) —
+ *  comprime e "lava" o som, péssimo pra violão/canto. Bitrate acima do
+ *  padrão do navegador é o resto do ganho de qualidade. */
 const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   echoCancellation: false,
   noiseSuppression: false,
@@ -42,14 +33,25 @@ const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
 const AUDIO_BITRATE = 192_000
 const VIDEO_BITRATE = 2_500_000
 
+function pickMime(candidates: string[]): string {
+  return candidates.find((m) => MediaRecorder.isTypeSupported(m)) ?? ''
+}
+
+function formatDuration(ms: number): string {
+  const totalSec = Math.round(ms / 1000)
+  const m = Math.floor(totalSec / 60)
+  const sec = totalSec % 60
+  return `${m}:${String(sec).padStart(2, '0')}`
+}
+
 type Status = 'idle' | 'starting' | 'recording' | 'denied' | 'unsupported'
 
-/** Gravação de prática: áudio ou vídeo, com o microfone (e a câmera, no modo vídeo). Guarda no aparelho, toca de volta. */
-export function Recorder({ songId }: { songId: string }) {
+export function Recorder({ songId, mode }: { songId: string; mode: RecordingKind }) {
   const [recordings, setRecordings] = useState<Recording[] | null>(null)
   const [status, setStatus] = useState<Status>('idle')
   const [elapsedMs, setElapsedMs] = useState(0)
-  const [mode, setMode] = useState<RecordingKind>('audio')
+  const [listOpen, setListOpen] = useState(false)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
   const [layerIds, setLayerIds] = useState<Set<string>>(new Set())
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -58,8 +60,9 @@ export function Recorder({ songId }: { songId: string }) {
   const startTimeRef = useRef(0)
   const timerRef = useRef<number | null>(null)
   const videoPreviewRef = useRef<HTMLVideoElement>(null)
-  // URLs de objeto para tocar os blobs — criadas sob demanda e revogadas ao desmontar
-  const urlsRef = useRef<Map<string, string>>(new Map())
+  // o modo pode mudar (mic/câmera) enquanto este componente segue montado;
+  // uma gravação em andamento deve continuar no modo em que começou
+  const activeModeRef = useRef<RecordingKind>(mode)
 
   useEffect(() => {
     let cancelled = false
@@ -67,27 +70,13 @@ export function Recorder({ songId }: { songId: string }) {
     return () => { cancelled = true }
   }, [songId])
 
-  useEffect(() => {
-    const urls = urlsRef.current
-    return () => { urls.forEach((url) => URL.revokeObjectURL(url)); urls.clear() }
-  }, [])
-
-  // encerra microfone/câmera e gravação em andamento se o usuário sair do painel no meio
+  // encerra microfone/câmera e gravação em andamento se a música mudar ou o gravador fechar
   useEffect(() => () => {
     if (timerRef.current) window.clearInterval(timerRef.current)
     if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop()
     streamRef.current?.getTracks().forEach((t) => t.stop())
     mixRef.current?.stop()
   }, [])
-
-  const urlFor = (r: Recording): string => {
-    let url = urlsRef.current.get(r.id)
-    if (!url) {
-      url = URL.createObjectURL(r.blob)
-      urlsRef.current.set(r.id, url)
-    }
-    return url
-  }
 
   const audioRecordings = recordings?.filter((r) => r.kind === 'audio') ?? []
 
@@ -105,6 +94,7 @@ export function Recorder({ songId }: { songId: string }) {
       setStatus('unsupported')
       return
     }
+    activeModeRef.current = mode
     setStatus('starting')
     try {
       if (mode === 'video') {
@@ -173,107 +163,85 @@ export function Recorder({ songId }: { songId: string }) {
   }
 
   const remove = async (id: string) => {
-    const url = urlsRef.current.get(id)
-    if (url) { URL.revokeObjectURL(url); urlsRef.current.delete(id) }
+    if (expandedId === id) setExpandedId(null)
+    setLayerIds((cur) => { if (!cur.has(id)) return cur; const next = new Set(cur); next.delete(id); return next })
     setRecordings(await deleteRecording(songId, id))
   }
 
-  const totalBytes = recordings?.reduce((sum, r) => sum + r.blob.size, 0) ?? 0
-
   return (
-    <div className="recorder">
-      {status !== 'recording' && (
-        <>
-          <div className="toggle recmode">
-            <button
-              className={mode === 'audio' ? 'on' : ''}
-              onClick={() => setMode('audio')}
-              aria-label="Gravar áudio"
-              title="Gravar áudio"
-            >
-              <MicrophoneIcon />
-            </button>
-            <button
-              className={mode === 'video' ? 'on' : ''}
-              onClick={() => setMode('video')}
-              aria-label="Gravar vídeo"
-              title="Gravar vídeo"
-            >
-              <VideoCameraIcon />
-            </button>
+    <div className="record-float-wrap">
+      {activeModeRef.current === 'video' && (status === 'recording' || status === 'starting') && (
+        <video ref={videoPreviewRef} className="record-preview-float" muted playsInline />
+      )}
+
+      {listOpen && (
+        <div className="record-list-float">
+          <div className="record-list-head">
+            <strong>Gravações desta música</strong>
+            <button className="icon small" aria-label="Fechar lista" onClick={() => setListOpen(false)}><XMarkIcon /></button>
           </div>
-
-          {mode === 'audio' && audioRecordings.length > 0 && (
-            <div className="layerpicker">
-              <span className="fieldlabel">Tocar junto (opcional)</span>
-              <p className="hint small">Toca essas gravações em tempo real enquanto grava — a nova gravação sai com elas somadas.</p>
-              <div className="layerlist">
-                {audioRecordings.map((r) => (
-                  <label key={r.id} className="layeritem">
-                    <input type="checkbox" checked={layerIds.has(r.id)} onChange={() => toggleLayer(r.id)} />
-                    {formatDate(r.createdAt)} · {formatDuration(r.durationMs)}
-                  </label>
-                ))}
-              </div>
-            </div>
+          {recordings === null && <p className="hint small">Carregando…</p>}
+          {recordings !== null && recordings.length === 0 && <p className="hint small">Nenhuma gravação ainda.</p>}
+          <div className="record-list-items">
+            {recordings?.map((r) => (
+              <RecordingRow
+                key={r.id}
+                recording={r}
+                expanded={expandedId === r.id}
+                onToggleExpand={() => setExpandedId((cur) => (cur === r.id ? null : r.id))}
+                onRename={(title) => void renameRecording(songId, r.id, title).then(setRecordings)}
+                onTogglePin={() => void togglePinned(songId, r.id).then(setRecordings)}
+                onDelete={() => void remove(r.id)}
+                layerable={r.kind === 'audio'}
+                layered={layerIds.has(r.id)}
+                onToggleLayer={() => toggleLayer(r.id)}
+              />
+            ))}
+          </div>
+          {layerIds.size > 0 && (
+            <p className="hint small">
+              {layerIds.size} gravaç{layerIds.size === 1 ? 'ão marcada' : 'ões marcadas'} pra tocar junto na próxima gravação de áudio.
+            </p>
           )}
-        </>
+        </div>
       )}
 
-      {mode === 'video' && (status === 'recording' || status === 'starting') && (
-        <video ref={videoPreviewRef} className="recorder-preview" muted playsInline />
-      )}
-
-      <div className="row">
-        {status !== 'recording' ? (
-          <button className="btn primary recordbtn" onClick={() => void startRecording()} disabled={status === 'starting'}>
-            <span className="record-dot" /> {status === 'starting' ? 'preparando…' : `gravar ${mode === 'video' ? 'vídeo' : 'áudio'}`}
+      <div className="record-cluster">
+        <div className="record-pill">
+          <button
+            className="record-pill-btn record"
+            disabled={status === 'recording' || status === 'starting'}
+            onClick={() => void startRecording()}
+            aria-label={status === 'starting' ? 'Preparando…' : `Gravar ${mode === 'video' ? 'vídeo' : 'áudio'}`}
+          >
+            <span className="record-dot" />
           </button>
-        ) : (
-          <button className="btn recording" onClick={stopRecording}><StopIcon /> parar · {formatDuration(elapsedMs)}</button>
-        )}
+          <button
+            className="record-pill-btn stop"
+            disabled={status !== 'recording'}
+            onClick={stopRecording}
+            aria-label="Parar gravação"
+          >
+            <StopIcon />
+          </button>
+        </div>
+        <button
+          className={`record-folder${listOpen ? ' on' : ''}`}
+          onClick={() => setListOpen((v) => !v)}
+          aria-label={listOpen ? 'Fechar gravações' : 'Ver gravações'}
+        >
+          <FolderIcon />
+        </button>
       </div>
+
+      {status === 'recording' && <span className="record-elapsed mono">{formatDuration(elapsedMs)}</span>}
       {status === 'denied' && (
-        <p className="hint danger">
+        <p className="hint danger record-denied">
           Não consegui acessar {mode === 'video' ? 'o microfone e/ou a câmera' : 'o microfone'}. Confira a permissão nas
           configurações do navegador ou do app.
         </p>
       )}
-      {status === 'unsupported' && <p className="hint danger">Este navegador não sabe gravar {mode === 'video' ? 'vídeo' : 'áudio'}.</p>}
-
-      <h4>Gravações desta música</h4>
-      {recordings === null && <p className="hint small">Carregando…</p>}
-      {recordings !== null && recordings.length === 0 && <p className="hint small">Nenhuma gravação ainda.</p>}
-      {recordings !== null && recordings.length > 0 && (
-        <p className="hint small">{recordings.length} gravaç{recordings.length === 1 ? 'ão' : 'ões'} · {formatBytes(totalBytes)} ocupados neste aparelho.</p>
-      )}
-      <div className="recordlist">
-        {recordings?.map((r) => (
-          <div key={r.id} className={`recorditem${r.pinned ? ' pinned' : ''}`}>
-            <div className="recorditem-meta">
-              <strong>{formatDate(r.createdAt)}</strong>
-              <span>{r.kind === 'video' ? 'vídeo' : 'áudio'} · {formatDuration(r.durationMs)} · {formatBytes(r.blob.size)}</span>
-              {r.layeredOver && r.layeredOver.length > 0 && (
-                <span className="recorditem-layered">tocada sobre {r.layeredOver.length} gravação{r.layeredOver.length === 1 ? '' : 'ões'}</span>
-              )}
-            </div>
-            {r.kind === 'video' ? (
-              <video controls src={urlFor(r)} preload="none" className="recorditem-video" />
-            ) : (
-              <audio controls src={urlFor(r)} preload="none" />
-            )}
-            <button
-              className={`icon small${r.pinned ? ' active' : ''}`}
-              aria-label={r.pinned ? 'Remover destaque desta gravação' : 'Destacar esta gravação'}
-              title={r.pinned ? 'Guardada em destaque' : 'Destacar'}
-              onClick={() => void togglePinned(songId, r.id).then(setRecordings)}
-            >
-              {r.pinned ? <BookmarkSolidIcon /> : <BookmarkIcon />}
-            </button>
-            <button className="icon small danger" aria-label="Apagar gravação" onClick={() => void remove(r.id)}><TrashIcon /></button>
-          </div>
-        ))}
-      </div>
+      {status === 'unsupported' && <p className="hint danger record-denied">Este navegador não sabe gravar {mode === 'video' ? 'vídeo' : 'áudio'}.</p>}
     </div>
   )
 }
