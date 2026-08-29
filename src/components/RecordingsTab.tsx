@@ -8,7 +8,9 @@ import { useEffect, useState } from 'react'
 import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { deleteRecording, listAllRecordings, renameRecording, togglePinned, type Recording } from '../store/recordings'
 import type { Song } from '../store/db'
+import { FontSizeToggleButton, InstrumentToggleButton } from './DisplayControls'
 import { RecordingRow } from './song/RecordingRow'
+import { ThemeToggleButton } from './ThemeControls'
 
 type Kind = 'audio' | 'video'
 
@@ -54,6 +56,9 @@ export function RecordingsTab({ songs }: { songs: Record<string, Song> }) {
     <div className="library">
       <header className="apphead">
         <h1>Gravações</h1>
+        <FontSizeToggleButton />
+        <InstrumentToggleButton />
+        <ThemeToggleButton />
       </header>
 
       {bySong === null && <p className="hint">Carregando…</p>}

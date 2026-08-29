@@ -21,7 +21,7 @@ import { guessPaletteFromSymbols, PALETTES } from '../theory/palettes'
 import { tuningById, type Tuning } from '../theory/tunings'
 import type { Song, SongSettings } from '../store/db'
 import { SCROLL_MAX } from '../store/songActions'
-import { getDisplayDefaults } from '../store/defaults'
+import { useDisplayDefaults } from './DisplayControls'
 import { CifraText } from './CifraText'
 import { Recorder } from './Recorder'
 import { RhythmGrid } from './RhythmView'
@@ -102,9 +102,9 @@ export function SongView({
   const [tunerOpen, setTunerOpen] = useState(false)
   const [manualAnalysisKey, setManualAnalysisKey] = useState<number | null>(null)
   const [recordMode, setRecordMode] = useState<RecordingKind>('audio')
-  // tamanho do texto e tablatura são preferências globais agora (aba
-  // Configurações) — lidas uma vez, já que trocar de aba desmonta esta tela
-  const [display] = useState(getDisplayDefaults)
+  // tamanho do texto, tablatura e instrumento são preferências globais (aba
+  // Configurações, ou os atalhos no cabeçalho das outras abas)
+  const [display] = useDisplayDefaults()
   useEffect(() => {
     setManualAnalysisKey(null)
     setChordStrip(null)
@@ -278,7 +278,7 @@ export function SongView({
       {chordStrip && (
         <ChordStrip
           chords={view.displayedChords}
-          instrument={s.instrument}
+          instrument={display.instrument}
           tuning={tuning}
           focus={chordStrip.focus}
           overridden={overriddenSymbols}
@@ -394,7 +394,7 @@ export function SongView({
           <ChordSheet
             key={inspect}
             symbol={inspect}
-            instrument={s.instrument}
+            instrument={display.instrument}
             threshold={s.threshold}
             tuning={tuning}
             isOverridden={overriddenSymbols.has(inspect)}

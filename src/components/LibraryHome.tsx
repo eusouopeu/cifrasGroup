@@ -4,6 +4,7 @@ import type { DB } from '../store/db'
 import type { Difficulty } from '../cifra/meta'
 import { rhythmById } from '../data/rhythms'
 import { SongCard } from './SongCard'
+import { FontSizeToggleButton, InstrumentToggleButton } from './DisplayControls'
 import { ThemeToggleButton } from './ThemeControls'
 
 export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }: {
@@ -59,6 +60,8 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
     <div className="library">
       <header className="apphead">
         <h1>cifras<span>Group</span></h1>
+        <FontSizeToggleButton />
+        <InstrumentToggleButton />
         <ThemeToggleButton />
       </header>
 

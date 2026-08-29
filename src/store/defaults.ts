@@ -3,11 +3,12 @@
  * IndexedDB): são poucos valores pequenos e precisam estar disponíveis de
  * forma síncrona.
  *
- * `fontSize` e `hideTabs` são configurações únicas para o app inteiro — não
- * há mais um valor por música (ver aba Configurações). `instrument` e
- * `tuning` continuam sendo só o ponto de partida de cada música nova
- * (importada ou duplicada); depois disso cada música guarda o próprio valor
- * em `SongSettings` (store/db.ts).
+ * `fontSize`, `hideTabs` e `instrument` são configurações únicas para o app
+ * inteiro — não há mais um valor por música, e os botões de atalho no
+ * cabeçalho de cada aba (components/DisplayControls.tsx) editam exatamente
+ * estes campos. `tuning` é diferente: continua sendo só o ponto de partida
+ * de cada música nova (importada ou duplicada) — depois disso cada música
+ * guarda a própria afinação em `SongSettings` (store/db.ts).
  */
 
 export interface DisplayDefaults {

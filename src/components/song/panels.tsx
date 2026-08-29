@@ -17,6 +17,7 @@ import type { Song, SongSettings } from '../../store/db'
 import { CAPO_MAX } from '../../store/songActions'
 import type { UseMetronome } from '../../audio/useMetronome'
 import { ChordCard } from '../ChordDiagram'
+import { useDisplayDefaults } from '../DisplayControls'
 import { RhythmCard } from '../RhythmView'
 import { TuningPicker } from '../TuningPicker'
 import { LevelButton, Panel, TagEditor } from './parts'
@@ -357,6 +358,7 @@ export function ChordsPanel({ s, view, dispatch, customTunings, onSaveCustomTuni
   onRestoreAllOverrides: () => void
 }) {
   const [tab, setTab] = useState<ChordsTab>('afinacao')
+  const [defaults, patchDefaults] = useDisplayDefaults()
   const tuning = tuningById(s.tuning, customTunings)
 
   return (
@@ -367,7 +369,7 @@ export function ChordsPanel({ s, view, dispatch, customTunings, onSaveCustomTuni
       <div className="chordspanel-content">
         {tab === 'afinacao' && (
           <>
-            {s.instrument === 'guitar' && (
+            {defaults.instrument === 'guitar' && (
               <TuningPicker
                 value={s.tuning}
                 onChange={(id) => dispatch({ type: 'setTuning', id })}
@@ -394,7 +396,7 @@ export function ChordsPanel({ s, view, dispatch, customTunings, onSaveCustomTuni
                   aria-label={`Ver ficha do acorde ${c.symbol}`}
                 >
                   {overriddenSymbols.has(c.symbol) && <span className="overridden-dot" title="Troca manual" />}
-                  <ChordCard symbol={c.symbol} instrument={s.instrument} compact tuning={tuning} />
+                  <ChordCard symbol={c.symbol} instrument={defaults.instrument} compact tuning={tuning} />
                 </div>
               ))}
             </div>
@@ -415,8 +417,8 @@ export function ChordsPanel({ s, view, dispatch, customTunings, onSaveCustomTuni
       <div className="chordspanel-footer">
         {tab === 'afinacao' && (
           <div className="toggle">
-            <button className={s.instrument === 'guitar' ? 'on' : ''} onClick={() => dispatch({ type: 'setInstrument', value: 'guitar' })}>Violão</button>
-            <button className={s.instrument === 'piano' ? 'on' : ''} onClick={() => dispatch({ type: 'setInstrument', value: 'piano' })}>Piano</button>
+            <button className={defaults.instrument === 'guitar' ? 'on' : ''} onClick={() => patchDefaults({ instrument: 'guitar' })}>Violão</button>
+            <button className={defaults.instrument === 'piano' ? 'on' : ''} onClick={() => patchDefaults({ instrument: 'piano' })}>Piano</button>
           </div>
         )}
         <div className="toggle chordsheet-tabs">

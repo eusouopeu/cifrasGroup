@@ -23,8 +23,8 @@ type Route = { view: 'library' } | { view: 'import' } | { view: 'song'; id: stri
 
 /** Padrões escolhidos pelo usuário em Configurações, por cima do reset de fábrica. */
 function newSongSettings(): SongSettings {
-  const { instrument, tuning } = getDisplayDefaults()
-  return { ...DEFAULT_SETTINGS, instrument, tuning }
+  const { tuning } = getDisplayDefaults()
+  return { ...DEFAULT_SETTINGS, tuning }
 }
 
 function withDemoSong(loaded: DB): DB {

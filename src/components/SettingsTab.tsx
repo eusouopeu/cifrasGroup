@@ -3,7 +3,7 @@ import { useToast } from './Toast'
 import { ThemePillPicker, ThemeToggleButton } from './ThemeControls'
 import { TuningPicker } from './TuningPicker'
 import { SizePicker } from './song/parts'
-import { getDisplayDefaults, setDisplayDefaults, type DisplayDefaults } from '../store/defaults'
+import { FontSizeToggleButton, InstrumentToggleButton, useDisplayDefaults } from './DisplayControls'
 import type { Tuning } from '../theory/tunings'
 
 export function SettingsTab({ customTunings, onExport, onImport }: {
@@ -13,15 +13,15 @@ export function SettingsTab({ customTunings, onExport, onImport }: {
   onImport: (json: string) => void
 }) {
   const [exporting, setExporting] = useState(false)
-  const [defaults, setDefaults] = useState<DisplayDefaults>(getDisplayDefaults)
+  const [defaults, patchDefaults] = useDisplayDefaults()
   const showToast = useToast()
-
-  const patchDefaults = (patch: Partial<DisplayDefaults>) => setDefaults(setDisplayDefaults(patch))
 
   return (
     <div className="library">
       <header className="apphead">
         <h1>Configurações</h1>
+        <FontSizeToggleButton />
+        <InstrumentToggleButton />
         <ThemeToggleButton />
       </header>
 
@@ -40,16 +40,16 @@ export function SettingsTab({ customTunings, onExport, onImport }: {
           <input type="checkbox" checked={defaults.hideTabs} onChange={(e) => patchDefaults({ hideTabs: e.target.checked })} />
           Esconder tablaturas
         </label>
-      </section>
-
-      <section className="settingsection">
-        <h4>Padrões para músicas novas</h4>
         <div className="row">
           <div className="toggle">
             <button className={defaults.instrument === 'guitar' ? 'on' : ''} onClick={() => patchDefaults({ instrument: 'guitar' })}>Violão</button>
             <button className={defaults.instrument === 'piano' ? 'on' : ''} onClick={() => patchDefaults({ instrument: 'piano' })}>Piano</button>
           </div>
         </div>
+      </section>
+
+      <section className="settingsection">
+        <h4>Padrões para músicas novas</h4>
         <TuningPicker
           value={defaults.tuning}
           onChange={(id) => patchDefaults({ tuning: id })}

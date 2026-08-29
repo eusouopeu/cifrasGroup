@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import { ToastProvider } from './components/Toast'
 import { ThemeProvider } from './components/ThemeControls'
+import { DisplayDefaultsProvider } from './components/DisplayControls'
 import { applyTheme, getTheme } from './store/theme'
 import './styles.css'
 
@@ -12,9 +13,11 @@ applyTheme(getTheme())
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
-      <ToastProvider>
-        <App />
-      </ToastProvider>
+      <DisplayDefaultsProvider>
+        <ToastProvider>
+          <App />
+        </ToastProvider>
+      </DisplayDefaultsProvider>
     </ThemeProvider>
   </StrictMode>,
 )

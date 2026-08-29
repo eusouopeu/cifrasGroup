@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Tuner } from './Tuner'
+import { FontSizeToggleButton, InstrumentToggleButton } from './DisplayControls'
 import { ThemeToggleButton } from './ThemeControls'
 import { TuningPicker } from './TuningPicker'
 import { tuningById, type Tuning } from '../theory/tunings'
@@ -16,6 +17,8 @@ export function TunerTab({ customTunings, onSaveCustomTuning, onDeleteCustomTuni
     <div className="library">
       <header className="apphead">
         <h1>Afinação</h1>
+        <FontSizeToggleButton />
+        <InstrumentToggleButton />
         <ThemeToggleButton />
       </header>
 

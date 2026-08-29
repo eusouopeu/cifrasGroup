@@ -45,7 +45,6 @@ export type SongAction =
   | { type: 'toggleClick' }
   | { type: 'setScrollSpeed'; value: number }
   | { type: 'scrollSpeedBy'; delta: number }
-  | { type: 'setInstrument'; value: 'guitar' | 'piano' }
   | { type: 'setTuning'; id: string }
   | { type: 'overrideChord'; original: string; symbol: string }
   | { type: 'clearOverride'; original: string }
@@ -88,8 +87,6 @@ export function songSettingsPatch(s: SongSettings, action: SongAction): Partial<
     case 'scrollSpeedBy':
       // subir a partir de "parada" começa numa velocidade já perceptível
       return { scrollSpeed: clamp(s.scrollSpeed === 0 && action.delta > 0 ? 6 : s.scrollSpeed + action.delta, 0, SCROLL_MAX) }
-    case 'setInstrument':
-      return { instrument: action.value }
     case 'setTuning':
       return { tuning: action.id }
     case 'overrideChord':

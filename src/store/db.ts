@@ -28,7 +28,6 @@ export interface SongSettings {
   /** trocas manuais feitas pelo usuário: símbolo original -> símbolo escolhido */
   overrides: Record<string, string>
   scrollSpeed: number
-  instrument: 'guitar' | 'piano'
   /** id do catálogo em theory/tunings.ts */
   tuning: string
   /**
@@ -95,7 +94,6 @@ export const DEFAULT_SETTINGS: SongSettings = {
   playClick: true,
   overrides: {},
   scrollSpeed: 0,
-  instrument: 'guitar',
   tuning: 'standard',
   preferredVoicings: {},
 }
