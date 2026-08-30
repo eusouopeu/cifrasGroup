@@ -263,9 +263,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* ---------- afinações personalizadas ---------- */
 .icon.active { border: 1px solid var(--accent); color: var(--accent); border-radius: 8px; }
 .panel-section { margin-bottom: 1.3rem; }
-.tuningbuilder { background: var(--bg3); border: 1px solid var(--line); border-radius: 10px; padding: .7rem .8rem; margin: .6rem 0; }
-.manualtuning { display: flex; flex-wrap: wrap; gap: .5rem; margin: .4rem 0; }
-.manualtuning .field { width: 76px; }
 
 /* ---------- diagramas ---------- */
 /* Faixa de acordes: rola para o lado, não para baixo. Assim ela ocupa uma
@@ -282,31 +279,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .chordgrid .chordcard { min-width: 104px; }
 /* o teclado é largo: no modo faixa ele rola dentro do próprio cartão */
 .chordgrid .chordcard .diagram { max-width: 168px; }
-.chordcard-name { font-family: var(--mono); font-size: .82rem; color: var(--accent); font-weight: 700; margin-bottom: .2rem; }
-.chordcard-none { font-size: .68rem; color: var(--dim); padding: 1rem .3rem; }
-.chordcard-cycle { display: flex; align-items: center; justify-content: center; gap: .2rem; margin-top: -.2rem; }
-.chordcard-cycle .icon.small { font-size: 1rem; padding: 0 .4rem; line-height: 1; min-width: 28px; min-height: 28px; }
-.chordcard-cycle-count { font-size: .62rem; color: var(--dim); }
-.chordcard-voicings, .sheet-voicings { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; }
-.voicing { display: flex; flex-direction: column; align-items: center; }
 .voicing-meta { font-size: .64rem; color: var(--dim); max-width: 110px; }
 .diagram { overflow: visible; }
-.d-line { stroke: var(--line); stroke-width: 1; }
-.d-nut { stroke: var(--fg); stroke-width: 3; }
-.d-dot { fill: var(--accent); }
-.d-open { fill: none; stroke: var(--fg); stroke-width: 1.4; }
-.d-mute { fill: var(--dim); }
-.d-barre { fill: var(--accent); opacity: .85; }
-.d-degree { fill: var(--dim); }
-.d-fretnum { fill: var(--dim); }
-.d-finger { fill: var(--dim); font-weight: 700; }
-.d-finger.on { fill: #14161a; }
-.k-label { fill: var(--dim); font-weight: 600; }
-.k-label.on { fill: #14161a; }
-.k-white { fill: var(--bg2); stroke: var(--line); }
-.k-white.on { fill: var(--accent); }
-.k-black { fill: var(--fg); }
-.k-black.on { fill: var(--accent2); }
 
 /* ---------- ficha do acorde ---------- */
 .sheet-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: flex-end; justify-content: center; z-index: 20; }
@@ -351,15 +325,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 
 /* aba de voz (aba Acordes → Voz) */
-.voicelab { display: flex; flex-direction: column; gap: .7rem; margin-top: .5rem; }
-.voicelab-head { display: flex; align-items: baseline; gap: .6rem; }
-.voicelab-note { font-size: 1.6rem; color: var(--accent); }
-.voicelab-bands { display: flex; flex-direction: column; gap: .4rem; }
-.voicelab-band { display: grid; grid-template-columns: 130px 1fr 40px; align-items: center; gap: .5rem; font-size: .78rem; }
-.voicelab-band-label { color: var(--dim); }
-.voicelab-band-value { text-align: right; color: var(--accent2); }
-.voicelab-meta { display: flex; flex-direction: column; gap: .2rem; font-size: .78rem; color: var(--dim); }
-.voicelab-tips ul { margin: .3rem 0 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: .3rem; font-size: .82rem; }
 
 /* editor do texto da cifra */
 .rawedit { width: 100%; min-height: 40vh; white-space: pre; overflow-wrap: normal; overflow-x: auto; font-size: .8rem; line-height: 1.45; }

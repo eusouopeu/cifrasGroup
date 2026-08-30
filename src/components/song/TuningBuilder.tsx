@@ -38,7 +38,7 @@ export function TuningBuilder({ allTunings, onSave }: { allTunings: Tuning[]; on
   }
 
   return (
-    <div className="tuningbuilder">
+    <div className="bg-bg3 border border-line rounded-[10px] p-[.7rem_.8rem] my-[.6rem]">
       <div className="toggle">
         <button className={mode === 'transpose' ? 'on' : ''} onClick={() => setMode('transpose')}>Transpor afinação existente</button>
         <button className={mode === 'manual' ? 'on' : ''} onClick={() => setMode('manual')}>Afinação livre</button>
@@ -68,9 +68,9 @@ export function TuningBuilder({ allTunings, onSave }: { allTunings: Tuning[]; on
             Escolha a nota de cada corda, da mais grave (6ª) para a mais aguda (1ª) — cobre qualquer instrumento ou
             afinação aberta fora do catálogo.
           </p>
-          <div className="manualtuning">
+          <div className="flex flex-wrap gap-2 my-[.4rem]">
             {manualPcs.map((pc, i) => (
-              <label key={i} className="field">
+              <label key={i} className="field w-[76px]">
                 {6 - i}ª corda
                 <select value={pc} onChange={(e) => setManualPcs(manualPcs.map((p, j) => (j === i ? Number(e.target.value) : p)))}>
                   {Array.from({ length: 12 }, (_, n) => <option key={n} value={n}>{nameOf(n)}</option>)}

@@ -59,45 +59,57 @@ export function GuitarDiagram({ symbol, voicing, size = 1, showDegrees = true, t
             width={gridW + 8 * size}
             height={8 * size}
             rx={4 * size}
-            className="d-barre"
+            className="fill-accent opacity-85"
           />
-          <text x={padX - 10 * size} y={padTop + (voicing.barre - base - 0.5) * dy + 3 * size} className="d-finger" fontSize={7.5 * size} textAnchor="middle">1</text>
+          <text
+            x={padX - 10 * size}
+            y={padTop + (voicing.barre - base - 0.5) * dy + 3 * size}
+            className="fill-dim font-bold"
+            fontSize={7.5 * size}
+            textAnchor="middle"
+          >
+            1
+          </text>
         </>
       )}
       {/* cordas */}
       {[0, 1, 2, 3, 4, 5].map((i) => (
-        <line key={`s${i}`} x1={padX + i * dx} y1={padTop} x2={padX + i * dx} y2={padTop + gridH} className="d-line" />
+        <line key={`s${i}`} x1={padX + i * dx} y1={padTop} x2={padX + i * dx} y2={padTop + gridH} strokeWidth={1} className="stroke-line" />
       ))}
       {/* trastes */}
-      {Array.from({ length: FRETS + 1 }, (_, i) => (
-        <line
-          key={`f${i}`}
-          x1={padX}
-          y1={padTop + i * dy}
-          x2={padX + gridW}
-          y2={padTop + i * dy}
-          className={i === 0 && base === 0 ? 'd-nut' : 'd-line'}
-        />
-      ))}
+      {Array.from({ length: FRETS + 1 }, (_, i) => {
+        const isNut = i === 0 && base === 0
+        return (
+          <line
+            key={`f${i}`}
+            x1={padX}
+            y1={padTop + i * dy}
+            x2={padX + gridW}
+            y2={padTop + i * dy}
+            strokeWidth={isNut ? 3 : 1}
+            className={isNut ? 'stroke-fg' : 'stroke-line'}
+          />
+        )
+      })}
       {base > 0 && (
-        <text x={padX + gridW + 4 * size} y={padTop + dy * 0.7} className="d-fretnum" fontSize={9 * size}>
+        <text x={padX + gridW + 4 * size} y={padTop + dy * 0.7} className="fill-dim" fontSize={9 * size}>
           {base + 1}ª
         </text>
       )}
       {/* marcações por corda */}
       {voicing.frets.map((f, i) => {
         const x = padX + i * dx
-        if (f === null) return <text key={i} x={x} y={padTop - 6 * size} className="d-mute" fontSize={10 * size} textAnchor="middle">×</text>
-        if (f === 0) return <circle key={i} cx={x} cy={padTop - 9 * size} r={3.2 * size} className="d-open" />
+        if (f === null) return <text key={i} x={x} y={padTop - 6 * size} className="fill-dim" fontSize={10 * size} textAnchor="middle">×</text>
+        if (f === 0) return <circle key={i} cx={x} cy={padTop - 9 * size} r={3.2 * size} strokeWidth={1.4} className="fill-none stroke-fg" />
         const rel = f - base
         const covered = voicing.barre !== null && f === voicing.barre
         if (covered) return null
         const cy = padTop + (rel - 0.5) * dy
         return (
           <g key={i}>
-            <circle cx={x} cy={cy} r={5.2 * size} className="d-dot" />
+            <circle cx={x} cy={cy} r={5.2 * size} className="fill-accent" />
             {fingers[i] !== null && (
-              <text x={x} y={cy + 2.6 * size} className="d-finger on" fontSize={7 * size} textAnchor="middle">{fingers[i]}</text>
+              <text x={x} y={cy + 2.6 * size} className="fill-[#14161a] font-bold" fontSize={7 * size} textAnchor="middle">{fingers[i]}</text>
             )}
           </g>
         )
@@ -106,7 +118,7 @@ export function GuitarDiagram({ symbol, voicing, size = 1, showDegrees = true, t
       {showDegrees &&
         degrees.map((d, i) =>
           d === null ? null : (
-            <text key={`d${i}`} x={padX + i * dx} y={h - 5 * size} className="d-degree" fontSize={8 * size} textAnchor="middle">
+            <text key={`d${i}`} x={padX + i * dx} y={h - 5 * size} className="fill-dim" fontSize={8 * size} textAnchor="middle">
               {d}
             </text>
           ),
@@ -114,7 +126,7 @@ export function GuitarDiagram({ symbol, voicing, size = 1, showDegrees = true, t
       {/* nomes das cordas */}
       {!showDegrees &&
         tuning.stringNames.map((n, i) => (
-          <text key={`n${i}`} x={padX + i * dx} y={h - 5 * size} className="d-degree" fontSize={8 * size} textAnchor="middle">
+          <text key={`n${i}`} x={padX + i * dx} y={h - 5 * size} className="fill-dim" fontSize={8 * size} textAnchor="middle">
             {n}
           </text>
         ))}
@@ -142,9 +154,9 @@ export function PianoDiagram({ symbol, size = 1 }: { symbol: string; size?: numb
           const on = pcs.has(pc)
           return (
             <g key={`w${o}-${i}`}>
-              <rect x={x} y={0} width={kw - 1} height={kh} rx={2} className={on ? 'k-white on' : 'k-white'} />
+              <rect x={x} y={0} width={kw - 1} height={kh} rx={2} strokeWidth={1} className={on ? 'fill-accent stroke-line' : 'fill-bg2 stroke-line'} />
               {on && (
-                <text x={x + (kw - 1) / 2} y={kh - 6 * size} className="k-label on" fontSize={7 * size} textAnchor="middle">
+                <text x={x + (kw - 1) / 2} y={kh - 6 * size} className="fill-[#14161a] font-semibold" fontSize={7 * size} textAnchor="middle">
                   {nameOf(pc)}
                 </text>
               )}
@@ -159,9 +171,9 @@ export function PianoDiagram({ symbol, size = 1 }: { symbol: string; size?: numb
           const on = pcs.has(pc)
           return (
             <g key={`b${o}-${pc}`}>
-              <rect x={x} y={0} width={kw * 0.6} height={kh * 0.62} rx={2} className={on ? 'k-black on' : 'k-black'} />
+              <rect x={x} y={0} width={kw * 0.6} height={kh * 0.62} rx={2} className={on ? 'fill-accent2' : 'fill-fg'} />
               {on && (
-                <text x={x + (kw * 0.6) / 2} y={kh * 0.62 - 5 * size} className="k-label on" fontSize={6 * size} textAnchor="middle">
+                <text x={x + (kw * 0.6) / 2} y={kh * 0.62 - 5 * size} className="fill-[#14161a] font-semibold" fontSize={6 * size} textAnchor="middle">
                   {nameOf(pc)}
                 </text>
               )}
@@ -170,7 +182,7 @@ export function PianoDiagram({ symbol, size = 1 }: { symbol: string; size?: numb
         }),
       )}
       {chord && (
-        <text x={2} y={h - 3} className="d-degree" fontSize={9 * size}>
+        <text x={2} y={h - 3} className="fill-dim" fontSize={9 * size}>
           {chord.pcs.length} notas
         </text>
       )}
@@ -187,7 +199,7 @@ export function ChordCard({ symbol, instrument, compact = false, tuning = DEFAUL
   if (instrument === 'piano') {
     return (
       <div className="chordcard">
-        <div className="chordcard-name">{symbol}</div>
+        <div className="mono text-[.82rem] text-accent font-bold mb-[.2rem]">{symbol}</div>
         <PianoDiagram symbol={symbol} size={compact ? 0.85 : 1} />
       </div>
     )
@@ -196,18 +208,18 @@ export function ChordCard({ symbol, instrument, compact = false, tuning = DEFAUL
   if (vs.length === 0) {
     return (
       <div className="chordcard">
-        <div className="chordcard-name">{symbol}</div>
-        <div className="chordcard-none">sem digitação viável no violão</div>
+        <div className="mono text-[.82rem] text-accent font-bold mb-[.2rem]">{symbol}</div>
+        <div className="text-[.68rem] text-dim p-[1rem_.3rem]">sem digitação viável no violão</div>
       </div>
     )
   }
   if (compact) return <CompactChordCard symbol={symbol} voicings={vs} tuning={tuning} />
   return (
     <div className="chordcard">
-      <div className="chordcard-name">{symbol}</div>
-      <div className="chordcard-voicings">
+      <div className="mono text-[.82rem] text-accent font-bold mb-[.2rem]">{symbol}</div>
+      <div className="flex gap-2 flex-wrap justify-center">
         {vs.map((v, i) => (
-          <div key={i} className="voicing">
+          <div key={i} className="flex flex-col items-center">
             <GuitarDiagram symbol={symbol} voicing={v} size={1} tuning={tuning} />
             <div className="voicing-meta">
               {v.barre !== null ? 'pestana' : 'sem pestana'} · {v.open} solta{v.open === 1 ? '' : 's'} · {v.muted} muda{v.muted === 1 ? '' : 's'}
@@ -226,20 +238,20 @@ function CompactChordCard({ symbol, voicings, tuning }: { symbol: string; voicin
   const v = voicings[safeIdx]
   return (
     <div className="chordcard">
-      <div className="chordcard-name">{symbol}</div>
+      <div className="mono text-[.82rem] text-accent font-bold mb-[.2rem]">{symbol}</div>
       <GuitarDiagram symbol={symbol} voicing={v} size={0.85} tuning={tuning} />
       {voicings.length > 1 && (
-        <div className="chordcard-cycle">
+        <div className="flex items-center justify-center gap-[.2rem] -mt-[.2rem]">
           <button
-            className="icon small"
+            className="icon small text-base p-[0_.4rem] leading-none min-w-7 min-h-7"
             aria-label="Digitação anterior"
             onClick={(e) => { e.stopPropagation(); setIdx((i) => (i - 1 + voicings.length) % voicings.length) }}
           >
             <ChevronLeft />
           </button>
-          <span className="chordcard-cycle-count">{safeIdx + 1}/{voicings.length}</span>
+          <span className="text-[.62rem] text-dim">{safeIdx + 1}/{voicings.length}</span>
           <button
-            className="icon small"
+            className="icon small text-base p-[0_.4rem] leading-none min-w-7 min-h-7"
             aria-label="Próxima digitação"
             onClick={(e) => { e.stopPropagation(); setIdx((i) => (i + 1) % voicings.length) }}
           >

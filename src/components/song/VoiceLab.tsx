@@ -92,26 +92,26 @@ function pct(v: number): string {
 function VoiceReadout({ reading }: { reading: VoiceReading }) {
   const tips = buildTips(reading)
   return (
-    <div className="voicelab">
-      <div className="voicelab-head">
-        <span className="voicelab-note mono">{reading.note}</span>
+    <div className="flex flex-col gap-[.7rem] mt-2">
+      <div className="flex items-baseline gap-[.6rem]">
+        <span className="mono text-[1.6rem] text-accent">{reading.note}</span>
         <span className="hint small">{reading.frequency.toFixed(1)} Hz · {reading.cents > 0 ? '+' : ''}{reading.cents} cents</span>
       </div>
 
-      <div className="voicelab-bands">
+      <div className="flex flex-col gap-[.4rem]">
         <BandBar label="Grave (corpo)" value={reading.bands.low} />
         <BandBar label="Médio (preenchimento)" value={reading.bands.mid} />
         <BandBar label="Agudo (brilho)" value={reading.bands.high} />
       </div>
 
-      <div className="voicelab-meta">
+      <div className="flex flex-col gap-[.2rem] text-[.78rem] text-dim">
         <span>Centro espectral: <strong>{Math.round(reading.centroid)} Hz</strong></span>
         <span>Fator de crista: <strong>{reading.crestFactor.toFixed(1)}</strong></span>
         {reading.clipRatio > 0.005 && <span className="hint warn">possível saturação ({pct(reading.clipRatio)} das amostras no limite)</span>}
       </div>
 
       {tips.length > 0 && (
-        <div className="voicelab-tips">
+        <div className="[&>ul]:mt-[.3rem] [&>ul]:pl-[1.1rem] [&>ul]:flex [&>ul]:flex-col [&>ul]:gap-[.3rem] [&>ul]:text-[.82rem]">
           <h4>Dicas (estimativas)</h4>
           <ul>
             {tips.map((t) => <li key={t}>{t}</li>)}
@@ -124,10 +124,10 @@ function VoiceReadout({ reading }: { reading: VoiceReading }) {
 
 function BandBar({ label, value }: { label: string; value: number }) {
   return (
-    <div className="voicelab-band">
-      <span className="voicelab-band-label">{label}</span>
+    <div className="grid [grid-template-columns:130px_1fr_40px] items-center gap-2 text-[.78rem]">
+      <span className="text-dim">{label}</span>
       <span className="bar"><i style={{ width: pct(value) }} /></span>
-      <span className="voicelab-band-value">{pct(value)}</span>
+      <span className="text-right text-accent2">{pct(value)}</span>
     </div>
   )
 }
