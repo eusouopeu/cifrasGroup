@@ -178,7 +178,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 
 /* ---------- tela da música ---------- */
-.songview { display: flex; flex-direction: column; height: 100%; }
 .songhead { display: flex; align-items: center; flex-wrap: wrap; row-gap: .2rem; gap: .3rem; padding: .5rem .6rem; border-bottom: 1px solid var(--line); background: var(--bg2); }
 .songhead .icon { padding: .2rem .4rem; }
 .songhead-title { flex: 1; display: flex; flex-direction: column; line-height: 1.15; min-width: 0; background: none; border: none; color: inherit; font: inherit; text-align: left; padding: 0; cursor: pointer; }
@@ -270,52 +269,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .toggle button { background: var(--bg3); border: none; padding: .35rem .8rem; font-size: .8rem; }
 .toggle button.on { background: var(--accent); color: #14161a; font-weight: 600; }
 
-/* ---------- ritmo ---------- */
-.capobar { background: color-mix(in srgb, var(--accent) 16%, var(--bg2)); border-bottom: 1px solid var(--line); padding: .25rem .7rem; font-size: .75rem; }
-.setlistbar { display: flex; align-items: center; justify-content: center; gap: .5rem; background: var(--bg2); border-bottom: 1px solid var(--line); padding: .15rem .4rem; }
-.setlistbar-label { font-size: .75rem; color: var(--dim); flex: 1; text-align: center; }
-.setlistbar .icon:disabled { opacity: .3; }
-
-/* ---------- cifra ---------- */
-.cifra-area { position: relative; flex: 1; min-height: 0; display: flex; }
-.cifra-scroll { flex: 1; overflow-y: auto; padding: .8rem 1rem 6rem; scroll-behavior: auto; }
-.cifra-footer { margin-top: 2rem; font-size: .75rem; color: var(--dim); }
-.cifra-rawedit {
-  width: 100%; height: 100%; min-height: 100%; resize: none; border: none; outline: none;
-  background: none; color: var(--fg); font-family: var(--mono); line-height: 1.5;
-  white-space: pre; overflow-wrap: normal;
-}
-
-/* ---------- barra de transporte (metrônomo + rolagem) ---------- */
-.transport {
-  position: sticky; bottom: 0; z-index: 5;
-  display: flex; align-items: center; justify-content: space-between; gap: .7rem;
-  padding: .5rem .7rem calc(.5rem + env(safe-area-inset-bottom));
-  background: var(--bg2); border-top: 1px solid var(--line);
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, .18);
-}
-.transport-editing { gap: .6rem; }
-.transport-editing .btn.wide { flex: 1; text-align: center; margin-bottom: 0; }
-.transport-play {
-  flex: 0 0 auto; width: 52px; height: 52px; border-radius: 50%;
-  border: 1px solid var(--line); background: var(--bg3);
-  display: grid; place-items: center;
-}
-.transport-play svg { width: 22px; height: 22px; }
-.transport-play.on { background: var(--accent); border-color: var(--accent); color: #14161a; }
-.transport-bpm {
-  flex: 0 0 auto; background: none; border: none; text-align: left;
-  display: flex; flex-direction: column; line-height: 1.15; padding: .2rem .15rem; min-height: 52px; justify-content: center;
-}
-.transport-bpm strong { font-size: 1.1rem; }
-.transport-bpm span { font-size: .7rem; color: var(--dim); max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.transport-actions { display: flex; align-items: center; gap: .9rem; flex: 0 0 auto; }
-.transport-icon {
-  flex: 0 0 auto; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line);
-  background: var(--bg3); color: var(--dim); display: grid; place-items: center;
-}
-.transport-icon svg { width: 19px; height: 19px; }
-.transport-icon.on { background: color-mix(in srgb, var(--accent) 16%, var(--bg3)); border-color: var(--accent); color: var(--accent); }
 
 .bpmbox { background: var(--bg3); border: 1px solid var(--line); border-radius: 10px; padding: .6rem .7rem; margin-bottom: .8rem; }
 .bpmbox input[type=range] { width: 100%; margin: .5rem 0 .4rem; }
@@ -549,35 +502,6 @@ button.recrow { display: flex; align-items: center; gap: .5rem; }
 .voicelab-meta { display: flex; flex-direction: column; gap: .2rem; font-size: .78rem; color: var(--dim); }
 .voicelab-tips ul { margin: .3rem 0 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: .3rem; font-size: .82rem; }
 
-/* aba "Gravações": accordion por música */
-
-/* ---------- controle de rolagem automática (acima da barra inferior) ---------- */
-.scrollbar-control {
-  position: sticky; bottom: 0; z-index: 6;
-  display: flex; align-items: center; gap: .4rem;
-  padding: .3rem .6rem; background: var(--bg3); border-top: 1px solid var(--line);
-}
-.scrollbar-slider { flex: 1; min-width: 0; accent-color: var(--accent); }
-.scrollbar-mark { font-size: .95rem; line-height: 1; opacity: .75; }
-
-/* ---------- indicador da batida ativa (acima da barra inferior) ---------- */
-.rhythmbar {
-  position: sticky; bottom: 0; z-index: 6;
-  display: flex; align-items: center; gap: .6rem;
-  padding: .3rem .6rem; background: var(--bg3); border-top: 1px solid var(--line);
-  overflow: hidden;
-}
-.rhythmbar-name { flex: 0 0 auto; font-size: .72rem; color: var(--dim); max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rhythmbar-grid { flex: 1; min-width: 0; overflow: hidden; }
-
-/* +/- de bpm ao lado do valor, na barra de transporte */
-.transport-bpmbox { display: flex; align-items: center; gap: .3rem; flex: 0 0 auto; }
-.transport-step {
-  width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line);
-  background: var(--bg3); color: var(--fg); display: grid; place-items: center; padding: 0;
-}
-.transport-step svg { width: 16px; height: 16px; }
-
 /* editor do texto da cifra */
 .rawedit { width: 100%; min-height: 40vh; white-space: pre; overflow-wrap: normal; overflow-x: auto; font-size: .8rem; line-height: 1.45; }
 
@@ -604,25 +528,7 @@ button.recrow { display: flex; align-items: center; gap: .5rem; }
   .chordfloat { max-height: 72vh; padding: .7rem .8rem; }
 
   /* linha comprida de cifra rola na horizontal em vez de quebrar */
-  .cifra-scroll { padding: .7rem .8rem 2rem; overflow-x: auto; }
   .chordstrip-scroll { padding: .35rem 1.9rem .35rem .4rem; }
-  .scrollbar-slider { min-height: 32px; }
-
-  /* seis ações + play + bpm não cabem em 360px com os tamanhos do desktop:
-     tudo encolhe um pouco em vez de o último botão sair da tela — mas ainda
-     maior e mais espaçado que o tamanho mínimo original */
-  .transport { gap: .35rem; padding: .4rem .4rem calc(.4rem + env(safe-area-inset-bottom)); }
-  .transport-play { width: 46px; height: 46px; }
-  .transport-play svg { width: 20px; height: 20px; }
-  .transport-bpm { padding: .2rem 0; }
-  .transport-bpm strong { font-size: 1rem; }
-  .transport-bpm span { max-width: 62px; font-size: .64rem; }
-  .transport-bpmbox { gap: .2rem; }
-  .transport-step { width: 30px; height: 30px; }
-  .transport-step svg { width: 14px; height: 14px; }
-  .transport-actions { gap: .55rem; }
-  .transport-icon { width: 38px; height: 38px; }
-  .transport-icon svg { width: 17px; height: 17px; }
   .songhead { padding: calc(.4rem + env(safe-area-inset-top)) .5rem .4rem; }
 }
 
@@ -631,5 +537,4 @@ button.recrow { display: flex; align-items: center; gap: .5rem; }
 /* animações de destaque só para quem não pediu menos movimento no sistema */
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
-  .cifra-scroll { scroll-behavior: auto; }
 }

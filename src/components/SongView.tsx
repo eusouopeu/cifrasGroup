@@ -225,7 +225,7 @@ export function SongView({
   const onChordInText = (displayed: string) => setChordStrip({ focus: displayed })
 
   return (
-    <div className="songview">
+    <div className="flex flex-col h-full">
       <header className="songhead">
         <button className="icon" onClick={onBack} aria-label="Voltar"><ArrowLeft /></button>
         {editingTitle ? (
@@ -294,7 +294,7 @@ export function SongView({
       )}
 
       {panel && panel !== 'notas' && panel !== 'gravar' && (
-        <div className="sheet-backdrop panel-backdrop" onClick={() => setPanel(null)}>
+        <div className="sheet-backdrop" onClick={() => setPanel(null)}>
           <div className="sheet panel-sheet" onClick={(e) => e.stopPropagation()}>
             <button className="icon panel-sheet-close" onClick={() => setPanel(null)} aria-label="Fechar painel"><X /></button>
             {panel === 'tom' && (
@@ -341,10 +341,14 @@ export function SongView({
         </div>
       )}
 
-      {s.capo > 0 && <div className="capobar">Capotraste na {s.capo}ª casa</div>}
+      {s.capo > 0 && (
+        <div className="bg-[color-mix(in_srgb,var(--accent)_16%,var(--bg2))] border-b border-line py-1 px-[.7rem] text-[.75rem]">
+          Capotraste na {s.capo}ª casa
+        </div>
+      )}
 
       {siblings && onNavigate && (
-        <div className="setlistbar">
+        <div className="flex items-center justify-center gap-2 bg-bg2 border-b border-line py-[.15rem] px-[.4rem] [&_.icon:disabled]:opacity-30">
           <button
             className="icon"
             disabled={siblings.index === 0}
@@ -353,7 +357,7 @@ export function SongView({
           >
             <ChevronLeft />
           </button>
-          <span className="setlistbar-label">{siblings.listName} · {siblings.index + 1}/{siblings.ids.length}</span>
+          <span className="text-[.75rem] text-dim flex-1 text-center">{siblings.listName} · {siblings.index + 1}/{siblings.ids.length}</span>
           <button
             className="icon"
             disabled={siblings.index === siblings.ids.length - 1}
@@ -365,11 +369,14 @@ export function SongView({
         </div>
       )}
 
-      <div className="cifra-area">
-        <div className="cifra-scroll" ref={scrollRef}>
+      <div className="relative flex-1 min-h-0 flex">
+        <div
+          className="flex-1 overflow-y-auto p-[.8rem_1rem_6rem] [scroll-behavior:auto] max-[620px]:p-[.7rem_.8rem_2rem] max-[620px]:overflow-x-auto"
+          ref={scrollRef}
+        >
           {editingRaw ? (
             <textarea
-              className="cifra-rawedit mono"
+              className="mono w-full h-full min-h-full resize-none border-0 outline-none bg-transparent text-fg leading-[1.5] whitespace-pre [overflow-wrap:normal]"
               aria-label="Texto da cifra"
               value={rawDraft}
               spellCheck={false}
@@ -388,7 +395,7 @@ export function SongView({
                 onChordClick={(_, displayed) => onChordInText(displayed)}
                 transposed={view.effectiveTranspose !== 0}
               />
-              <div className="cifra-footer">
+              <div className="mt-8 text-[.75rem] text-dim">
                 {song.source && <a href={song.source} target="_blank" rel="noreferrer">fonte original</a>}
               </div>
             </>
@@ -423,7 +430,7 @@ export function SongView({
       </div>
 
       {scrollBarOpen && !editingRaw && (
-        <div className="scrollbar-control">
+        <div className="sticky bottom-0 z-[6] flex items-center gap-1.5 py-1.5 px-[.6rem] bg-bg3 border-t border-line">
           <button
             className="icon"
             onClick={() => dispatch({ type: 'setScrollSpeed', value: s.scrollSpeed > 0 ? 0 : Number(localStorage.getItem(LAST_SCROLL_SPEED_KEY)) || 6 })}
@@ -439,9 +446,9 @@ export function SongView({
           >
             <RotateCw />
           </button>
-          <span className="scrollbar-mark" aria-hidden="true">🐢</span>
+          <span className="text-[.95rem] leading-none opacity-75" aria-hidden="true">🐢</span>
           <input
-            className="scrollbar-slider"
+            className="flex-1 min-w-0 accent-accent max-[620px]:min-h-8"
             type="range"
             min={0}
             max={SCROLL_MAX}
@@ -454,7 +461,7 @@ export function SongView({
               dispatch({ type: 'setScrollSpeed', value })
             }}
           />
-          <span className="scrollbar-mark" aria-hidden="true">🐇</span>
+          <span className="text-[.95rem] leading-none opacity-75" aria-hidden="true">🐇</span>
           <button
             className="icon"
             onClick={() => { dispatch({ type: 'setScrollSpeed', value: 0 }); setScrollBarOpen(false) }}
@@ -466,7 +473,7 @@ export function SongView({
       )}
 
       {rhythm && metronome.running && !editingRaw && (
-        <div className="rhythmbar">
+        <div className="sticky bottom-0 z-[6] flex items-center gap-2.5 py-1.5 px-[.6rem] bg-bg3 border-t border-line overflow-hidden">
           <button
             className={`icon${s.playPattern ? ' active' : ''}`}
             onClick={() => dispatch({ type: 'togglePattern' })}
@@ -475,8 +482,8 @@ export function SongView({
           >
             <Music />
           </button>
-          <span className="rhythmbar-name">{rhythm.name}</span>
-          <div className="rhythmbar-grid">
+          <span className="flex-none text-[.72rem] text-dim max-w-[90px] overflow-hidden text-ellipsis whitespace-nowrap">{rhythm.name}</span>
+          <div className="flex-1 min-w-0 overflow-hidden">
             <RhythmGrid rhythm={rhythm} activeStep={metronome.step} />
           </div>
         </div>
@@ -485,49 +492,67 @@ export function SongView({
       {/* barra de transporte: fica no rodapé, ao alcance do polegar — durante a
           edição da cifra vira só os botões de cancelar/salvar */}
       {editingRaw ? (
-        <div className="transport transport-editing">
-          <button className="btn wide ghost" onClick={() => setEditingRaw(false)}>cancelar</button>
-          <button className="btn wide primary" onClick={saveEditingRaw}>salvar</button>
+        <div className="sticky bottom-0 z-[5] flex items-center justify-between gap-2.5 py-2 px-[.7rem] pb-[calc(.5rem+env(safe-area-inset-bottom))] bg-bg2 border-t border-line shadow-[0_-4px_16px_rgba(0,0,0,.18)] max-[620px]:gap-[.35rem] max-[620px]:p-[.4rem_.4rem_calc(.4rem+env(safe-area-inset-bottom))]">
+          <button className="btn wide ghost !flex-1 !text-center !mb-0" onClick={() => setEditingRaw(false)}>cancelar</button>
+          <button className="btn wide primary !flex-1 !text-center !mb-0" onClick={saveEditingRaw}>salvar</button>
         </div>
       ) : (
-        <div className="transport">
+        <div className="sticky bottom-0 z-[5] flex items-center justify-between gap-[.7rem] py-2 px-[.7rem] pb-[calc(.5rem+env(safe-area-inset-bottom))] bg-bg2 border-t border-line shadow-[0_-4px_16px_rgba(0,0,0,.18)] max-[620px]:gap-[.35rem] max-[620px]:p-[.4rem_.4rem_calc(.4rem+env(safe-area-inset-bottom))]">
           <button
-            className={`transport-play${metronome.running ? ' on' : ''}`}
+            className={`flex-none w-[52px] h-[52px] rounded-full border border-line grid place-items-center [&>svg]:w-[22px] [&>svg]:h-[22px] max-[620px]:w-[46px] max-[620px]:h-[46px] max-[620px]:[&>svg]:w-5 max-[620px]:[&>svg]:h-5 ${
+              metronome.running ? 'bg-accent border-accent text-[#14161a]' : 'bg-bg3'
+            }`}
             onClick={play}
             aria-label={metronome.running ? 'Parar metrônomo' : 'Iniciar metrônomo'}
           >
             {metronome.running ? <Square /> : <Play />}
           </button>
-          <div className="transport-bpmbox">
-            <button className="transport-bpm" onClick={() => togglePanel('ritmo')} aria-label="Abrir painel de ritmo">
-              <span className="transport-bpm-value"><strong>{s.bpm}</strong> bpm</span>
+          <div className="flex items-center gap-1 flex-none max-[620px]:gap-[.2rem]">
+            <button
+              className="flex-none bg-none border-0 text-left flex flex-col leading-[1.15] p-[.2rem_.15rem] min-h-[52px] justify-center max-[620px]:py-[.2rem] max-[620px]:px-0 [&>*:first-child>strong]:text-[1.1rem] max-[620px]:[&>*:first-child>strong]:text-base [&>*]:text-[.7rem] [&>*]:text-dim [&>*]:max-w-[100px] [&>*]:overflow-hidden [&>*]:text-ellipsis [&>*]:whitespace-nowrap max-[620px]:[&>*]:max-w-[62px] max-[620px]:[&>*]:text-[.64rem]"
+              onClick={() => togglePanel('ritmo')}
+              aria-label="Abrir painel de ritmo"
+            >
+              <span><strong>{s.bpm}</strong> bpm</span>
               <span>{rhythm ? rhythm.name : 'só pulso'}</span>
             </button>
-            <button className="transport-step" onClick={() => dispatch({ type: 'bpmBy', delta: -1 })} aria-label="Diminuir 1 bpm"><Minus /></button>
-            <button className="transport-step" onClick={() => dispatch({ type: 'bpmBy', delta: 1 })} aria-label="Aumentar 1 bpm"><Plus /></button>
+            <button
+              className="w-[34px] h-[34px] rounded-full border border-line bg-bg3 text-fg grid place-items-center p-0 [&>svg]:w-4 [&>svg]:h-4 max-[620px]:w-[30px] max-[620px]:h-[30px] max-[620px]:[&>svg]:w-3.5 max-[620px]:[&>svg]:h-3.5"
+              onClick={() => dispatch({ type: 'bpmBy', delta: -1 })}
+              aria-label="Diminuir 1 bpm"
+            >
+              <Minus />
+            </button>
+            <button
+              className="w-[34px] h-[34px] rounded-full border border-line bg-bg3 text-fg grid place-items-center p-0 [&>svg]:w-4 [&>svg]:h-4 max-[620px]:w-[30px] max-[620px]:h-[30px] max-[620px]:[&>svg]:w-3.5 max-[620px]:[&>svg]:h-3.5"
+              onClick={() => dispatch({ type: 'bpmBy', delta: 1 })}
+              aria-label="Aumentar 1 bpm"
+            >
+              <Plus />
+            </button>
           </div>
-          <div className="transport-actions">
+          <div className="flex items-center gap-3.5 flex-none max-[620px]:gap-[.55rem]">
+            {[
+              { active: panel === 'gravar' && recordMode === 'audio', onClick: () => openRecorder('audio'), label: 'Gravar áudio', Icon: Mic },
+              { active: panel === 'gravar' && recordMode === 'video', onClick: () => openRecorder('video'), label: 'Gravar vídeo', Icon: Video },
+              { active: panel === 'notas', onClick: () => togglePanel('notas'), label: 'Notas', Icon: SquarePen },
+            ].map(({ active, onClick, label, Icon }) => (
+              <button
+                key={label}
+                className={`flex-none w-[42px] h-[42px] rounded-full border grid place-items-center [&>svg]:w-[19px] [&>svg]:h-[19px] max-[620px]:w-[38px] max-[620px]:h-[38px] max-[620px]:[&>svg]:w-[17px] max-[620px]:[&>svg]:h-[17px] ${
+                  active ? 'bg-[color-mix(in_srgb,var(--accent)_16%,var(--bg3))] border-accent text-accent' : 'border-line bg-bg3 text-dim'
+                }`}
+                onClick={onClick}
+                aria-label={label}
+                title={label}
+              >
+                <Icon />
+              </button>
+            ))}
             <button
-              className={`transport-icon${panel === 'gravar' && recordMode === 'audio' ? ' on' : ''}`}
-              onClick={() => openRecorder('audio')}
-              aria-label="Gravar áudio"
-              title="Gravar áudio"
-            >
-              <Mic />
-            </button>
-            <button
-              className={`transport-icon${panel === 'gravar' && recordMode === 'video' ? ' on' : ''}`}
-              onClick={() => openRecorder('video')}
-              aria-label="Gravar vídeo"
-              title="Gravar vídeo"
-            >
-              <Video />
-            </button>
-            <button className={`transport-icon${panel === 'notas' ? ' on' : ''}`} onClick={() => togglePanel('notas')} aria-label="Notas">
-              <SquarePen />
-            </button>
-            <button
-              className={`transport-icon${s.scrollSpeed > 0 ? ' on' : ''}`}
+              className={`flex-none w-[42px] h-[42px] rounded-full border grid place-items-center [&>svg]:w-[19px] [&>svg]:h-[19px] max-[620px]:w-[38px] max-[620px]:h-[38px] max-[620px]:[&>svg]:w-[17px] max-[620px]:[&>svg]:h-[17px] ${
+                s.scrollSpeed > 0 ? 'bg-[color-mix(in_srgb,var(--accent)_16%,var(--bg3))] border-accent text-accent' : 'border-line bg-bg3 text-dim'
+              }`}
               onClick={toggleScroll}
               aria-label="Rolagem automática"
             >
