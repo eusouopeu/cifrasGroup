@@ -64,7 +64,7 @@ export function RecordingsTab({ songs }: { songs: Record<string, Song> }) {
       {bySong === null && <p className="hint">Carregando…</p>}
       {bySong !== null && entries.length === 0 && <p className="empty">Nenhuma gravação de prática ainda.</p>}
 
-      <div className="recaccordion">
+      <div className="flex flex-col gap-2 mt-2.5">
         {entries.map(({ id, song, list }) => {
           const open = openSongs.has(id)
           const kind = kindTab[id] ?? 'audio'
@@ -73,10 +73,10 @@ export function RecordingsTab({ songs }: { songs: Record<string, Song> }) {
           const shown = kind === 'audio' ? audio : video
 
           return (
-            <div key={id} className="recaccordion-item">
-              <button className="recaccordion-head" onClick={() => toggleSong(id)} aria-expanded={open}>
-                {open ? <ChevronDown className="recaccordion-chevron" /> : <ChevronRight className="recaccordion-chevron" />}
-                <span className="recaccordion-title">
+            <div key={id} className="bg-bg2 border border-line rounded-[10px] overflow-hidden">
+              <button className="w-full flex items-center gap-2 p-[.7rem_.8rem] bg-none border-0 text-inherit text-left" onClick={() => toggleSong(id)} aria-expanded={open}>
+                {open ? <ChevronDown className="w-4 h-4 text-dim flex-shrink-0" /> : <ChevronRight className="w-4 h-4 text-dim flex-shrink-0" />}
+                <span className="flex-1 min-w-0 flex flex-col gap-0.5 [&>strong]:overflow-hidden [&>strong]:text-ellipsis [&>strong]:whitespace-nowrap">
                   <strong>{song.title}</strong>
                   <span className="hint small">{song.artist || '—'}</span>
                 </span>
@@ -84,7 +84,7 @@ export function RecordingsTab({ songs }: { songs: Record<string, Song> }) {
               </button>
 
               {open && (
-                <div className="recaccordion-body">
+                <div className="p-[0_.8rem_.8rem] flex flex-col gap-2">
                   <div className="toggle">
                     <button className={kind === 'audio' ? 'on' : ''} onClick={() => setKindTab((c) => ({ ...c, [id]: 'audio' }))}>
                       Áudio ({audio.length})
@@ -96,7 +96,7 @@ export function RecordingsTab({ songs }: { songs: Record<string, Song> }) {
 
                   {shown.length === 0 && <p className="hint small">Nenhuma gravação de {kind === 'audio' ? 'áudio' : 'vídeo'} nesta música.</p>}
 
-                  <div className="record-list-items">
+                  <div className="flex flex-col gap-1.5">
                     {shown.map((r) => (
                       <RecordingRow
                         key={r.id}

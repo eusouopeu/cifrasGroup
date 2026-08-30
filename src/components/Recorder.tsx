@@ -215,20 +215,25 @@ export function Recorder({ songId, mode }: { songId: string; mode: RecordingKind
   }
 
   return (
-    <div className="record-float-wrap">
+    <div className="fixed right-[1.1rem] bottom-[calc(4.6rem+env(safe-area-inset-bottom))] z-[15] flex flex-col items-end gap-2">
       {mode === 'video' && (
-        <video ref={videoPreviewRef} className="record-preview-float" muted playsInline />
+        <video
+          ref={videoPreviewRef}
+          className="w-[150px] aspect-[9/16] rounded-xl bg-black object-cover shadow-[0_4px_14px_rgba(0,0,0,.3)]"
+          muted
+          playsInline
+        />
       )}
 
       {listOpen && (
-        <div className="record-list-float">
-          <div className="record-list-head">
+        <div className="w-[min(370px,calc(100vw-1.6rem))] max-h-[60vh] overflow-y-auto bg-bg2 border border-line rounded-2xl p-[.7rem_.8rem] shadow-[0_8px_20px_rgba(0,0,0,.35)]">
+          <div className="flex items-center justify-between mb-1.5">
             <strong>Gravações desta música</strong>
             <button className="icon small" aria-label="Fechar lista" onClick={() => setListOpen(false)}><X /></button>
           </div>
           {recordings === null && <p className="hint small">Carregando…</p>}
           {recordings !== null && recordings.length === 0 && <p className="hint small">Nenhuma gravação ainda.</p>}
-          <div className="record-list-items">
+          <div className="flex flex-col gap-1.5">
             {recordings?.map((r) => (
               <RecordingRow
                 key={r.id}
@@ -252,18 +257,18 @@ export function Recorder({ songId, mode }: { songId: string; mode: RecordingKind
         </div>
       )}
 
-      <div className="record-cluster">
-        <div className="record-pill">
+      <div className="flex items-center gap-2">
+        <div className="flex bg-bg2 border border-line rounded-full overflow-hidden shadow-[0_4px_14px_rgba(0,0,0,.3)]">
           <button
-            className="record-pill-btn record"
+            className="w-[46px] h-[46px] flex items-center justify-center bg-none border-0 text-fg disabled:opacity-35"
             disabled={status === 'recording' || status === 'starting' || (mode === 'video' && cameraStatus !== 'ready')}
             onClick={() => void startRecording()}
             aria-label={status === 'starting' ? 'Preparando…' : `Gravar ${mode === 'video' ? 'vídeo' : 'áudio'}`}
           >
-            <span className="record-dot" />
+            <span className="w-2.5 h-2.5 rounded-full bg-danger inline-block flex-shrink-0" />
           </button>
           <button
-            className="record-pill-btn stop"
+            className="w-[46px] h-[46px] flex items-center justify-center bg-none border-0 border-l border-line text-danger disabled:opacity-35 [&>svg]:w-[18px] [&>svg]:h-[18px]"
             disabled={status !== 'recording'}
             onClick={stopRecording}
             aria-label="Parar gravação"
@@ -272,7 +277,9 @@ export function Recorder({ songId, mode }: { songId: string; mode: RecordingKind
           </button>
         </div>
         <button
-          className={`record-folder${listOpen ? ' on' : ''}`}
+          className={`w-[46px] h-[46px] rounded-full border-0 text-[#14161a] flex items-center justify-center shadow-[0_4px_14px_rgba(0,0,0,.3)] [&>svg]:w-5 [&>svg]:h-5 ${
+            listOpen ? 'bg-[color-mix(in_srgb,var(--accent)_70%,#000)]' : 'bg-accent'
+          }`}
           onClick={() => setListOpen((v) => !v)}
           aria-label={listOpen ? 'Fechar gravações' : 'Ver gravações'}
         >
@@ -280,20 +287,24 @@ export function Recorder({ songId, mode }: { songId: string; mode: RecordingKind
         </button>
       </div>
 
-      {status === 'recording' && <span className="record-elapsed mono">{formatDuration(elapsedMs)}</span>}
+      {status === 'recording' && (
+        <span className="bg-bg2 border border-line rounded-full py-[.2rem] px-[.7rem] text-[.78rem] text-danger mono">{formatDuration(elapsedMs)}</span>
+      )}
       {status === 'idle' && mode === 'video' && cameraStatus === 'starting' && (
-        <p className="hint record-denied">Ligando a câmera…</p>
+        <p className="hint max-w-[260px] text-right bg-bg2 border border-line rounded-lg p-[.4rem_.6rem]">Ligando a câmera…</p>
       )}
       {status === 'idle' && mode === 'video' && cameraStatus === 'denied' && (
-        <p className="hint danger record-denied">Não consegui acessar a câmera/microfone. Confira a permissão nas configurações do navegador ou do app.</p>
+        <p className="hint danger max-w-[260px] text-right bg-bg2 border border-line rounded-lg p-[.4rem_.6rem]">Não consegui acessar a câmera/microfone. Confira a permissão nas configurações do navegador ou do app.</p>
       )}
       {status === 'denied' && (
-        <p className="hint danger record-denied">
+        <p className="hint danger max-w-[260px] text-right bg-bg2 border border-line rounded-lg p-[.4rem_.6rem]">
           Não consegui acessar {mode === 'video' ? 'o microfone e/ou a câmera' : 'o microfone'}. Confira a permissão nas
           configurações do navegador ou do app.
         </p>
       )}
-      {status === 'unsupported' && <p className="hint danger record-denied">Este navegador não sabe gravar {mode === 'video' ? 'vídeo' : 'áudio'}.</p>}
+      {status === 'unsupported' && (
+        <p className="hint danger max-w-[260px] text-right bg-bg2 border border-line rounded-lg p-[.4rem_.6rem]">Este navegador não sabe gravar {mode === 'video' ? 'vídeo' : 'áudio'}.</p>
+      )}
     </div>
   )
 }

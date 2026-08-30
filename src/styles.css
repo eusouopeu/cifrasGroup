@@ -142,7 +142,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* ---------- biblioteca ---------- */
 /* env(safe-area-inset-top) evita que o cabeçalho fique atrás da barra de
    status do Android (edge-to-edge é obrigatório a partir do Android 15) */
-.library, .importview { max-width: 900px; margin: 0 auto; padding: calc(1rem + env(safe-area-inset-top)) 1rem 4rem; }
+.library { max-width: 900px; margin: 0 auto; padding: calc(1rem + env(safe-area-inset-top)) 1rem 4rem; }
 .apphead { display: flex; align-items: center; gap: .75rem; margin-bottom: 1rem; }
 .apphead h1 { font-size: 1.4rem; flex: 1; letter-spacing: -.02em; }
 .apphead h1 span { color: var(--accent); }
@@ -169,27 +169,15 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .tabbar-item.on { color: var(--accent); }
 
 /* ---------- importação ---------- */
-.importlink { background: color-mix(in srgb, var(--accent) 10%, var(--bg2)); border: 1px solid var(--accent); border-radius: 10px; padding: .8rem 1rem; margin-bottom: 1rem; font-size: .85rem; }
-.importlink .row { margin: .5rem 0 .2rem; }
-.linkinput { flex: 1; min-width: 0; background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; color: var(--fg); padding: .55rem .7rem; font-size: .85rem; }
-.linkerror { color: var(--danger); }
-.importhelp { background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: .8rem 1rem; margin-bottom: 1rem; font-size: .85rem; }
-.importhelp ol { margin: .5rem 0; padding-left: 1.2rem; color: var(--dim); }
-.importform { display: flex; flex-direction: column; gap: .7rem; }
 .field { display: flex; flex-direction: column; gap: .3rem; font-size: .8rem; color: var(--dim); }
 .field.wide { width: 100%; }
 .field.inline { flex-direction: row; align-items: center; gap: .5rem; }
 .field.checkbox { flex-direction: row; align-items: center; gap: .5rem; color: var(--dim); font-size: .9rem; }
 .field.checkbox input[type=checkbox] { accent-color: var(--accent); width: 18px; height: 18px; }
 .fieldlabel { display: block; font-size: .8rem; color: var(--dim); margin-bottom: .3rem; }
-.field input:not([type=checkbox]), .field textarea, .field select, .importform input, .importform textarea {
+.field input:not([type=checkbox]), .field textarea, .field select {
   background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; color: var(--fg); padding: .55rem .7rem; font-size: .9rem; width: 100%;
 }
-.importform textarea { font-family: var(--mono); font-size: .82rem; line-height: 1.45; white-space: pre; overflow-x: auto; }
-.importpreview { background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: .8rem 1rem; margin-top: 1rem; font-size: .85rem; }
-.importpreview ul { margin: .3rem 0; padding-left: 1.1rem; color: var(--dim); }
-.chordpreview { color: var(--accent2); font-size: .78rem; margin-top: .4rem; word-break: break-word; }
-.importactions { display: flex; gap: .5rem; justify-content: flex-end; margin-top: 1rem; }
 
 /* ---------- tela da música ---------- */
 .songview { display: flex; flex-direction: column; height: 100%; }
@@ -349,7 +337,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .transport-icon svg { width: 19px; height: 19px; }
 .transport-icon.on { background: color-mix(in srgb, var(--accent) 16%, var(--bg3)); border-color: var(--accent); color: var(--accent); }
-.record-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); display: inline-block; flex-shrink: 0; }
 
 .bpmbox { background: var(--bg3); border: 1px solid var(--line); border-radius: 10px; padding: .6rem .7rem; margin-bottom: .8rem; }
 .bpmbox input[type=range] { width: 100%; margin: .5rem 0 .4rem; }
@@ -470,35 +457,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
    mesma "família" visual do botão flutuante de importar (aba Início, agora
    em utilities Tailwind em LibraryHome.tsx): raio, sombra, cor sólida de
    destaque — reaproveita os mesmos valores em vez de inventar nova elevação. */
-.record-float-wrap {
-  position: fixed; right: 1.1rem; bottom: calc(4.6rem + env(safe-area-inset-bottom));
-  z-index: 15; display: flex; flex-direction: column; align-items: flex-end; gap: .5rem;
-}
-.record-preview-float { width: 150px; aspect-ratio: 9 / 16; border-radius: 12px; background: #000; object-fit: cover; box-shadow: 0 4px 14px rgba(0, 0, 0, .3); }
-.record-cluster { display: flex; align-items: center; gap: .5rem; }
-.record-pill { display: flex; background: var(--bg2); border: 1px solid var(--line); border-radius: 24px; overflow: hidden; box-shadow: 0 4px 14px rgba(0, 0, 0, .3); }
-.record-pill-btn { width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--fg); }
-.record-pill-btn svg { width: 18px; height: 18px; }
-.record-pill-btn:disabled { opacity: .35; }
-.record-pill-btn.stop { color: var(--danger); border-left: 1px solid var(--line); }
-.record-folder { width: 46px; height: 46px; border-radius: 50%; background: var(--accent); color: #14161a; border: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0, 0, 0, .3); }
-.record-folder svg { width: 20px; height: 20px; }
-.record-folder.on { background: color-mix(in srgb, var(--accent) 70%, #000); }
-.record-elapsed { background: var(--bg2); border: 1px solid var(--line); border-radius: 20px; padding: .2rem .7rem; font-size: .78rem; color: var(--danger); }
-.record-denied { max-width: 260px; text-align: right; background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; padding: .4rem .6rem; }
-
-.record-list-float {
-  width: min(370px, calc(100vw - 1.6rem));
-  max-height: 60vh;
-  overflow-y: auto;
-  background: var(--bg2);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: .7rem .8rem;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, .35);
-}
-.record-list-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .4rem; }
-.record-list-items { display: flex; flex-direction: column; gap: .4rem; }
 
 .recrow { background: var(--bg3); border: 1px solid var(--line); border-radius: 9px; padding: .5rem .6rem; text-align: left; width: 100%; }
 .recrow.pinned { border-color: var(--accent2); }
@@ -613,13 +571,6 @@ button.recrow { display: flex; align-items: center; gap: .5rem; }
 .voicelab-tips ul { margin: .3rem 0 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: .3rem; font-size: .82rem; }
 
 /* aba "Gravações": accordion por música */
-.recaccordion { display: flex; flex-direction: column; gap: .5rem; margin-top: .6rem; }
-.recaccordion-item { background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
-.recaccordion-head { width: 100%; display: flex; align-items: center; gap: .5rem; padding: .7rem .8rem; background: none; border: none; color: inherit; text-align: left; }
-.recaccordion-chevron { width: 16px; height: 16px; color: var(--dim); flex-shrink: 0; }
-.recaccordion-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .1rem; }
-.recaccordion-title strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.recaccordion-body { padding: 0 .8rem .8rem; display: flex; flex-direction: column; gap: .5rem; }
 
 /* ---------- controle de rolagem automática (acima da barra inferior) ---------- */
 .scrollbar-control {
@@ -656,7 +607,7 @@ button.recrow { display: flex; align-items: center; gap: .5rem; }
   .keyrow { grid-template-columns: 48px 1fr 26px 54px; min-height: 40px; }
   .keyrow-chords { display: none; }
 
-  .library, .importview { padding: calc(.8rem + env(safe-area-inset-top)) .8rem 3rem; }
+  .library { padding: calc(.8rem + env(safe-area-inset-top)) .8rem 3rem; }
 
   /* o painel aberto não pode engolir a cifra inteira */
   .panel { max-height: 46vh; padding: .7rem .8rem 1rem; }

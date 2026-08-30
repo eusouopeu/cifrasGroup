@@ -89,14 +89,14 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
   }, [initialUrl])
 
   return (
-    <div className="importview">
+    <div className="max-w-[900px] mx-auto p-[calc(1rem+env(safe-area-inset-top))_1rem_4rem] max-[620px]:p-[calc(.8rem+env(safe-area-inset-top))_.8rem_3rem]">
       <header className="apphead">
         <button className="icon" onClick={onCancel} aria-label="Voltar"><ArrowLeft /></button>
         <h1>Importar cifra</h1>
       </header>
 
       {nativeOk && (
-        <div className="importlink">
+        <div className="bg-[color-mix(in_srgb,var(--accent)_10%,var(--bg2))] border border-accent rounded-[10px] p-[.8rem_1rem] mb-4 text-[.85rem]">
           <strong>Importar por link do CifraClub</strong>
           <p className="hint small">
             Cole o link de uma música, ou use "Compartilhar" no Chrome / no app do CifraClub e escolha o cifrasGroup.
@@ -104,7 +104,7 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
           </p>
           <div className="row tight">
             <input
-              className="linkinput"
+              className="flex-1 min-w-0 bg-bg2 border border-line rounded-lg text-fg p-[.55rem_.7rem] text-[.85rem]"
               value={linkUrl}
               onChange={(e) => { setLinkUrl(e.target.value); if (linkStatus === 'error') { setLinkStatus('idle'); setLinkError(null) } }}
               placeholder="https://www.cifraclub.com.br/artista/musica/"
@@ -123,21 +123,21 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
               <button className="btn ghost" onClick={cancelImport}>cancelar</button>
             )}
           </div>
-          {linkStatus === 'error' && linkError && <p className="hint linkerror">{linkError}</p>}
+          {linkStatus === 'error' && linkError && <p className="hint text-danger">{linkError}</p>}
           {linkUrl && !isCifraClubUrl(linkUrl) && linkStatus !== 'loading' && (
             <p className="hint small">Esse link não parece ser de uma música do CifraClub.</p>
           )}
         </div>
       )}
 
-      <div className="importhelp">
+      <div className="bg-bg2 border border-line rounded-[10px] p-[.8rem_1rem] mb-4 text-[.85rem] [&_ol]:my-2 [&_ol]:pl-5 [&_ol]:text-dim">
         <p className="hint small">
           Também aceita ChordPro (<span className="mono">[C]colchetes na letra</span>) e arquivos <span className="mono">.txt</span>/<span className="mono">.cho</span>.
           A cifra fica só no seu aparelho.
         </p>
       </div>
 
-      <div className="importform">
+      <div className="flex flex-col gap-[.7rem]">
         <label className="btn ghost">
           {fileName ? `arquivo: ${fileName}` : 'carregar arquivo .txt / .cho'}
           <input type="file" accept=".txt,.cho,.chopro,.crd,text/plain" hidden onChange={(e) => {
@@ -162,6 +162,7 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
         <label className="field wide">
           Cifra
           <textarea
+            className="mono !text-[.82rem] !leading-[1.45] whitespace-pre overflow-x-auto"
             value={raw}
             rows={16}
             spellCheck={false}
@@ -177,7 +178,7 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
       </div>
 
       {preview && (
-        <div className="importpreview">
+        <div className="bg-bg2 border border-line rounded-[10px] p-[.8rem_1rem] mt-4 text-[.85rem] [&>ul]:my-1 [&>ul]:pl-[1.1rem] [&>ul]:text-dim">
           <h3>O que o app entendeu</h3>
           <ul>
             <li><strong>{preview.chords.length}</strong> acordes diferentes em <strong>{preview.chordLines}</strong> linhas de acorde</li>
@@ -188,7 +189,7 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
             )}
             {preview.capo !== null && <li>capotraste na {preview.capo}ª casa</li>}
           </ul>
-          <div className="mono chordpreview">{preview.chords.map((c) => `${c.symbol}×${c.count}`).join('  ')}</div>
+          <div className="mono text-accent2 text-[.78rem] mt-1.5 break-words">{preview.chords.map((c) => `${c.symbol}×${c.count}`).join('  ')}</div>
           {preview.chords.length === 0 && (
             <p className="hint">Nenhum acorde reconhecido. Confira se a cifra tem os acordes em linhas próprias acima da letra.</p>
           )}
@@ -201,7 +202,7 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
         </div>
       )}
 
-      <div className="importactions">
+      <div className="flex gap-2 justify-end mt-4">
         <button className="btn ghost" onClick={onCancel}>cancelar</button>
         <button
           className="btn primary"
