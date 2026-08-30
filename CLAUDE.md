@@ -78,22 +78,33 @@ SEMPRE usar a skill `/caveman` (modo de comunicação ultra-comprimido) em toda 
   espaçamento entrelinhas (line-height) de 1.5.
 - Dar preferência a **botões-ícone** em vez de botões com texto.
 
-### Migração Tailwind + Lucide (em andamento, 2026-08-29)
+### Migração Tailwind + Lucide (concluída, 2026-08-30)
 
-O app usava CSS por classe (`src/styles.css`) e `@heroicons/react`. Migração para
-Tailwind v4 (`@tailwindcss/vite`) e `lucide-react` começou e roda **incremental,
-3 telas por rodada** (decisão do usuário) — não tudo de uma vez, pra não
-arriscar quebrar layout numa mudança só. Paleta atual (`--bg`, `--fg`, `--accent`
-etc.) foi mantida (sem unificar com outro design system) e mapeada em
-`src/styles.css` via bloco `@theme inline` — continua funcionando com os dois
-temas (claro/escuro) exatamente como antes, só que como tokens Tailwind
-(`bg-bg2`, `text-fg`, `border-line`...).
+O app usava CSS por classe (`src/styles.css`, 814 linhas) e `@heroicons/react`.
+Migrado para Tailwind v4 (`@tailwindcss/vite`) e `lucide-react` em 10 rodadas
+incrementais (3 telas por rodada, decisão do usuário), com build/typecheck/teste
+e verificação visual no browser a cada rodada, commit+push por rodada. Paleta
+atual (`--bg`, `--fg`, `--accent` etc.) foi mantida (sem unificar com outro
+design system) e mapeada em `src/styles.css` via bloco `@theme inline` —
+continua funcionando com os dois temas (claro/escuro) exatamente como antes,
+só que como tokens Tailwind (`bg-bg2`, `text-fg`, `border-line`...).
 
-Rodada 1 (concluída): setup do Tailwind v4 + troca completa de `@heroicons/react`
-por `lucide-react` em todos os componentes (sem tocar em classes/layout ainda).
-Rodadas seguintes: converter `styles.css`/classNames para utilities Tailwind,
-3 telas por vez. Builds de APK só acontecem ao final de toda a migração (não a
-cada rodada), por acordo explícito do usuário — só commit/push por rodada até lá.
+`styles.css` caiu de 814 para ~350 linhas: o que sobrou é CSS genuinamente
+compartilhado entre várias telas (`.btn`, `.icon`, `.hint`, `.chip`, `.sheet*`,
+`.field`, `.toggle`, `.panel`, resets globais, `@font-face`) ou efeitos que
+Tailwind não expressa bem em utility (gradiente de sombra de scroll da
+`.toolbar`). Todo esse CSS customizado vive dentro de `@layer components` —
+**isso é obrigatório**: sem `@layer`, CSS solto sempre vence qualquer utility
+Tailwind por causa de cascade layers, não importa a especificidade, e overrides
+tipo `flex-nowrap` em cima de uma classe antiga simplesmente não fazem efeito
+nenhum, silenciosamente. Foi um bug real descoberto e corrigido no meio da
+migração (rodada 8) — qualquer CSS novo adicionado a este arquivo deve ficar
+dentro do bloco `@layer components { ... }` existente.
+
+Ao adicionar uma tela/componente novo agora: usar utilities Tailwind direto,
+reaproveitando as classes de `styles.css` (`.btn`, `.icon`, `.chip`, `.sheet`,
+`.panel-section` etc.) para os padrões de design system em vez de duplicá-los
+com utilities soltas.
 
 ## Testes
 
