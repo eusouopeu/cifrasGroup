@@ -153,10 +153,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .numinput.small { width: 64px !important; }
 .newlist { display: flex; gap: .5rem; margin-top: .75rem; }
 .newlist input { flex: 1; padding: .5rem .7rem; border-radius: 8px; border: 1px solid var(--line); background: var(--bg2); color: var(--fg); }
-.settingsection { margin-bottom: 1.5rem; }
-.theme-pill { display: flex; width: 100%; max-width: 220px; }
-.theme-pill button { flex: 1; display: flex; align-items: center; justify-content: center; padding: .5rem 0; }
-.theme-pill svg { width: 18px; height: 18px; }
 
 /* ---------- estrutura de abas ---------- */
 .app-shell { display: flex; flex-direction: column; height: 100%; }
@@ -408,12 +404,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .chip.on { background: var(--accent); border-color: var(--accent); color: #14161a; font-weight: 600; }
 
 /* ---------- afinações personalizadas ---------- */
-.tuningrow { flex-wrap: nowrap; }
-.tuningselect {
-  flex: 1; min-width: 0;
-  background: var(--bg2); border: 1px solid var(--line); border-radius: 8px;
-  color: var(--fg); padding: .55rem .7rem; font-size: .85rem;
-}
 .icon.active { border: 1px solid var(--accent); color: var(--accent); border-radius: 8px; }
 .panel-title-row { display: inline-flex; align-items: center; gap: .5rem; }
 .panel-title-extra { display: inline-flex; }
@@ -425,9 +415,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .tuningbuilder { background: var(--bg3); border: 1px solid var(--line); border-radius: 10px; padding: .7rem .8rem; margin: .6rem 0; }
 .manualtuning { display: flex; flex-wrap: wrap; gap: .5rem; margin: .4rem 0; }
 .manualtuning .field { width: 76px; }
-.customtunings { margin-top: .8rem; }
-.customtuning-row { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .35rem 0; border-bottom: 1px solid var(--line); font-size: .82rem; }
-.customtuning-row:last-child { border-bottom: none; }
 
 /* ---------- diagramas ---------- */
 /* Faixa de acordes: rola para o lado, não para baixo. Assim ela ocupa uma

@@ -25,12 +25,12 @@ export function SettingsTab({ customTunings, onExport, onImport }: {
         <ThemeToggleButton />
       </header>
 
-      <section className="settingsection">
+      <section className="mb-6">
         <h4>Tema</h4>
         <ThemePillPicker />
       </section>
 
-      <section className="settingsection">
+      <section className="mb-6">
         <h4>Leitura da cifra</h4>
         <div className="row tight">
           <span className="fieldlabel">Tamanho do texto</span>
@@ -48,7 +48,7 @@ export function SettingsTab({ customTunings, onExport, onImport }: {
         </div>
       </section>
 
-      <section className="settingsection">
+      <section className="mb-6">
         <h4>Padrões para músicas novas</h4>
         <TuningPicker
           value={defaults.tuning}
@@ -58,7 +58,7 @@ export function SettingsTab({ customTunings, onExport, onImport }: {
         />
       </section>
 
-      <section className="settingsection">
+      <section className="mb-6">
         <h4>Backup</h4>
         <p className="hint small">
           O arquivo leva músicas, listas, configurações de cada música e também as gravações de prática —

@@ -33,8 +33,13 @@ export function TuningPicker({
   return (
     <>
       <span className="fieldlabel">Afinação</span>
-      <div className="row tight tuningrow">
-        <select className="tuningselect" aria-label="Afinação" value={value} onChange={(e) => onChange(e.target.value)}>
+      <div className="row tight flex-nowrap">
+        <select
+          className="flex-1 min-w-0 bg-bg2 border border-line rounded-lg text-fg p-[.55rem_.7rem] text-[.85rem]"
+          aria-label="Afinação"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        >
           <optgroup label="Violão">
             {TUNINGS.filter((t) => t.family !== 'viola').map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </optgroup>
@@ -76,10 +81,10 @@ export function TuningPicker({
       )}
 
       {canManage && onDeleteCustomTuning && customTunings.length > 0 && (
-        <div className="customtunings">
+        <div className="mt-3">
           <h4>Suas afinações</h4>
           {customTunings.map((t) => (
-            <div key={t.id} className="customtuning-row">
+            <div key={t.id} className="flex items-center justify-between gap-2 py-1.5 border-b border-line text-[.82rem] last:border-b-0">
               <span className="mono">{t.name}</span>
               <button
                 className="icon small danger"

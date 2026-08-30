@@ -52,7 +52,7 @@ export function ThemeToggleButton() {
 export function ThemePillPicker() {
   const [theme, setThemeVal] = useTheme()
   return (
-    <div className="toggle theme-pill">
+    <div className="toggle flex w-full max-w-[220px] [&>button]:flex-1 [&>button]:flex [&>button]:items-center [&>button]:justify-center [&>button]:py-2 [&_svg]:w-[18px] [&_svg]:h-[18px]">
       {THEME_OPTIONS.map((t) => {
         const Icon = THEME_ICON[t]
         return (
