@@ -1,6 +1,6 @@
 /** Peças pequenas e sem lógica da tela da música. */
 import { useRef, useState } from 'react'
-import { XMarkIcon } from '@heroicons/react/24/outline'
+import { X } from 'lucide-react'
 import { FONT_SIZES, fontSizeLabelFor, type FontSizeLabel } from '../../store/songActions'
 
 /** Tamanho do texto em quatro passos (P/M/G/GG) em vez de um valor livre em px. */
@@ -76,7 +76,7 @@ export function TagEditor({ tags, onChange }: { tags: string[]; onChange: (tags:
         {tags.map((t) => (
           <span key={t} className="tagchip">
             {t}
-            <button className="tagchip-remove" onClick={() => onChange(tags.filter((x) => x !== t))} aria-label={`Remover tag ${t}`}><XMarkIcon /></button>
+            <button className="tagchip-remove" onClick={() => onChange(tags.filter((x) => x !== t))} aria-label={`Remover tag ${t}`}><X /></button>
           </span>
         ))}
       </div>

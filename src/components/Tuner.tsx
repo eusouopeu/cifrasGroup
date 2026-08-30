@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
-import { ArrowPathIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { RotateCw, X } from 'lucide-react'
 import { nameOf, SHARP_NAMES } from '../theory/notes'
 import { stringFrequencies, tuningById, type Tuning } from '../theory/tunings'
 import { pluckNote } from '../audio/pluck'
@@ -155,7 +155,7 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
       {!embedded && (
         <div className="sheet-head">
           <h3>Afinador</h3>
-          <button className="icon" onClick={onClose}><XMarkIcon /></button>
+          <button className="icon" onClick={onClose}><X /></button>
         </div>
       )}
 
@@ -185,7 +185,7 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
           <div className="row tight">
             <button className="btn" onClick={() => setPermHelpOpen(true)}>como permitir o microfone</button>
             <button className="icon" onClick={() => setAttempt((n) => n + 1)} aria-label="Tentar de novo" title="Tentar de novo">
-              <ArrowPathIcon />
+              <RotateCw />
             </button>
           </div>
         </div>
@@ -208,7 +208,7 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
       <div className="sheet small" onClick={(e) => e.stopPropagation()}>
         <div className="sheet-head">
           <h3>Permitir o microfone</h3>
-          <button className="icon" onClick={() => setPermHelpOpen(false)}><XMarkIcon /></button>
+          <button className="icon" onClick={() => setPermHelpOpen(false)}><X /></button>
         </div>
         {Capacitor.isNativePlatform() ? (
           <ol className="permsteps">

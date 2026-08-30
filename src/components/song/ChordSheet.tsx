@@ -12,7 +12,7 @@
  * das duas não fecha a ficha — dá pra comparar mais de uma antes de decidir.
  */
 import { useState } from 'react'
-import { ArrowUturnLeftIcon, ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { ChevronLeft, ChevronRight, Undo2, X } from 'lucide-react'
 import { chordSpelling, parseChord } from '../../theory/chord'
 import { nameOf } from '../../theory/notes'
 import { simplifyChord } from '../../theory/simplify'
@@ -54,7 +54,7 @@ export function ChordSheet({ symbol, instrument, threshold, tuning, isOverridden
     <div className="chordfloat">
       <div className="sheet-head">
         <h3 className="mono">{symbol}</h3>
-        <button className="icon" onClick={onClose} aria-label="Fechar ficha do acorde"><XMarkIcon /></button>
+        <button className="icon" onClick={onClose} aria-label="Fechar ficha do acorde"><X /></button>
       </div>
       {chord && (
         <div className="spelling">
@@ -153,7 +153,7 @@ function VoicingCarousel({ symbol, voicings, tuning, preferredFingerprint, onPre
         disabled={voicings.length < 2}
         onClick={() => setIdx((i) => (i - 1 + voicings.length) % voicings.length)}
       >
-        <ChevronLeftIcon />
+        <ChevronLeft />
       </button>
       <div className="voicing-carousel-main">
         <span className="voicing-carousel-count">{safe + 1} de {voicings.length}</span>
@@ -175,7 +175,7 @@ function VoicingCarousel({ symbol, voicings, tuning, preferredFingerprint, onPre
         disabled={voicings.length < 2}
         onClick={() => setIdx((i) => (i + 1) % voicings.length)}
       >
-        <ChevronRightIcon />
+        <ChevronRight />
       </button>
     </div>
   )
@@ -247,7 +247,7 @@ function ManualPicker({ current, isOverridden, onPick, onReset }: {
           aria-label="Desfazer troca manual deste acorde"
           title="Desfazer troca manual deste acorde"
         >
-          <ArrowUturnLeftIcon />
+          <Undo2 />
         </button>
       </div>
       {freeInvalid && <p className="hint small danger">Não reconheci esse acorde.</p>}

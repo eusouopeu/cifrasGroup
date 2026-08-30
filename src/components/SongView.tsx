@@ -1,19 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  ArrowDownTrayIcon,
-  ArrowLeftIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  MinusIcon,
-  MusicalNoteIcon,
-  PencilIcon,
-  PencilSquareIcon,
-  PlusIcon,
-  Squares2X2Icon,
-  VideoCameraIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/outline'
-import { ArrowDownIcon, ArrowPathIcon, MicrophoneIcon, PauseIcon, PlayIcon, StopIcon } from '@heroicons/react/24/solid'
+  ArrowDown,
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Grid2x2,
+  Mic,
+  Minus,
+  Music,
+  Pause,
+  Pencil,
+  Play,
+  Plus,
+  RotateCw,
+  Square,
+  SquarePen,
+  Video,
+  X,
+} from 'lucide-react'
 import { chordSequence, guessKeyFromSymbols, guessKeyModeFromSymbols } from '../cifra/parse'
 import { buildView, viewToText } from '../cifra/view'
 import { rhythmById } from '../data/rhythms'
@@ -222,7 +227,7 @@ export function SongView({
   return (
     <div className="songview">
       <header className="songhead">
-        <button className="icon" onClick={onBack} aria-label="Voltar"><ArrowLeftIcon /></button>
+        <button className="icon" onClick={onBack} aria-label="Voltar"><ArrowLeft /></button>
         {editingTitle ? (
           <EditTitle
             title={song.title}
@@ -235,14 +240,14 @@ export function SongView({
             <span>{song.artist || '—'}</span>
           </button>
         )}
-        <button className="icon" onClick={onSaveToList} aria-label="Salvar em lista"><PlusIcon /></button>
+        <button className="icon" onClick={onSaveToList} aria-label="Salvar em lista"><Plus /></button>
         <button
           className={`icon${editingRaw ? ' active' : ''}`}
           onClick={startEditingRaw}
           aria-label="Editar texto da cifra"
           title="Editar o texto da cifra (letra e acordes)"
         >
-          <PencilIcon />
+          <Pencil />
         </button>
         <button
           className={`icon${panel === 'acordes' ? ' active' : ''}`}
@@ -250,7 +255,7 @@ export function SongView({
           aria-label="Acordes"
           title="Acordes (afinação, conferência, voz)"
         >
-          <Squares2X2Icon />
+          <Grid2x2 />
         </button>
         <button
           className="icon"
@@ -258,7 +263,7 @@ export function SongView({
           aria-label={typeof navigator.share === 'function' ? 'Compartilhar cifra' : 'Baixar cifra'}
           title="Baixar cifra (.txt)"
         >
-          <ArrowDownTrayIcon />
+          <Download />
         </button>
       </header>
 
@@ -291,7 +296,7 @@ export function SongView({
       {panel && panel !== 'notas' && panel !== 'gravar' && (
         <div className="sheet-backdrop panel-backdrop" onClick={() => setPanel(null)}>
           <div className="sheet panel-sheet" onClick={(e) => e.stopPropagation()}>
-            <button className="icon panel-sheet-close" onClick={() => setPanel(null)} aria-label="Fechar painel"><XMarkIcon /></button>
+            <button className="icon panel-sheet-close" onClick={() => setPanel(null)} aria-label="Fechar painel"><X /></button>
             {panel === 'tom' && (
               <KeyPanel
                 s={s}
@@ -330,7 +335,7 @@ export function SongView({
       {panel === 'notas' && (
         <div className="sheet-backdrop centered-backdrop" onClick={() => setPanel(null)}>
           <div className="sheet centered-sheet" onClick={(e) => e.stopPropagation()}>
-            <button className="icon panel-sheet-close" onClick={() => setPanel(null)} aria-label="Fechar painel"><XMarkIcon /></button>
+            <button className="icon panel-sheet-close" onClick={() => setPanel(null)} aria-label="Fechar painel"><X /></button>
             <NotesPanel song={song} onNotesChange={onNotesChange} onTagsChange={onTagsChange} />
           </div>
         </div>
@@ -346,7 +351,7 @@ export function SongView({
             onClick={() => onNavigate(siblings.ids[siblings.index - 1])}
             aria-label="Música anterior da lista"
           >
-            <ChevronLeftIcon />
+            <ChevronLeft />
           </button>
           <span className="setlistbar-label">{siblings.listName} · {siblings.index + 1}/{siblings.ids.length}</span>
           <button
@@ -355,7 +360,7 @@ export function SongView({
             onClick={() => onNavigate(siblings.ids[siblings.index + 1])}
             aria-label="Próxima música da lista"
           >
-            <ChevronRightIcon />
+            <ChevronRight />
           </button>
         </div>
       )}
@@ -424,7 +429,7 @@ export function SongView({
             onClick={() => dispatch({ type: 'setScrollSpeed', value: s.scrollSpeed > 0 ? 0 : Number(localStorage.getItem(LAST_SCROLL_SPEED_KEY)) || 6 })}
             aria-label={s.scrollSpeed > 0 ? 'Pausar rolagem automática' : 'Retomar rolagem automática'}
           >
-            {s.scrollSpeed > 0 ? <PauseIcon /> : <PlayIcon />}
+            {s.scrollSpeed > 0 ? <Pause /> : <Play />}
           </button>
           <button
             className={`icon${loop.active ? ' active' : ''}`}
@@ -432,7 +437,7 @@ export function SongView({
             aria-label={loop.active ? 'Desativar loop do trecho' : 'Ativar loop do trecho selecionado na cifra'}
             title={loop.active ? 'Loop ativo — toque para desativar' : 'Selecione um trecho da letra e toque para repeti-lo em loop'}
           >
-            <ArrowPathIcon />
+            <RotateCw />
           </button>
           <span className="scrollbar-mark" aria-hidden="true">🐢</span>
           <input
@@ -455,7 +460,7 @@ export function SongView({
             onClick={() => { dispatch({ type: 'setScrollSpeed', value: 0 }); setScrollBarOpen(false) }}
             aria-label="Fechar controle de rolagem"
           >
-            <XMarkIcon />
+            <X />
           </button>
         </div>
       )}
@@ -468,7 +473,7 @@ export function SongView({
             aria-label={s.playPattern ? 'Não tocar a batida por cima do metrônomo' : 'Tocar a batida por cima do metrônomo'}
             title={s.playPattern ? 'Batida tocando — toque para silenciar' : 'Tocar a batida por cima do metrônomo'}
           >
-            <MusicalNoteIcon />
+            <Music />
           </button>
           <span className="rhythmbar-name">{rhythm.name}</span>
           <div className="rhythmbar-grid">
@@ -491,15 +496,15 @@ export function SongView({
             onClick={play}
             aria-label={metronome.running ? 'Parar metrônomo' : 'Iniciar metrônomo'}
           >
-            {metronome.running ? <StopIcon /> : <PlayIcon />}
+            {metronome.running ? <Square /> : <Play />}
           </button>
           <div className="transport-bpmbox">
             <button className="transport-bpm" onClick={() => togglePanel('ritmo')} aria-label="Abrir painel de ritmo">
               <span className="transport-bpm-value"><strong>{s.bpm}</strong> bpm</span>
               <span>{rhythm ? rhythm.name : 'só pulso'}</span>
             </button>
-            <button className="transport-step" onClick={() => dispatch({ type: 'bpmBy', delta: -1 })} aria-label="Diminuir 1 bpm"><MinusIcon /></button>
-            <button className="transport-step" onClick={() => dispatch({ type: 'bpmBy', delta: 1 })} aria-label="Aumentar 1 bpm"><PlusIcon /></button>
+            <button className="transport-step" onClick={() => dispatch({ type: 'bpmBy', delta: -1 })} aria-label="Diminuir 1 bpm"><Minus /></button>
+            <button className="transport-step" onClick={() => dispatch({ type: 'bpmBy', delta: 1 })} aria-label="Aumentar 1 bpm"><Plus /></button>
           </div>
           <div className="transport-actions">
             <button
@@ -508,7 +513,7 @@ export function SongView({
               aria-label="Gravar áudio"
               title="Gravar áudio"
             >
-              <MicrophoneIcon />
+              <Mic />
             </button>
             <button
               className={`transport-icon${panel === 'gravar' && recordMode === 'video' ? ' on' : ''}`}
@@ -516,17 +521,17 @@ export function SongView({
               aria-label="Gravar vídeo"
               title="Gravar vídeo"
             >
-              <VideoCameraIcon />
+              <Video />
             </button>
             <button className={`transport-icon${panel === 'notas' ? ' on' : ''}`} onClick={() => togglePanel('notas')} aria-label="Notas">
-              <PencilSquareIcon />
+              <SquarePen />
             </button>
             <button
               className={`transport-icon${s.scrollSpeed > 0 ? ' on' : ''}`}
               onClick={toggleScroll}
               aria-label="Rolagem automática"
             >
-              {s.scrollSpeed > 0 ? <PauseIcon /> : <ArrowDownIcon />}
+              {s.scrollSpeed > 0 ? <Pause /> : <ArrowDown />}
             </button>
           </div>
         </div>

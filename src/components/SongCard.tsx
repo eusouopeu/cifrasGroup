@@ -1,4 +1,4 @@
-import { ChevronDownIcon, ChevronUpIcon, DocumentDuplicateIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { ChevronDown, ChevronUp, Copy, Trash2 } from 'lucide-react'
 import type { Song } from '../store/db'
 
 export function SongCard({ song, onOpen, onDelete, onDuplicate, deleteLabel = 'apagar', onMoveUp, onMoveDown }: {
@@ -38,13 +38,13 @@ export function SongCard({ song, onOpen, onDelete, onDuplicate, deleteLabel = 'a
       <div className="songcard-actions">
         {(onMoveUp || onMoveDown) && (
           <span className="reorder">
-            <button className="icon small" disabled={!onMoveUp} onClick={onMoveUp} aria-label="Mover para cima"><ChevronUpIcon /></button>
-            <button className="icon small" disabled={!onMoveDown} onClick={onMoveDown} aria-label="Mover para baixo"><ChevronDownIcon /></button>
+            <button className="icon small" disabled={!onMoveUp} onClick={onMoveUp} aria-label="Mover para cima"><ChevronUp /></button>
+            <button className="icon small" disabled={!onMoveDown} onClick={onMoveDown} aria-label="Mover para baixo"><ChevronDown /></button>
           </span>
         )}
         <span className="songcard-iconcol">
-          <button className="icon songcard-icon blue" onClick={onDuplicate} aria-label="Duplicar música" title="Duplicar"><DocumentDuplicateIcon /></button>
-          <button className="icon songcard-icon danger" onClick={onDelete} aria-label={deleteLabel === 'apagar' ? 'Apagar música' : deleteLabel} title={deleteLabel}><TrashIcon /></button>
+          <button className="icon songcard-icon blue" onClick={onDuplicate} aria-label="Duplicar música" title="Duplicar"><Copy /></button>
+          <button className="icon songcard-icon danger" onClick={onDelete} aria-label={deleteLabel === 'apagar' ? 'Apagar música' : deleteLabel} title={deleteLabel}><Trash2 /></button>
         </span>
       </div>
     </div>

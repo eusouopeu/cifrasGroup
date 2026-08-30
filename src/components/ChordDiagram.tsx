@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { parseChord } from '../theory/chord'
 import { nameOf } from '../theory/notes'
 import { tuningById, type Tuning } from '../theory/tunings'
@@ -235,7 +235,7 @@ function CompactChordCard({ symbol, voicings, tuning }: { symbol: string; voicin
             aria-label="Digitação anterior"
             onClick={(e) => { e.stopPropagation(); setIdx((i) => (i - 1 + voicings.length) % voicings.length) }}
           >
-            <ChevronLeftIcon />
+            <ChevronLeft />
           </button>
           <span className="chordcard-cycle-count">{safeIdx + 1}/{voicings.length}</span>
           <button
@@ -243,7 +243,7 @@ function CompactChordCard({ symbol, voicings, tuning }: { symbol: string; voicin
             aria-label="Próxima digitação"
             onClick={(e) => { e.stopPropagation(); setIdx((i) => (i + 1) % voicings.length) }}
           >
-            <ChevronRightIcon />
+            <ChevronRight />
           </button>
         </div>
       )}

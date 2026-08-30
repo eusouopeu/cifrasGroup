@@ -1,4 +1,4 @@
-import { PlayIcon } from '@heroicons/react/24/solid'
+import { Play } from 'lucide-react'
 import { STROKE_LABEL, genreColorClass, type Rhythm } from '../data/rhythms'
 
 /**
@@ -69,7 +69,7 @@ export function RhythmCard({ rhythm, selected, playing = false, onSelect }: {
   return (
     <button className={`rhythmcard${selected ? ' selected' : ''}${playing ? ' playing' : ''}`} onClick={onSelect}>
       <div className="rhythmcard-head">
-        {playing && <PlayIcon className="rhythmcard-playing" aria-label="Tocando agora" />}
+        {playing && <Play className="rhythmcard-playing" aria-label="Tocando agora" />}
         <span className="rhythmcard-name">{rhythm.name}</span>
         <span className="tag">{rhythm.meter}</span>
       </div>

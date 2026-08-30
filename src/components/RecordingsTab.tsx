@@ -5,7 +5,7 @@
  * uma tomada antiga.
  */
 import { useEffect, useState } from 'react'
-import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import { deleteRecording, listAllRecordings, renameRecording, togglePinned, type Recording } from '../store/recordings'
 import type { Song } from '../store/db'
 import { FontSizeToggleButton, InstrumentToggleButton } from './DisplayControls'
@@ -75,7 +75,7 @@ export function RecordingsTab({ songs }: { songs: Record<string, Song> }) {
           return (
             <div key={id} className="recaccordion-item">
               <button className="recaccordion-head" onClick={() => toggleSong(id)} aria-expanded={open}>
-                {open ? <ChevronDownIcon className="recaccordion-chevron" /> : <ChevronRightIcon className="recaccordion-chevron" />}
+                {open ? <ChevronDown className="recaccordion-chevron" /> : <ChevronRight className="recaccordion-chevron" />}
                 <span className="recaccordion-title">
                   <strong>{song.title}</strong>
                   <span className="hint small">{song.artist || '—'}</span>

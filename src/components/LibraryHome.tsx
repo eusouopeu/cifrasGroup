@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { FunnelIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { Filter, Plus, X } from 'lucide-react'
 import type { DB } from '../store/db'
 import type { Difficulty } from '../cifra/meta'
 import { rhythmById } from '../data/rhythms'
@@ -74,7 +74,7 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
             aria-label="Filtros"
             title="Filtros"
           >
-            <FunnelIcon />
+            <Filter />
             {hasActiveFilters && !filtersOpen && <span className="filter-dot" />}
           </button>
         )}
@@ -105,7 +105,7 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
             </label>
             {hasActiveFilters && (
               <button className="icon small" onClick={clearFilters} aria-label="Limpar filtros" title="Limpar filtros">
-                <XMarkIcon />
+                <X />
               </button>
             )}
           </div>
@@ -140,7 +140,7 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
       </div>
 
       <button className="fab" onClick={onNew} aria-label="Importar cifra" title="Importar cifra">
-        <PlusIcon />
+        <Plus />
       </button>
     </div>
   )

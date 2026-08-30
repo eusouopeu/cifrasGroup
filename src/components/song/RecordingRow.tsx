@@ -6,8 +6,7 @@
  * apagar).
  */
 import { useEffect, useRef, useState } from 'react'
-import { ArrowDownTrayIcon, BookmarkIcon, PencilIcon, Square3Stack3DIcon, TrashIcon } from '@heroicons/react/24/outline'
-import { BookmarkIcon as BookmarkSolidIcon, PauseIcon, PlayIcon } from '@heroicons/react/24/solid'
+import { Bookmark, Download, Layers, Pause, Pencil, Play, Trash2 } from 'lucide-react'
 import { formatBytes, type Recording } from '../../store/recordings'
 
 function formatDuration(ms: number): string {
@@ -86,7 +85,7 @@ export function RecordingRow({ recording, expanded, onToggleExpand, onRename, on
             {formatDuration(recording.durationMs)} - {formatBytes(recording.blob.size)}
           </span>
         </span>
-        {recording.pinned && <BookmarkSolidIcon className="recrow-pin" />}
+        {recording.pinned && <Bookmark className="recrow-pin" fill="currentColor" />}
       </button>
     )
   }
@@ -111,7 +110,7 @@ export function RecordingRow({ recording, expanded, onToggleExpand, onRename, on
           </button>
         )}
         <button className="icon small" aria-label="Renomear gravação" onClick={() => { setDraft(recording.title ?? ''); setRenaming(true) }}>
-          <PencilIcon />
+          <Pencil />
         </button>
       </div>
 
@@ -125,7 +124,7 @@ export function RecordingRow({ recording, expanded, onToggleExpand, onRename, on
 
       <div className="recrow-player">
         <button className="icon" onClick={togglePlay} aria-label={playing ? 'Pausar' : 'Tocar'}>
-          {playing ? <PauseIcon /> : <PlayIcon />}
+          {playing ? <Pause /> : <Play />}
         </button>
         <input
           className="recrow-scrub"
@@ -152,7 +151,7 @@ export function RecordingRow({ recording, expanded, onToggleExpand, onRename, on
             title="Tocar junto na próxima gravação"
             onClick={onToggleLayer}
           >
-            <Square3Stack3DIcon />
+            <Layers />
           </button>
         )}
         <button
@@ -161,13 +160,13 @@ export function RecordingRow({ recording, expanded, onToggleExpand, onRename, on
           title={recording.pinned ? 'Guardada em destaque' : 'Destacar'}
           onClick={onTogglePin}
         >
-          {recording.pinned ? <BookmarkSolidIcon /> : <BookmarkIcon />}
+          <Bookmark fill={recording.pinned ? 'currentColor' : 'none'} />
         </button>
         <button className="icon small" aria-label="Baixar gravação" title="Baixar" onClick={download}>
-          <ArrowDownTrayIcon />
+          <Download />
         </button>
         <button className="icon small danger" aria-label="Apagar gravação" onClick={onDelete}>
-          <TrashIcon />
+          <Trash2 />
         </button>
       </div>
     </div>

@@ -7,7 +7,7 @@
  * acorde que você pretendia tocar — não para transcrever uma música inteira.
  */
 import { useRef, useState } from 'react'
-import { MicrophoneIcon } from '@heroicons/react/24/outline'
+import { Mic } from 'lucide-react'
 import { captureMicPCM, identifyChord } from '../../audio/analysis'
 import { chordSpelling, parseChord } from '../../theory/chord'
 import { nameOf } from '../../theory/notes'
@@ -66,7 +66,7 @@ export function ChordConferenceTab({ tuning }: { tuning: Tuning }) {
       </p>
 
       <button className="btn primary wide" disabled={status === 'listening' || status === 'analyzing'} onClick={() => void listen()}>
-        <MicrophoneIcon className="inline-icon" />
+        <Mic className="inline-icon" />
         {status === 'listening' ? 'ouvindo…' : status === 'analyzing' ? 'analisando…' : 'ouvir acorde'}
       </button>
 

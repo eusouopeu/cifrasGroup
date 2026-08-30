@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { XMarkIcon } from '@heroicons/react/24/outline'
+import { X } from 'lucide-react'
 import { DEMO_RAW } from './data/demo'
 import { LibraryHome } from './components/LibraryHome'
 import { ListsView } from './components/ListsView'
@@ -414,7 +414,7 @@ function ImportChoiceSheet({ songCount, recordingCount, onChoose, onClose }: {
       <div className="sheet small" onClick={(e) => e.stopPropagation()}>
         <div className="sheet-head">
           <h3>Importar backup</h3>
-          <button className="icon" onClick={onClose}><XMarkIcon /></button>
+          <button className="icon" onClick={onClose}><X /></button>
         </div>
         <p className="hint small">
           O arquivo tem {songCount} música{songCount === 1 ? '' : 's'}
@@ -448,7 +448,7 @@ function ListPicker({ db, onPick, onCreate, onClose }: {
       <div className="sheet small" onClick={(e) => e.stopPropagation()}>
         <div className="sheet-head">
           <h3>Salvar nesta lista</h3>
-          <button className="icon" onClick={onClose}><XMarkIcon /></button>
+          <button className="icon" onClick={onClose}><X /></button>
         </div>
         <div className="listpick">
           {db.lists.map((l) => (

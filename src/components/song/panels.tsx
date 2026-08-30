@@ -4,8 +4,7 @@
  * painel arriscar os outros.
  */
 import { useState } from 'react'
-import { ArrowPathIcon, ArrowRightIcon, MinusIcon, MusicalNoteIcon, PlusIcon, SpeakerWaveIcon } from '@heroicons/react/24/outline'
-import { PlayIcon, StopIcon } from '@heroicons/react/24/solid'
+import { ArrowRight, Minus, Music, Play, Plus, RotateCw, Square, Volume2 } from 'lucide-react'
 import type { CifraView } from '../../cifra/view'
 import { RHYTHMS, type Rhythm } from '../../data/rhythms'
 import { romanNumeral } from '../../theory/functional'
@@ -86,7 +85,7 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
       title="Tom e capotraste"
       headerExtra={
         <button className="icon small panel-reset" onClick={() => dispatch({ type: 'resetKey' })} aria-label="Voltar ao original" title="Voltar ao original">
-          <ArrowPathIcon />
+          <RotateCw />
         </button>
       }
     >
@@ -99,11 +98,11 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
         <>
           <div className="panel-section">
             <div className="row">
-              <button className="icon" onClick={() => dispatch({ type: 'transposeBy', semitones: -1 })} aria-label="−1 semitom"><MinusIcon /></button>
+              <button className="icon" onClick={() => dispatch({ type: 'transposeBy', semitones: -1 })} aria-label="−1 semitom"><Minus /></button>
               <div className="keydisplay">
                 {view.displayedChords[0] ? <span className="mono">{view.displayedChords.slice(0, 4).map((c) => c.symbol).join('  ')}</span> : '—'}
               </div>
-              <button className="icon" onClick={() => dispatch({ type: 'transposeBy', semitones: 1 })} aria-label="+1 semitom"><PlusIcon /></button>
+              <button className="icon" onClick={() => dispatch({ type: 'transposeBy', semitones: 1 })} aria-label="+1 semitom"><Plus /></button>
             </div>
             <label className="field inline" style={{ marginTop: '.7rem' }}>
               Capotraste
@@ -147,7 +146,7 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
                 {modulations.map((k) => (
                   <div key={k.label} className="subrow section-key">
                     <span className="mono from">{k.label}</span>
-                    <ArrowRightIcon className="arrow-icon" />
+                    <ArrowRight className="arrow-icon" />
                     <span className="mono to">
                       {k.best.semitones === 0 ? 'original' : `${k.best.semitones > 0 ? '+' : ''}${k.best.semitones}`}
                     </span>
@@ -181,7 +180,7 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
             {view.displayedChords.map((c) => (
               <div key={c.symbol} className="subrow">
                 <span className="mono from">{c.symbol}</span>
-                <ArrowRightIcon className="arrow-icon" />
+                <ArrowRight className="arrow-icon" />
                 <span className="mono to">{romanNumeral(c.symbol, analysisKeyPc) ?? '?'}</span>
               </div>
             ))}
@@ -226,7 +225,7 @@ export function SimplifyPanel({ s, view, dispatch, mapSymbol }: {
         {[...view.substitutions.values()].map((sub) => (
           <div key={sub.from} className="subrow">
             <span className="mono from">{sub.from}</span>
-            <ArrowRightIcon className="arrow-icon" />
+            <ArrowRight className="arrow-icon" />
             <span className="mono to">{mapSymbol(sub.from)}</span>
             <span className="score">{Math.round(sub.score * 100)}% igual</span>
             <span className="reason">
@@ -301,7 +300,7 @@ export function RhythmPanel({ s, rhythm, dispatch, metronome, onPlay }: {
             title="Metrônomo (clique audível)"
             onClick={() => dispatch({ type: 'toggleClick' })}
           >
-            <SpeakerWaveIcon />
+            <Volume2 />
           </button>
           <button
             className={`icon round-play${metronome.running ? ' on' : ''}`}
@@ -309,7 +308,7 @@ export function RhythmPanel({ s, rhythm, dispatch, metronome, onPlay }: {
             aria-label={metronome.running ? 'Parar metrônomo' : 'Tocar metrônomo'}
             title="Tocar/parar para ouvir as mudanças"
           >
-            {metronome.running ? <StopIcon /> : <PlayIcon />}
+            {metronome.running ? <Square /> : <Play />}
           </button>
           <button
             className={`icon${s.playPattern ? ' active' : ''}`}
@@ -318,7 +317,7 @@ export function RhythmPanel({ s, rhythm, dispatch, metronome, onPlay }: {
             title="Tocar a batida, não só o pulso"
             onClick={() => dispatch({ type: 'togglePattern' })}
           >
-            <MusicalNoteIcon />
+            <Music />
           </button>
         </div>
       </div>

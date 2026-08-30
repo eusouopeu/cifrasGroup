@@ -5,7 +5,7 @@
  * divergirem em comportamento.
  */
 import { useState } from 'react'
-import { MusicalNoteIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { Music, Plus, Trash2 } from 'lucide-react'
 import { TUNINGS, type Tuning } from '../theory/tunings'
 import { TuningBuilder } from './song/TuningBuilder'
 
@@ -49,7 +49,7 @@ export function TuningPicker({
         </select>
         {onOpenTuner && (
           <button className="icon" onClick={onOpenTuner} aria-label="Afinar o violão nesta afinação" title="Afinar o violão nesta afinação">
-            <MusicalNoteIcon />
+            <Music />
           </button>
         )}
         {canManage && (
@@ -59,7 +59,7 @@ export function TuningPicker({
             aria-label={builderOpen ? 'Fechar criador de afinação' : 'Criar afinação personalizada'}
             title="Criar afinação personalizada"
           >
-            <PlusIcon />
+            <Plus />
           </button>
         )}
       </div>
@@ -89,7 +89,7 @@ export function TuningPicker({
                   if (value === t.id) onChange('standard')
                 }}
               >
-                <TrashIcon />
+                <Trash2 />
               </button>
             </div>
           ))}

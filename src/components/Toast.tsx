@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useRef, useState } from 'react'
-import { XMarkIcon } from '@heroicons/react/24/outline'
+import { X } from 'lucide-react'
 
 interface ToastItem {
   id: number
@@ -65,7 +65,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 {toast.actionLabel}
               </button>
             )}
-            <button className="toast-close" onClick={dismiss} aria-label="Fechar aviso"><XMarkIcon /></button>
+            <button className="toast-close" onClick={dismiss} aria-label="Fechar aviso"><X /></button>
           </div>
         </div>
       )}

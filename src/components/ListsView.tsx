@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDownIcon, ChevronRightIcon, PlusIcon } from '@heroicons/react/24/outline'
+import { ChevronDown, ChevronRight, Plus } from 'lucide-react'
 import type { DB, SongList } from '../store/db'
 import { SongCard } from './SongCard'
 import { FontSizeToggleButton, InstrumentToggleButton } from './DisplayControls'
@@ -47,7 +47,7 @@ export function ListsView({ db, onOpen, onCreateList, onDeleteList, onRemoveFrom
           aria-label="Criar lista"
           title="Criar lista"
         >
-          <PlusIcon />
+          <Plus />
         </button>
       </div>
     </div>
@@ -69,7 +69,7 @@ function ListSection({ list, db, onOpen, onDeleteList, onRemoveFromList, onDupli
     <section className="listsection">
       <div className="listhead">
         <button className="listtoggle" aria-expanded={open} onClick={() => setOpen(!open)}>
-          {open ? <ChevronDownIcon /> : <ChevronRightIcon />} {list.name} <span className="count">{songs.length}</span>
+          {open ? <ChevronDown /> : <ChevronRight />} {list.name} <span className="count">{songs.length}</span>
         </button>
         {list.id !== 'favoritas' && <button className="icon small" aria-label={`Apagar a lista ${list.name}`} onClick={() => onDeleteList(list.id)}>apagar</button>}
       </div>

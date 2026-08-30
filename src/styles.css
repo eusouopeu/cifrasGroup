@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 /* Montserrat local (sem depender de rede) — só os 3 pesos que o app usa
    (normal/semibold/bold) e só o subconjunto latino, que já cobre os
    acentos do português (ç, ã, é...). Mantém a promessa de rodar sem servidor. */
@@ -39,6 +41,27 @@
   --genre-d: #d1a13a;
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   --sans: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* mapeia as variáveis de tema (trocadas em runtime por :root[data-theme]) pros
+   tokens de cor do Tailwind — as classes bg-bg2/text-fg/border-line/etc. abaixo
+   continuam claras/escuras junto com o resto do app, sem duplicar paleta */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg2: var(--bg2);
+  --color-bg3: var(--bg3);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-dim: var(--dim);
+  --color-accent: var(--accent);
+  --color-accent2: var(--accent2);
+  --color-danger: var(--danger);
+  --color-blue: var(--blue);
+  --color-genre-a: var(--genre-a);
+  --color-genre-b: var(--genre-b);
+  --color-genre-d: var(--genre-d);
+  --font-sans: var(--sans);
+  --font-mono: var(--mono);
 }
 
 /* segue o sistema quando não há preferência explícita (data-theme ausente) */

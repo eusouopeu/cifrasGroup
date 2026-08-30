@@ -6,8 +6,7 @@
  * gravações desta música.
  */
 import { useEffect, useRef, useState } from 'react'
-import { FolderIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { StopIcon } from '@heroicons/react/24/solid'
+import { Folder, Square, X } from 'lucide-react'
 import {
   deleteRecording,
   listRecordings,
@@ -225,7 +224,7 @@ export function Recorder({ songId, mode }: { songId: string; mode: RecordingKind
         <div className="record-list-float">
           <div className="record-list-head">
             <strong>Gravações desta música</strong>
-            <button className="icon small" aria-label="Fechar lista" onClick={() => setListOpen(false)}><XMarkIcon /></button>
+            <button className="icon small" aria-label="Fechar lista" onClick={() => setListOpen(false)}><X /></button>
           </div>
           {recordings === null && <p className="hint small">Carregando…</p>}
           {recordings !== null && recordings.length === 0 && <p className="hint small">Nenhuma gravação ainda.</p>}
@@ -269,7 +268,7 @@ export function Recorder({ songId, mode }: { songId: string; mode: RecordingKind
             onClick={stopRecording}
             aria-label="Parar gravação"
           >
-            <StopIcon />
+            <Square />
           </button>
         </div>
         <button
@@ -277,7 +276,7 @@ export function Recorder({ songId, mode }: { songId: string; mode: RecordingKind
           onClick={() => setListOpen((v) => !v)}
           aria-label={listOpen ? 'Fechar gravações' : 'Ver gravações'}
         >
-          <FolderIcon />
+          <Folder />
         </button>
       </div>
 
