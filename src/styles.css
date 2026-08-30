@@ -135,8 +135,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .icon.small svg { width: 16px; height: 16px; }
 /* botões "meio-toggle" de cabeçalho que mostram texto em vez de ícone
    (tamanho do texto, instrumento) — mesmo lugar/comportamento do tema */
-.labeltoggle { font-size: .68rem; font-weight: 700; font-family: var(--mono); min-width: 30px; color: var(--dim); }
-.labeltoggle.emoji { font-size: 1.15rem; font-family: initial; font-weight: normal; min-width: auto; }
 .inlinebtn { background: var(--bg3); border: 1px solid var(--line); border-radius: 5px; padding: 0 .35rem; margin: 0 .15rem; font-size: .75rem; }
 
 /* ---------- biblioteca ---------- */
@@ -281,25 +279,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* ---------- cifra ---------- */
 .cifra-area { position: relative; flex: 1; min-height: 0; display: flex; }
 .cifra-scroll { flex: 1; overflow-y: auto; padding: .8rem 1rem 6rem; scroll-behavior: auto; }
-.cifra { font-family: var(--mono); overflow-wrap: anywhere; }
-.cifra-line { min-height: 1em; }
-/* acordes nunca quebram linha — o espaçamento entre eles já é reduzido na
-   montagem da linha (CifraText#layoutChords); se mesmo assim não couber (ex.:
-   muitos acordes estendidos numa linha só), rola na horizontal em vez de
-   cortar ou empurrar o resto da tela */
-.cifra-line.chords { white-space: pre; overflow-x: auto; scrollbar-width: none; }
-.cifra-line.chords::-webkit-scrollbar { display: none; }
-/* letra quebra e continua na linha de baixo em vez de vazar pra lateral */
-.cifra-line.lyrics { color: var(--fg); white-space: pre-wrap; }
-.cifra-line.section { color: var(--accent); font-weight: 700; margin-top: .9em; white-space: pre-wrap; }
-.cifra-line.tab { color: var(--dim); opacity: .8; white-space: pre; }
-.cifra-line.blank { white-space: pre; }
-.cifra-note { color: var(--dim); font-size: .72rem; font-family: var(--sans); margin-bottom: .6rem; }
-.cifra-note.warn { color: var(--accent); }
-.chordchip { background: none; border: none; padding: 0; font: inherit; color: var(--accent); font-weight: 700; }
-.chordchip:hover { text-decoration: underline; }
-.chordchip.hl { background: color-mix(in srgb, var(--accent) 25%, transparent); border-radius: 3px; }
-.gap { white-space: pre; }
 .cifra-footer { margin-top: 2rem; font-size: .75rem; color: var(--dim); }
 .cifra-rawedit {
   width: 100%; height: 100%; min-height: 100%; resize: none; border: none; outline: none;

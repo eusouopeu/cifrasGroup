@@ -35,7 +35,7 @@ export function FontSizeToggleButton() {
   const next = FONT_ORDER[(FONT_ORDER.indexOf(current) + 1) % FONT_ORDER.length]
   return (
     <button
-      className="icon labeltoggle"
+      className="icon text-[.68rem] font-bold mono min-w-[30px] text-dim"
       onClick={() => patch({ fontSize: FONT_SIZES[next] })}
       aria-label={`Tamanho do texto: ${current} — toque para trocar para ${next}`}
       title={`Tamanho do texto: ${current}`}
@@ -54,7 +54,7 @@ export function InstrumentToggleButton() {
   const next: DisplayDefaults['instrument'] = defaults.instrument === 'guitar' ? 'piano' : 'guitar'
   return (
     <button
-      className="icon labeltoggle emoji"
+      className="icon text-dim text-[1.15rem] [font-family:initial] font-normal min-w-0"
       onClick={() => patch({ instrument: next })}
       aria-label={`Instrumento: ${INSTRUMENT_LABEL[defaults.instrument]} — toque para trocar para ${INSTRUMENT_LABEL[next]}`}
       title={`Instrumento: ${INSTRUMENT_LABEL[defaults.instrument]}`}

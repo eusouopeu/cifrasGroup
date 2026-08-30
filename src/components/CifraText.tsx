@@ -59,26 +59,26 @@ export function CifraText({ parsed, map, fontSize, hideTabs, onChordClick, highl
   const downPos = useRef<{ x: number; y: number } | null>(null)
 
   return (
-    <div className="cifra" style={{ fontSize: `${fontSize}px`, lineHeight: 1.5 }}>
+    <div className="font-mono [overflow-wrap:anywhere]" style={{ fontSize: `${fontSize}px`, lineHeight: 1.5 }}>
       {hideTabs && hiddenCount > 0 && (
-        <div className="cifra-note">{hiddenCount} linha{hiddenCount === 1 ? '' : 's'} de tablatura oculta{hiddenCount === 1 ? '' : 's'}</div>
+        <div className="text-dim text-[.72rem] font-sans mb-2.5">{hiddenCount} linha{hiddenCount === 1 ? '' : 's'} de tablatura oculta{hiddenCount === 1 ? '' : 's'}</div>
       )}
       {visibleTabs && transposed && (
-        <div className="cifra-note warn">Tablatura mostrada no tom original — não acompanha a transposição.</div>
+        <div className="text-accent text-[.72rem] font-sans mb-2.5">Tablatura mostrada no tom original — não acompanha a transposição.</div>
       )}
       {lines.map(({ line, i }) => {
-        if (line.kind === 'blank') return <div key={i} data-line-index={i} className="cifra-line blank">&nbsp;</div>
-        if (line.kind === 'section') return <div key={i} data-line-index={i} className="cifra-line section">{line.text}</div>
-        if (line.kind === 'tab') return <div key={i} data-line-index={i} className="cifra-line tab">{line.text}</div>
+        if (line.kind === 'blank') return <div key={i} data-line-index={i} className="min-h-[1em] whitespace-pre">&nbsp;</div>
+        if (line.kind === 'section') return <div key={i} data-line-index={i} className="min-h-[1em] text-accent font-bold mt-[.9em] whitespace-pre-wrap">{line.text}</div>
+        if (line.kind === 'tab') return <div key={i} data-line-index={i} className="min-h-[1em] text-dim opacity-80 whitespace-pre">{line.text}</div>
         if (line.kind === 'chords') {
           const items = layoutChords(line, map)
           return (
-            <div key={i} data-line-index={i} className="cifra-line chords">
+            <div key={i} data-line-index={i} className="min-h-[1em] whitespace-pre overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {items.map((it, j) => (
                 <Fragment key={j}>
-                  <span className="gap">{' '.repeat(Math.max(0, it.gap))}</span>
+                  <span className="whitespace-pre">{' '.repeat(Math.max(0, it.gap))}</span>
                   <button
-                    className={`chordchip${highlight === it.symbol ? ' hl' : ''}`}
+                    className={`bg-none border-0 p-0 font-inherit text-accent font-bold hover:underline${highlight === it.symbol ? ' bg-[color-mix(in_srgb,var(--accent)_25%,transparent)] rounded-sm' : ''}`}
                     aria-label={`Acorde ${it.symbol}`}
                     onPointerDown={(e) => { downPos.current = { x: e.clientX, y: e.clientY } }}
                     onClick={(e) => {
@@ -94,7 +94,7 @@ export function CifraText({ parsed, map, fontSize, hideTabs, onChordClick, highl
             </div>
           )
         }
-        return <div key={i} data-line-index={i} className="cifra-line lyrics">{line.text}</div>
+        return <div key={i} data-line-index={i} className="min-h-[1em] text-fg whitespace-pre-wrap">{line.text}</div>
       })}
     </div>
   )
