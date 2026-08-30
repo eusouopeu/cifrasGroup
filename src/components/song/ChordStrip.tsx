@@ -40,22 +40,39 @@ export function ChordStrip({ chords, instrument, tuning, focus, overridden, pref
   if (chords.length === 0) return null
 
   return (
-    <div className="chordstrip">
-      <div className="chordstrip-scroll" ref={ref}>
-        {chords.map((c) => (
-          <button
-            key={c.symbol}
-            data-chord={c.symbol}
-            className={`chordstrip-item${focus === c.symbol ? ' focus' : ''}${overridden.has(c.symbol) ? ' overridden' : ''}`}
-            onClick={() => onSelect(c.symbol)}
-            aria-label={`Ver digitações de ${c.symbol}`}
-          >
-            <span className="chordstrip-name mono">{c.symbol}</span>
-            <StripDiagram symbol={c.symbol} instrument={instrument} tuning={tuning} preferred={preferredVoicings[c.symbol]} />
-          </button>
-        ))}
+    <div className="relative flex items-stretch bg-bg2 border-b border-line">
+      <div
+        className="flex gap-[.4rem] overflow-x-auto p-[.4rem_2rem_.4rem_.5rem] [scroll-snap-type:x_proximity] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden max-[620px]:p-[.35rem_1.9rem_.35rem_.4rem]"
+        ref={ref}
+      >
+        {chords.map((c) => {
+          const isFocus = focus === c.symbol
+          const isOverridden = overridden.has(c.symbol)
+          return (
+            <button
+              key={c.symbol}
+              data-chord={c.symbol}
+              className={`flex-none [scroll-snap-align:center] bg-none border rounded-lg p-[.1rem_.25rem_.2rem] flex flex-col items-center gap-[.1rem] ${
+                isFocus ? 'border-accent bg-[color-mix(in_srgb,var(--accent)_12%,var(--bg2))]' : 'border-transparent'
+              }`}
+              onClick={() => onSelect(c.symbol)}
+              aria-label={`Ver digitações de ${c.symbol}`}
+            >
+              <span className={`mono text-accent font-bold text-[.82rem] ${isOverridden ? 'underline decoration-dotted decoration-accent2' : ''}`}>
+                {c.symbol}
+              </span>
+              <StripDiagram symbol={c.symbol} instrument={instrument} tuning={tuning} preferred={preferredVoicings[c.symbol]} />
+            </button>
+          )
+        })}
       </div>
-      <button className="icon small chordstrip-close" onClick={onClose} aria-label="Fechar faixa de acordes"><X /></button>
+      <button
+        className="icon small absolute top-[.15rem] right-[.1rem] z-[1] bg-bg2 rounded-full"
+        onClick={onClose}
+        aria-label="Fechar faixa de acordes"
+      >
+        <X />
+      </button>
     </div>
   )
 }
@@ -71,6 +88,6 @@ function StripDiagram({ symbol, instrument, tuning, preferred }: {
   // se a digitação escolhida não existir mais nesta afinação/janela de busca,
   // cai de volta para a mais fácil — nunca fica sem mostrar nada
   const chosen = (preferred && voicings.find((v) => voicingFingerprint(v) === preferred)) || voicings[0]
-  if (!chosen) return <span className="chordstrip-none">sem digitação</span>
+  if (!chosen) return <span className="text-[.66rem] text-dim p-[1rem_.5rem]">sem digitação</span>
   return <GuitarDiagram symbol={symbol} voicing={chosen} size={0.62} showDegrees={false} tuning={tuning} />
 }

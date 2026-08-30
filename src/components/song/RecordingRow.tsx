@@ -75,27 +75,32 @@ export function RecordingRow({ recording, expanded, onToggleExpand, onRename, on
     a.click()
   }
 
+  const rowBase = 'bg-bg3 border rounded-[9px] p-[.5rem_.6rem] text-left w-full'
+
   if (!expanded) {
     return (
-      <button className={`recrow${recording.pinned ? ' pinned' : ''}`} onClick={onToggleExpand}>
-        <span className="recrow-main">
+      <button
+        className={`${rowBase} flex items-center gap-2 ${recording.pinned ? 'border-accent2' : 'border-line'}`}
+        onClick={onToggleExpand}
+      >
+        <span className="flex flex-col gap-[.1rem] bg-none border-0 p-0 text-left text-inherit font-inherit flex-1 min-w-0 [&>strong]:text-[.82rem] [&>strong]:overflow-hidden [&>strong]:text-ellipsis [&>strong]:whitespace-nowrap">
           <strong>{label}</strong>
           <span className="hint small">
             {showSong && <>{showSong} · </>}
             {formatDuration(recording.durationMs)} - {formatBytes(recording.blob.size)}
           </span>
         </span>
-        {recording.pinned && <Bookmark className="recrow-pin" fill="currentColor" />}
+        {recording.pinned && <Bookmark className="w-3.5 h-3.5 text-accent2 flex-shrink-0" fill="currentColor" />}
       </button>
     )
   }
 
   return (
-    <div className="recrow recrow-expanded">
-      <div className="recrow-head">
+    <div className={`${rowBase} border-line flex flex-col gap-[.4rem]`}>
+      <div className="flex items-center gap-[.4rem]">
         {renaming ? (
           <input
-            className="recrow-rename"
+            className="flex-1 min-w-0 bg-bg2 border border-accent rounded-md text-fg p-[.3rem_.5rem] text-[.82rem]"
             autoFocus
             value={draft}
             placeholder={formatDate(recording.createdAt)}
@@ -104,7 +109,10 @@ export function RecordingRow({ recording, expanded, onToggleExpand, onRename, on
             onBlur={commitRename}
           />
         ) : (
-          <button className="recrow-main" onClick={onToggleExpand}>
+          <button
+            className="flex flex-col gap-[.1rem] bg-none border-0 p-0 text-left text-inherit font-inherit flex-1 min-w-0 [&>strong]:text-[.82rem] [&>strong]:overflow-hidden [&>strong]:text-ellipsis [&>strong]:whitespace-nowrap"
+            onClick={onToggleExpand}
+          >
             <strong>{label}</strong>
             <span className="hint small">{showSong && <>{showSong} · </>}{formatDate(recording.createdAt)}</span>
           </button>
@@ -115,19 +123,25 @@ export function RecordingRow({ recording, expanded, onToggleExpand, onRename, on
       </div>
 
       {recording.kind === 'video' ? (
-        <video ref={mediaRef as React.RefObject<HTMLVideoElement>} src={urlRef.current} className="recrow-video" playsInline
-          onTimeUpdate={(e) => setCurrentMs(e.currentTarget.currentTime * 1000)} onEnded={() => setPlaying(false)} />
+        <video
+          ref={mediaRef as React.RefObject<HTMLVideoElement>}
+          src={urlRef.current}
+          className="w-full max-h-[200px] rounded-lg bg-black"
+          playsInline
+          onTimeUpdate={(e) => setCurrentMs(e.currentTarget.currentTime * 1000)}
+          onEnded={() => setPlaying(false)}
+        />
       ) : (
         <audio ref={mediaRef as React.RefObject<HTMLAudioElement>} src={urlRef.current}
           onTimeUpdate={(e) => setCurrentMs(e.currentTarget.currentTime * 1000)} onEnded={() => setPlaying(false)} />
       )}
 
-      <div className="recrow-player">
+      <div className="flex items-center gap-[.4rem]">
         <button className="icon" onClick={togglePlay} aria-label={playing ? 'Pausar' : 'Tocar'}>
           {playing ? <Pause /> : <Play />}
         </button>
         <input
-          className="recrow-scrub"
+          className="flex-1 min-w-0 accent-accent"
           type="range"
           min={0}
           max={recording.durationMs}
@@ -140,10 +154,10 @@ export function RecordingRow({ recording, expanded, onToggleExpand, onRename, on
             setCurrentMs(ms)
           }}
         />
-        <span className="hint small recrow-time">{formatDuration(currentMs)}</span>
+        <span className="hint small min-w-[34px] text-right">{formatDuration(currentMs)}</span>
       </div>
 
-      <div className="recrow-actions">
+      <div className="flex justify-end gap-[.15rem] [&_.icon.small.active]:text-accent2">
         {layerable && (
           <button
             className={`icon small${layered ? ' active' : ''}`}

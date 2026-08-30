@@ -66,7 +66,7 @@ export function ChordConferenceTab({ tuning }: { tuning: Tuning }) {
       </p>
 
       <button className="btn primary wide" disabled={status === 'listening' || status === 'analyzing'} onClick={() => void listen()}>
-        <Mic className="inline-icon" />
+        <Mic className="w-4 h-4 align-[-3px] mr-[.3rem] inline" />
         {status === 'listening' ? 'ouvindo…' : status === 'analyzing' ? 'analisando…' : 'ouvir acorde'}
       </button>
 
@@ -80,8 +80,8 @@ export function ChordConferenceTab({ tuning }: { tuning: Tuning }) {
       )}
 
       {status === 'done' && result && chord && voicing && (
-        <div className="conference-result">
-          <h3 className="mono conference-symbol">{result.symbol}</h3>
+        <div className="mt-3">
+          <h3 className="mono text-accent text-[1.6rem] mb-[.1rem]">{result.symbol}</h3>
           <p className="hint small">confiança: {Math.round(result.confidence * 100)}%</p>
 
           {spelling.length > 0 && (
@@ -95,7 +95,7 @@ export function ChordConferenceTab({ tuning }: { tuning: Tuning }) {
             </div>
           )}
 
-          <div className="conference-diagram">
+          <div className="flex justify-center py-1.5">
             <GuitarDiagram symbol={result.symbol} voicing={voicing} size={1.3} tuning={tuning} />
           </div>
 
@@ -107,7 +107,7 @@ export function ChordConferenceTab({ tuning }: { tuning: Tuning }) {
           ) : (
             <div className="sublist">
               {scales.map((sc) => (
-                <div key={sc.label + sc.roman} className="subrow scalefit-row">
+                <div key={sc.label + sc.roman} className="subrow [grid-template-columns:1fr_auto_auto]">
                   <span className="mono to">{sc.label}</span>
                   <span className="reason">{sc.family}</span>
                   <span className="score">grau {sc.roman}</span>
@@ -130,7 +130,7 @@ function StringBreakdown({ voicing, rootPc, tuning }: { voicing: Voicing; rootPc
         if (f === null) return null
         const pc = (tuning.strings[i] + f) % 12
         return (
-          <div key={i} className="subrow stringbreak-row">
+          <div key={i} className="subrow [grid-template-columns:1fr_auto_auto]">
             <span className="reason">{6 - i}ª corda ({tuning.stringNames[i]})</span>
             <span className="mono to">{nameOf(pc)}</span>
             <span className="score">grau {degrees[i] ?? '—'}</span>

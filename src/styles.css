@@ -330,21 +330,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
    em utilities Tailwind em LibraryHome.tsx): raio, sombra, cor sólida de
    destaque — reaproveita os mesmos valores em vez de inventar nova elevação. */
 
-.recrow { background: var(--bg3); border: 1px solid var(--line); border-radius: 9px; padding: .5rem .6rem; text-align: left; width: 100%; }
-.recrow.pinned { border-color: var(--accent2); }
-button.recrow { display: flex; align-items: center; gap: .5rem; }
-.recrow-main { display: flex; flex-direction: column; gap: .1rem; background: none; border: none; padding: 0; text-align: left; color: inherit; font: inherit; flex: 1; min-width: 0; }
-.recrow-main strong { font-size: .82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.recrow-pin { width: 14px; height: 14px; color: var(--accent2); flex-shrink: 0; }
-.recrow-expanded { display: flex; flex-direction: column; gap: .4rem; }
-.recrow-head { display: flex; align-items: center; gap: .4rem; }
-.recrow-rename { flex: 1; min-width: 0; background: var(--bg2); border: 1px solid var(--accent); border-radius: 6px; color: var(--fg); padding: .3rem .5rem; font-size: .82rem; }
-.recrow-video { width: 100%; max-height: 200px; border-radius: 8px; background: #000; }
-.recrow-player { display: flex; align-items: center; gap: .4rem; }
-.recrow-scrub { flex: 1; min-width: 0; accent-color: var(--accent); }
-.recrow-time { min-width: 34px; text-align: right; }
-.recrow-actions { display: flex; justify-content: flex-end; gap: .15rem; }
-.recrow-actions .icon.small.active { color: var(--accent2); }
 
 .listpick { display: flex; flex-direction: column; }
 .empty { padding: 2rem; text-align: center; }
@@ -364,41 +349,6 @@ button.recrow { display: flex; align-items: center; gap: .5rem; }
 .toast-close { background: none; border: none; color: var(--dim); font-size: 1.1rem; padding: 0 .3rem; display: inline-flex; align-items: center; }
 .toast-close svg { width: 16px; height: 16px; }
 
-
-/* ---------- faixa de acordes (abaixo da barra de ferramentas) ---------- */
-/* mostra a digitação mais fácil de cada acorde da música sem tapar a cifra;
-   a ficha completa do acorde sai daqui, não mais de um toque na letra */
-.chordstrip {
-  position: relative; display: flex; align-items: stretch;
-  background: var(--bg2); border-bottom: 1px solid var(--line);
-}
-.chordstrip-scroll {
-  display: flex; gap: .4rem; overflow-x: auto; padding: .4rem 2rem .4rem .5rem;
-  scroll-snap-type: x proximity; scrollbar-width: none;
-}
-.chordstrip-scroll::-webkit-scrollbar { display: none; }
-.chordstrip-item {
-  flex: 0 0 auto; scroll-snap-align: center;
-  background: none; border: 1px solid transparent; border-radius: 8px;
-  padding: .1rem .25rem .2rem; display: flex; flex-direction: column; align-items: center; gap: .1rem;
-}
-.chordstrip-item.focus { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--bg2)); }
-.chordstrip-item.overridden .chordstrip-name { text-decoration: underline dotted var(--accent2); }
-.chordstrip-name { color: var(--accent); font-weight: 700; font-size: .82rem; }
-.chordstrip-none { font-size: .66rem; color: var(--dim); padding: 1rem .5rem; }
-.chordstrip-close {
-  position: absolute; top: .15rem; right: .1rem; z-index: 1;
-  background: var(--bg2); border-radius: 50%;
-}
-
-
-.inline-icon { width: 16px; height: 16px; vertical-align: -3px; margin-right: .3rem; }
-
-/* modo conferência de acordes (aba Acordes → Conferência) */
-.conference-result { margin-top: .8rem; }
-.conference-symbol { color: var(--accent); font-size: 1.6rem; margin-bottom: .1rem; }
-.conference-diagram { display: flex; justify-content: center; padding: .4rem 0; }
-.scalefit-row, .stringbreak-row { grid-template-columns: 1fr auto auto; }
 
 /* aba de voz (aba Acordes → Voz) */
 .voicelab { display: flex; flex-direction: column; gap: .7rem; margin-top: .5rem; }
@@ -428,8 +378,6 @@ button.recrow { display: flex; align-items: center; gap: .5rem; }
   .rootbtn { min-height: 36px; }
   .sheet { border-radius: 16px 16px 0 0; padding: .9rem .8rem calc(.9rem + env(safe-area-inset-bottom)); }
 
-  /* linha comprida de cifra rola na horizontal em vez de quebrar */
-  .chordstrip-scroll { padding: .35rem 1.9rem .35rem .4rem; }
   .songhead { padding: calc(.4rem + env(safe-area-inset-top)) .5rem .4rem; }
 }
 
