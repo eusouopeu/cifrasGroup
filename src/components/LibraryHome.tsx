@@ -59,44 +59,48 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
   return (
     <div className="library">
       <header className="apphead">
-        <h1>cifras<span>Group</span></h1>
+        <h1>cifras<span className="text-accent">Group</span></h1>
         <FontSizeToggleButton />
         <InstrumentToggleButton />
         <ThemeToggleButton />
       </header>
 
-      <div className="searchrow">
-        <input className="search" aria-label="Buscar por título ou artista" placeholder="Buscar por título ou artista" value={query} onChange={(e) => setQuery(e.target.value)} />
+      <div className="flex items-center gap-2 mt-2.5">
+        <input className="search flex-1" aria-label="Buscar por título ou artista" placeholder="Buscar por título ou artista" value={query} onChange={(e) => setQuery(e.target.value)} />
         {songs.length > 0 && (
           <button
-            className={`icon${filtersOpen ? ' active' : ''}`}
+            className={`icon relative flex-shrink-0${filtersOpen ? ' active' : ''}`}
             onClick={() => setFiltersOpen((v) => !v)}
             aria-label="Filtros"
             title="Filtros"
           >
             <Filter />
-            {hasActiveFilters && !filtersOpen && <span className="filter-dot" />}
+            {hasActiveFilters && !filtersOpen && <span className="absolute top-[2px] right-[2px] w-[7px] h-[7px] rounded-full bg-accent" />}
           </button>
         )}
       </div>
 
       {filtersOpen && songs.length > 0 && (
         <>
-          <div className="filterbar">
-            <label className="filterfield">
+          <div className="flex flex-wrap gap-3 my-2.5 items-center">
+            <label className="flex items-center gap-1.5 text-[.8rem] text-dim">
               Acordes:
               <input
                 type="number"
                 min={0}
                 placeholder="até"
-                className="numinput small"
+                className="numinput small bg-bg2 border border-line rounded-lg text-fg px-2.5 py-1.5 text-[.8rem]"
                 value={maxChordsFilter}
                 onChange={(e) => setMaxChordsFilter(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))}
               />
             </label>
-            <label className="filterfield">
+            <label className="flex items-center gap-1.5 text-[.8rem] text-dim">
               Dificuldade:
-              <select value={difficultyFilter ?? ''} onChange={(e) => setDifficultyFilter(e.target.value === '' ? null : (e.target.value as Difficulty))}>
+              <select
+                className="bg-bg2 border border-line rounded-lg text-fg px-2.5 py-1.5 text-[.8rem]"
+                value={difficultyFilter ?? ''}
+                onChange={(e) => setDifficultyFilter(e.target.value === '' ? null : (e.target.value as Difficulty))}
+              >
                 <option value="">qualquer</option>
                 <option value="fácil">fácil</option>
                 <option value="médio">médio</option>
@@ -111,9 +115,14 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
           </div>
 
           {usedGenres.length > 0 && (
-            <div className="genrefilter">
+            <div className="flex flex-wrap gap-1.5 mb-3">
               {usedGenres.map((g) => (
-                <button key={g} className={`genrechip${genreFilter.has(g) ? ' on' : ''}`} aria-pressed={genreFilter.has(g)} onClick={() => toggleGenre(g)}>
+                <button
+                  key={g}
+                  className={`bg-white text-[#1b1d21] border border-line rounded-full px-3 py-1.5 text-[.78rem]${genreFilter.has(g) ? ' bg-accent border-accent text-[#14161a] font-semibold' : ''}`}
+                  aria-pressed={genreFilter.has(g)}
+                  onClick={() => toggleGenre(g)}
+                >
                   {g}
                 </button>
               ))}
@@ -121,9 +130,14 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
           )}
 
           {allTags.length > 0 && (
-            <div className="tagchips filterbar-tags">
+            <div className="tagchips -mt-0.5 mb-3">
               {allTags.map((t) => (
-                <button key={t} className={`tagchip filterchip${tagFilter === t ? ' on' : ''}`} aria-pressed={tagFilter === t} onClick={() => setTagFilter(tagFilter === t ? null : t)}>
+                <button
+                  key={t}
+                  className={`tagchip cursor-pointer${tagFilter === t ? ' bg-accent border-accent text-[#14161a] font-semibold' : ''}`}
+                  aria-pressed={tagFilter === t}
+                  onClick={() => setTagFilter(tagFilter === t ? null : t)}
+                >
                   {t}
                 </button>
               ))}
@@ -133,13 +147,18 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
       )}
 
       {filtered.length === 0 && <p className="hint">Nada aqui ainda. Importe uma cifra para começar.</p>}
-      <div className="songgrid">
+      <div className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(230px,1fr))] mt-2 max-[620px]:grid-cols-1">
         {filtered.map((s) => (
           <SongCard key={s.id} song={s} onOpen={() => onOpen(s.id)} onDelete={() => onDeleteSong(s.id)} onDuplicate={() => onDuplicateSong(s.id)} />
         ))}
       </div>
 
-      <button className="fab" onClick={onNew} aria-label="Importar cifra" title="Importar cifra">
+      <button
+        className="fixed right-[1.1rem] bottom-[calc(4.6rem+env(safe-area-inset-bottom))] z-[6] w-14 h-14 rounded-full bg-accent text-[#14161a] border-0 grid place-items-center shadow-[0_4px_14px_rgba(0,0,0,.3)] [&>svg]:w-[26px] [&>svg]:h-[26px]"
+        onClick={onNew}
+        aria-label="Importar cifra"
+        title="Importar cifra"
+      >
         <Plus />
       </button>
     </div>

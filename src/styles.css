@@ -147,42 +147,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .apphead h1 { font-size: 1.4rem; flex: 1; letter-spacing: -.02em; }
 .apphead h1 span { color: var(--accent); }
 .search { width: 100%; padding: .6rem .8rem; border-radius: 8px; border: 1px solid var(--line); background: var(--bg2); color: var(--fg); }
-.searchrow { display: flex; gap: .5rem; align-items: center; margin: .6rem 0 0; }
-.searchrow .search { flex: 1; }
-.searchrow .icon { position: relative; flex-shrink: 0; }
-.filter-dot { position: absolute; top: 2px; right: 2px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
-.listsection { margin-top: 1.25rem; }
-.listhead { display: flex; align-items: center; justify-content: space-between; }
-.listtoggle { background: none; border: none; font-size: .95rem; font-weight: 600; padding: .3rem 0; display: inline-flex; align-items: center; gap: .3rem; }
-.listtoggle svg { width: 18px; height: 18px; flex-shrink: 0; }
-.songgrid { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); margin-top: .5rem; }
-.songcard { background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: .6rem .7rem; display: flex; flex-direction: column; gap: .3rem; }
-.songcard-main { background: none; border: none; text-align: left; padding: 0; display: flex; flex-direction: column; gap: .2rem; }
-.songcard .artist { color: var(--dim); font-size: .8rem; }
-.songcard .chords { color: var(--accent2); font-size: .78rem; }
-.songcard-actions { display: flex; gap: .5rem; align-self: flex-end; align-items: center; }
-.reorder { display: flex; gap: 0; }
-.reorder .icon:disabled { opacity: .3; }
-.songcard-iconcol { display: flex; flex-direction: column; gap: .3rem; align-items: center; justify-content: center; }
-.songcard-icon { font-size: 1.05rem; line-height: 1; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
-.songcard-icon.blue { color: var(--blue); }
-.songcard-icon.danger { color: var(--danger); }
-.badges { display: flex; flex-wrap: wrap; gap: .25rem; }
-.badges i { font-style: normal; font-size: .68rem; background: var(--bg3); border: 1px solid var(--line); border-radius: 4px; padding: 0 .3rem; color: var(--dim); }
-.badges i.more { color: var(--accent2); border-color: var(--accent2); cursor: default; }
-.filterbar { display: flex; flex-wrap: wrap; gap: .8rem; margin: .6rem 0; align-items: center; }
-.filterfield { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: var(--dim); }
-.filterfield select, .filterfield input { background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; color: var(--fg); padding: .4rem .6rem; font-size: .8rem; }
 /* !important porque .numinput precisa vencer o width:100% de ".field input"
    (regra genérica de campo) não importa em que estrutura/wrapper apareça */
 .numinput { width: 80px !important; }
 .numinput.small { width: 64px !important; }
-.filterbar-tags { margin: -.2rem 0 .8rem; }
-.tagchip.filterchip { cursor: pointer; }
-.tagchip.filterchip.on { background: var(--accent); border-color: var(--accent); color: #14161a; font-weight: 600; }
-.genrefilter { display: flex; flex-wrap: wrap; gap: .35rem; margin: 0 0 .8rem; }
-.genrechip { background: #ffffff; color: #1b1d21; border: 1px solid var(--line); border-radius: 20px; padding: .3rem .7rem; font-size: .78rem; }
-.genrechip.on { background: var(--accent); border-color: var(--accent); color: #14161a; font-weight: 600; }
 .newlist { display: flex; gap: .5rem; margin-top: .75rem; }
 .newlist input { flex: 1; padding: .5rem .7rem; border-radius: 8px; border: 1px solid var(--line); background: var(--bg2); color: var(--fg); }
 .settingsection { margin-bottom: 1.5rem; }
@@ -553,20 +521,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .tagchip-remove { background: none; border: none; color: var(--dim); font-size: .9rem; padding: 0 .3rem; line-height: 1; display: inline-flex; align-items: center; }
 .tagchip-remove svg { width: 12px; height: 12px; }
 .tagchip-remove:hover { color: var(--danger); }
-/* botão flutuante de importar cifra, aba Início — fica por cima da rolagem
-   da lista, sempre alcançável com o polegar */
-.fab {
-  position: fixed; right: 1.1rem; bottom: calc(4.6rem + env(safe-area-inset-bottom));
-  z-index: 6; width: 56px; height: 56px; border-radius: 50%;
-  background: var(--accent); color: #14161a; border: none;
-  display: grid; place-items: center; box-shadow: 0 4px 14px rgba(0, 0, 0, .3);
-}
-.fab svg { width: 26px; height: 26px; }
 .tageditor input { flex: 1; background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; color: var(--fg); padding: .45rem .6rem; font-size: .85rem; }
 /* ---------- gravador de prática (flutuante) ----------
-   mesma "família" visual do .fab (raio, sombra, cor sólida de destaque) —
-   é a outra peça flutuante que já existe no app, então reaproveita os
-   mesmos valores em vez de inventar uma nova elevação. */
+   mesma "família" visual do botão flutuante de importar (aba Início, agora
+   em utilities Tailwind em LibraryHome.tsx): raio, sombra, cor sólida de
+   destaque — reaproveita os mesmos valores em vez de inventar nova elevação. */
 .record-float-wrap {
   position: fixed; right: 1.1rem; bottom: calc(4.6rem + env(safe-area-inset-bottom));
   z-index: 15; display: flex; flex-direction: column; align-items: flex-end; gap: .5rem;
@@ -753,10 +712,6 @@ button.recrow { display: flex; align-items: center; gap: .5rem; }
   .keyrow { grid-template-columns: 48px 1fr 26px 54px; min-height: 40px; }
   .keyrow-chords { display: none; }
 
-  /* uma coluna: cartão largo é mais fácil de acertar com o polegar */
-  .songgrid { grid-template-columns: 1fr; }
-  .songcard { flex-direction: row; align-items: center; justify-content: space-between; padding: .7rem .8rem; }
-  .songcard-main { flex: 1; min-width: 0; }
   .library, .importview { padding: calc(.8rem + env(safe-area-inset-top)) .8rem 3rem; }
 
   /* o painel aberto não pode engolir a cifra inteira */

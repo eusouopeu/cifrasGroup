@@ -66,9 +66,13 @@ function ListSection({ list, db, onOpen, onDeleteList, onRemoveFromList, onDupli
   const [open, setOpen] = useState(true)
   const songs = list.songIds.map((id) => db.songs[id]).filter(Boolean)
   return (
-    <section className="listsection">
-      <div className="listhead">
-        <button className="listtoggle" aria-expanded={open} onClick={() => setOpen(!open)}>
+    <section className="mt-5">
+      <div className="flex items-center justify-between">
+        <button
+          className="bg-none border-0 text-[.95rem] font-semibold py-1.5 inline-flex items-center gap-1.5 [&>svg]:w-[18px] [&>svg]:h-[18px] [&>svg]:flex-shrink-0"
+          aria-expanded={open}
+          onClick={() => setOpen(!open)}
+        >
           {open ? <ChevronDown /> : <ChevronRight />} {list.name} <span className="count">{songs.length}</span>
         </button>
         {list.id !== 'favoritas' && <button className="icon small" aria-label={`Apagar a lista ${list.name}`} onClick={() => onDeleteList(list.id)}>apagar</button>}
@@ -78,7 +82,7 @@ function ListSection({ list, db, onOpen, onDeleteList, onRemoveFromList, onDupli
           ? null
           : <>
               {songs.length > 1 && <p className="hint small">A ordem aqui é a ordem do repertório: use as setas para reorganizar e abra qualquer música para navegar pelas outras da lista sem voltar aqui.</p>}
-              <div className="songgrid">
+              <div className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(230px,1fr))] mt-2 max-[620px]:grid-cols-1">
                 {songs.map((s, i) => (
                   <SongCard
                     key={s.id}
