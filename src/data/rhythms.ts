@@ -265,8 +265,19 @@ export const GENRE_COLOR: Record<string, string> = {
   Valsa: 'g', 'Valsa lenta': 'g', Folk: 'g',
 }
 
+const GENRE_TAILWIND_CLASS: Record<string, string> = {
+  a: 'text-genre-a border-genre-a',
+  b: 'text-genre-b border-genre-b',
+  c: 'text-danger border-danger',
+  d: 'text-genre-d border-genre-d',
+  e: 'text-accent2 border-accent2',
+  f: 'text-blue border-blue',
+  g: 'text-dim border-line',
+  x: 'text-dim border-line',
+}
+
 export function genreColorClass(genre: string): string {
-  return `genre-${GENRE_COLOR[genre] ?? 'x'}`
+  return GENRE_TAILWIND_CLASS[GENRE_COLOR[genre] ?? 'x']
 }
 
 export const STROKE_LABEL: Record<string, string> = {

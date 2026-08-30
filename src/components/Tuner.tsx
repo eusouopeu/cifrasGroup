@@ -163,24 +163,31 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
         Afinação alvo: <strong>{tuning.name}</strong>
         {tuning.id !== 'standard' && ' — a última usada nesta música'}.
       </p>
-      <div className="tuner-strings">
-        {tuning.stringNames.map((name, i) => (
-          <button
-            key={i}
-            type="button"
-            className={`tuner-string${reading?.pc === tuning.strings[i] ? ' match' : ''}`}
-            onClick={() => pluckNote(targetFreqs[i])}
-            aria-label={`Tocar a nota da ${6 - i}ª corda (${name})`}
-            title={`Ouvir ${name} — ${targetFreqs[i].toFixed(1)} Hz`}
-          >
-            {name}
-          </button>
-        ))}
+      <div className="flex justify-center gap-1.5 my-2">
+        {tuning.stringNames.map((name, i) => {
+          const match = reading?.pc === tuning.strings[i]
+          return (
+            <button
+              key={i}
+              type="button"
+              className={`font-mono text-[.82rem] border rounded-md py-1 px-2 cursor-pointer ${
+                match
+                  ? 'border-accent2 text-accent2 font-bold bg-[color-mix(in_srgb,var(--accent2)_16%,var(--bg3))]'
+                  : 'bg-bg3 border-line text-dim hover:border-accent hover:text-fg'
+              }`}
+              onClick={() => pluckNote(targetFreqs[i])}
+              aria-label={`Tocar a nota da ${6 - i}ª corda (${name})`}
+              title={`Ouvir ${name} — ${targetFreqs[i].toFixed(1)} Hz`}
+            >
+              {name}
+            </button>
+          )
+        })}
       </div>
 
       {status === 'unsupported' && <p className="hint danger">Este navegador não dá acesso ao microfone.</p>}
       {status === 'denied' && (
-        <div className="mic-denied">
+        <div>
           <p className="hint danger">Não consegui acessar o microfone. É preciso permitir o acesso nas configurações.</p>
           <div className="row tight">
             <button className="btn" onClick={() => setPermHelpOpen(true)}>como permitir o microfone</button>
@@ -194,7 +201,7 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
 
       {status === 'listening' && (
         reading ? (
-          <TunerGauge reading={reading} inTune={inTune} cents={clampedCents} />
+          <TunerGauge reading={reading} inTune={inTune} cents={clampedCents} embedded={embedded} />
         ) : (
           <p className="hint">Toque uma corda ou nota isolada, num ambiente silencioso.</p>
         )
@@ -211,7 +218,7 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
           <button className="icon" onClick={() => setPermHelpOpen(false)}><X /></button>
         </div>
         {Capacitor.isNativePlatform() ? (
-          <ol className="permsteps">
+          <ol className="my-3 pl-5 flex flex-col gap-1.5 text-[.85rem]">
             <li>Abra os <strong>Ajustes</strong> (Configurações) do celular</li>
             <li>Toque em <strong>Apps</strong> (ou "Aplicativos")</li>
             <li>Procure e toque em <strong>CifrasGroup</strong></li>
@@ -219,7 +226,7 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
             <li>Toque em <strong>Microfone</strong> e escolha <strong>Permitir</strong></li>
           </ol>
         ) : (
-          <ol className="permsteps">
+          <ol className="my-3 pl-5 flex flex-col gap-1.5 text-[.85rem]">
             <li>Toque no ícone de cadeado (ou "ⓘ") ao lado do endereço, na barra do navegador</li>
             <li>Toque em <strong>Permissões do site</strong> (ou "Configurações do site")</li>
             <li>Procure <strong>Microfone</strong> e escolha <strong>Permitir</strong></li>
@@ -232,11 +239,11 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
     </div>
   )
 
-  if (embedded) return <div className="tuner tuner-embedded">{content}{permHelp}</div>
+  if (embedded) return <div>{content}{permHelp}</div>
 
   return (
     <div className="sheet-backdrop" onClick={onClose}>
-      <div className="sheet small tuner" onClick={(e) => e.stopPropagation()}>
+      <div className="sheet small" onClick={(e) => e.stopPropagation()}>
         {content}
       </div>
       {permHelp}
@@ -255,23 +262,32 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
  */
 const NEEDLE_SWEEP = 55 // graus para cada lado, correspondendo a ±50 cents
 
-function TunerGauge({ reading, inTune, cents }: { reading: Reading; inTune: boolean; cents: number }) {
+function TunerGauge({ reading, inTune, cents, embedded }: { reading: Reading; inTune: boolean; cents: number; embedded: boolean }) {
   const angle = (cents / 50) * NEEDLE_SWEEP
   const pivotX = 150
   const pivotY = 118
   const needleLen = 96
+  const accentClass = inTune ? 'text-accent2' : 'text-accent'
 
   return (
-    <div className={`tuner-display${inTune ? ' in-tune' : ''}`}>
-      <div className="tuner-note">{reading.note}<sub>{reading.octave}</sub></div>
-      <div className="tuner-freq">{reading.freq.toFixed(1).replace('.', ',')} Hz</div>
+    <div className="flex flex-col items-center gap-2 pt-5 pb-1.5">
+      <div className={`font-bold font-mono leading-none ${embedded ? 'text-[3.6rem]' : 'text-5xl'} ${inTune ? 'text-accent2' : 'text-fg'}`}>
+        {reading.note}<sub className="text-[1.1rem] text-dim">{reading.octave}</sub>
+      </div>
+      <div className={`font-mono leading-none ${embedded ? 'text-[1.6rem]' : 'text-[1.35rem]'} ${accentClass}`}>{reading.freq.toFixed(1).replace('.', ',')} Hz</div>
 
-      <svg className="tuner-gauge" viewBox="0 0 300 132" role="img" aria-label={`${reading.note}${reading.octave}, ${reading.freq.toFixed(1)} hertz, ${reading.cents} cents`}>
+      <svg
+        className={`w-full h-auto ${embedded ? 'max-w-[460px]' : 'max-w-[320px]'}`}
+        viewBox="0 0 300 132"
+        role="img"
+        aria-label={`${reading.note}${reading.octave}, ${reading.freq.toFixed(1)} hertz, ${reading.cents} cents`}
+      >
         {/* marcas: as três centrais delimitam a zona afinada (±5 cents) */}
         {[-50, -30, -15, -5, 0, 5, 15, 30, 50].map((c) => {
           const a = ((c / 50) * NEEDLE_SWEEP * Math.PI) / 180
           const inner = c === 0 ? 74 : Math.abs(c) <= 5 ? 84 : 90
           const outer = 106
+          const center = Math.abs(c) <= 5
           return (
             <line
               key={c}
@@ -279,26 +295,34 @@ function TunerGauge({ reading, inTune, cents }: { reading: Reading; inTune: bool
               y1={pivotY - Math.cos(a) * inner}
               x2={pivotX + Math.sin(a) * outer}
               y2={pivotY - Math.cos(a) * outer}
-              className={Math.abs(c) <= 5 ? 'g-tick center' : 'g-tick'}
+              strokeWidth={center ? 2.5 : 2}
+              className={center ? 'stroke-dim' : 'stroke-line'}
             />
           )
         })}
-        <text x={pivotX - 128} y={64} className="g-side">♭</text>
-        <text x={pivotX + 120} y={64} className="g-side">♯</text>
+        <text x={pivotX - 128} y={64} fontSize={20} textAnchor="middle" className="fill-dim">♭</text>
+        <text x={pivotX + 120} y={64} fontSize={20} textAnchor="middle" className="fill-dim">♯</text>
         <line
           x1={pivotX}
           y1={pivotY}
           x2={pivotX + Math.sin((angle * Math.PI) / 180) * needleLen}
           y2={pivotY - Math.cos((angle * Math.PI) / 180) * needleLen}
-          className="g-needle"
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          className={`transition-all duration-75 ease-linear ${inTune ? 'stroke-accent2' : 'stroke-accent'}`}
         />
-        <circle cx={pivotX} cy={pivotY} r={7} className="g-pivot" />
+        <circle cx={pivotX} cy={pivotY} r={7} strokeWidth={2} className="fill-bg3 stroke-line" />
       </svg>
 
-      <div className="tuner-cents">{reading.cents > 0 ? '+' : ''}{reading.cents} cents</div>
-      <div className="tuner-chromatic">
+      <div className="text-[.8rem] text-dim font-mono">{reading.cents > 0 ? '+' : ''}{reading.cents} cents</div>
+      <div className="flex flex-wrap justify-center gap-1 mt-1.5">
         {SHARP_NAMES.map((n, pc) => (
-          <span key={n} className={`tuner-chromatic-note${pc === reading.pc ? ' on' : ''}`}>{n}</span>
+          <span
+            key={n}
+            className={`font-mono text-[.72rem] px-[.15rem] ${pc === reading.pc ? 'text-accent font-bold border-b-2 border-accent' : 'text-dim'}`}
+          >
+            {n}
+          </span>
         ))}
       </div>
     </div>
