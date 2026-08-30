@@ -52,7 +52,7 @@ function KeyDetectButton({ onDetected }: { onDetected: (pc: number | null) => vo
   }
 
   return (
-    <div className="keydetect">
+    <div className="my-2 mb-3">
       <button className="btn ghost" disabled={status === 'listening' || status === 'analyzing'} onClick={() => void detect()}>
         {status === 'listening' ? 'ouvindo…' : status === 'analyzing' ? 'analisando…' : 'detectar tom pelo microfone'}
       </button>
@@ -84,12 +84,12 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
     <Panel
       title="Tom e capotraste"
       headerExtra={
-        <button className="icon small panel-reset" onClick={() => dispatch({ type: 'resetKey' })} aria-label="Voltar ao original" title="Voltar ao original">
+        <button className="icon small" onClick={() => dispatch({ type: 'resetKey' })} aria-label="Voltar ao original" title="Voltar ao original">
           <RotateCw />
         </button>
       }
     >
-      <div className="toggle chordsheet-tabs">
+      <div className="toggle flex w-full [&>button]:flex-1">
         <button className={tab === 'tom' ? 'on' : ''} onClick={() => setTab('tom')}>Tom</button>
         <button className={tab === 'analise' ? 'on' : ''} onClick={() => setTab('analise')}>Análise funcional</button>
       </div>
@@ -99,7 +99,7 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
           <div className="panel-section">
             <div className="row">
               <button className="icon" onClick={() => dispatch({ type: 'transposeBy', semitones: -1 })} aria-label="−1 semitom"><Minus /></button>
-              <div className="keydisplay">
+              <div className="flex-1 text-center text-accent2 text-[.85rem]">
                 {view.displayedChords[0] ? <span className="mono">{view.displayedChords.slice(0, 4).map((c) => c.symbol).join('  ')}</span> : '—'}
               </div>
               <button className="icon" onClick={() => dispatch({ type: 'transposeBy', semitones: 1 })} aria-label="+1 semitom"><Plus /></button>
@@ -121,18 +121,20 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
 
           <div className="panel-section">
             <h4>5 tons mais fáceis</h4>
-            <div className="keylist">
+            <div className="flex flex-col gap-[2px]">
               {view.keyRanking.slice(0, 5).map((k) => (
                 <button
                   key={k.semitones}
-                  className={`keyrow${k.semitones === currentSemitones ? ' current' : ''}`}
+                  className={`grid [grid-template-columns:58px_1fr_30px_62px_2fr] max-[620px]:[grid-template-columns:48px_1fr_26px_54px] max-[620px]:min-h-10 items-center gap-2 bg-none border rounded-md p-[.25rem_.4rem] text-left text-[.76rem] hover:bg-bg3 ${
+                    k.semitones === currentSemitones ? 'border-accent' : 'border-transparent'
+                  }`}
                   onClick={() => dispatch({ type: 'setKey', semitones: k.semitones, capo: k.capo })}
                 >
-                  <span className="keyrow-shift">{k.semitones === 0 ? '0' : `${k.semitones > 0 ? '+' : ''}${k.semitones}`}</span>
+                  <span>{k.semitones === 0 ? '0' : `${k.semitones > 0 ? '+' : ''}${k.semitones}`}</span>
                   <span className="bar"><i style={{ width: `${k.ease}%` }} /></span>
-                  <span className="keyrow-ease">{k.ease}</span>
-                  <span className="keyrow-capo">{k.capo > 0 ? `capo ${k.capo}ª` : '—'}</span>
-                  <span className="keyrow-chords mono">{k.chords.slice(0, 5).join(' ')}</span>
+                  <span className="text-accent font-bold text-right">{k.ease}</span>
+                  <span className="text-dim">{k.capo > 0 ? `capo ${k.capo}ª` : '—'}</span>
+                  <span className="mono text-accent2 overflow-hidden text-ellipsis whitespace-nowrap max-[620px]:hidden">{k.chords.slice(0, 5).join(' ')}</span>
                 </button>
               ))}
             </div>
@@ -144,7 +146,7 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
               <h4>Possível modulação por trecho</h4>
               <div className="sublist">
                 {modulations.map((k) => (
-                  <div key={k.label} className="subrow section-key">
+                  <div key={k.label} className="subrow">
                     <span className="mono from">{k.label}</span>
                     <ArrowRight className="arrow-icon" />
                     <span className="mono to">
@@ -200,7 +202,7 @@ export function SimplifyPanel({ s, view, dispatch, mapSymbol }: {
   const best = view.keyRanking[0]
   return (
     <Panel title="Simplificação automática">
-      <div className="levels">
+      <div className="grid gap-1.5 [grid-template-columns:repeat(auto-fit,minmax(190px,1fr))] max-[620px]:grid-cols-1">
         <LevelButton active={s.simplifyLevel === 0} onClick={() => dispatch({ type: 'setSimplifyLevel', level: 0 })}
           title="Desligado" desc="Cifra exatamente como veio." />
         <LevelButton active={s.simplifyLevel === 1} onClick={() => dispatch({ type: 'setSimplifyLevel', level: 1 })}
@@ -249,11 +251,17 @@ export function SimplifyPanel({ s, view, dispatch, mapSymbol }: {
 export function PalettePanel({ s, view, dispatch }: { s: SongSettings; view: CifraView; dispatch: SongDispatch }) {
   return (
     <Panel title="Emoção dos acordes (cor)">
-      <div className="palettes">
+      <div className="grid gap-1.5 [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))] max-[620px]:grid-cols-1">
         {PALETTES.map((p) => (
-          <button key={p.id} className={`palette${s.paletteId === p.id ? ' selected' : ''}`} onClick={() => dispatch({ type: 'setPalette', id: p.id })}>
+          <button
+            key={p.id}
+            className={`bg-bg3 border rounded-[9px] p-[.55rem_.7rem] text-left flex flex-col gap-[.2rem] [&>span]:text-[.74rem] [&>span]:text-dim ${
+              s.paletteId === p.id ? 'border-accent bg-[color-mix(in_srgb,var(--accent)_12%,var(--bg3))]' : 'border-line'
+            }`}
+            onClick={() => dispatch({ type: 'setPalette', id: p.id })}
+          >
             <strong>{p.name}</strong>
-            <span className="mono preview">{previewPalette(view.displayedChords.map((c) => c.symbol), p.id)}</span>
+            <span className="mono !text-accent !font-bold !text-[.78rem]">{previewPalette(view.displayedChords.map((c) => c.symbol), p.id)}</span>
             <span>{p.description}</span>
           </button>
         ))}
@@ -279,11 +287,13 @@ export function RhythmPanel({ s, rhythm, dispatch, metronome, onPlay }: {
 }) {
   return (
     <Panel title="Ritmo">
-      <div className="bpmbox">
+      <div className="bg-bg3 border border-line rounded-[10px] p-[.6rem_.7rem] mb-3 [&_input[type=range]]:w-full [&_input[type=range]]:my-2 [&_input[type=range]]:mb-[.4rem]">
         <div className="row tight">
           <button className="btn round" onClick={() => dispatch({ type: 'bpmBy', delta: -5 })}>−5</button>
           <button className="btn round" onClick={() => dispatch({ type: 'bpmBy', delta: -1 })}>−1</button>
-          <div className="bpmvalue"><strong>{s.bpm}</strong><span>bpm</span></div>
+          <div className="flex-1 text-center flex items-baseline justify-center gap-1 [&>strong]:text-2xl [&>span]:text-[.7rem] [&>span]:text-dim">
+            <strong>{s.bpm}</strong><span>bpm</span>
+          </div>
           <button className="btn round" onClick={() => dispatch({ type: 'bpmBy', delta: 1 })}>+1</button>
           <button className="btn round" onClick={() => dispatch({ type: 'bpmBy', delta: 5 })}>+5</button>
           {rhythm && (
@@ -303,7 +313,9 @@ export function RhythmPanel({ s, rhythm, dispatch, metronome, onPlay }: {
             <Volume2 />
           </button>
           <button
-            className={`icon round-play${metronome.running ? ' on' : ''}`}
+            className={`icon w-9 h-9 rounded-full border border-line bg-bg2 [&>svg]:w-[15px] [&>svg]:h-[15px] ${
+              metronome.running ? 'bg-accent border-accent text-[#14161a]' : ''
+            }`}
             onClick={onPlay}
             aria-label={metronome.running ? 'Parar metrônomo' : 'Tocar metrônomo'}
             title="Tocar/parar para ouvir as mudanças"
@@ -324,7 +336,7 @@ export function RhythmPanel({ s, rhythm, dispatch, metronome, onPlay }: {
 
       <p className="hint small">↓ para baixo · ↑ para cima · × abafado · P polegar · ≡ acorde</p>
       <h4>Batidas</h4>
-      <div className="rhythmgrid">
+      <div className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(215px,1fr))] max-[620px]:grid-cols-1">
         {RHYTHMS.filter((r) => r.kind === 'batida').map((r) => (
           <RhythmCard key={r.id} rhythm={r} selected={s.rhythmId === r.id} playing={metronome.running && s.rhythmId === r.id}
             onSelect={() => dispatch(s.rhythmId === r.id ? { type: 'setRhythm', id: null } : { type: 'setRhythm', id: r.id, bpm: r.bpmSuggested })} />
@@ -332,7 +344,7 @@ export function RhythmPanel({ s, rhythm, dispatch, metronome, onPlay }: {
       </div>
       <h4>Dedilhados</h4>
       <p className="hint small">p = polegar · i = indicador · m = médio · a = anelar</p>
-      <div className="rhythmgrid">
+      <div className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(215px,1fr))] max-[620px]:grid-cols-1">
         {RHYTHMS.filter((r) => r.kind === 'dedilhado').map((r) => (
           <RhythmCard key={r.id} rhythm={r} selected={s.rhythmId === r.id} playing={metronome.running && s.rhythmId === r.id}
             onSelect={() => dispatch(s.rhythmId === r.id ? { type: 'setRhythm', id: null } : { type: 'setRhythm', id: r.id, bpm: r.bpmSuggested })} />
@@ -365,7 +377,7 @@ export function ChordsPanel({ s, view, dispatch, customTunings, onSaveCustomTuni
       {/* conteúdo primeiro, pílulas por último — presas embaixo (ver
           .chordspanel-footer) pra não pular de lugar quando o conteúdo de
           cada aba muda de altura */}
-      <div className="chordspanel-content">
+      <div className="min-h-[120px]">
         {tab === 'afinacao' && (
           <>
             {defaults.instrument === 'guitar' && (
@@ -389,17 +401,22 @@ export function ChordsPanel({ s, view, dispatch, customTunings, onSaveCustomTuni
                   key={c.symbol}
                   role="button"
                   tabIndex={0}
-                  className={`chordslot${overriddenSymbols.has(c.symbol) ? ' overridden' : ''}`}
+                  className="relative bg-none border-0 p-0 text-inherit font-inherit text-left cursor-pointer"
                   onClick={() => onInspect(c.symbol)}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onInspect(c.symbol) } }}
                   aria-label={`Ver ficha do acorde ${c.symbol}`}
                 >
-                  {overriddenSymbols.has(c.symbol) && <span className="overridden-dot" title="Troca manual" />}
+                  {overriddenSymbols.has(c.symbol) && (
+                    <span className="absolute -top-[3px] -right-[3px] z-[1] w-[9px] h-[9px] rounded-full bg-accent2 border border-bg2" title="Troca manual" />
+                  )}
                   <ChordCard symbol={c.symbol} instrument={defaults.instrument} compact tuning={tuning} />
                 </div>
               ))}
             </div>
-            <p className="hint small">Toque em um acorde para ver todas as digitações e a construção nota a nota. <span className="overridden-dot inline" /> marca acordes trocados manualmente.</p>
+            <p className="hint small">
+              Toque em um acorde para ver todas as digitações e a construção nota a nota.{' '}
+              <span className="inline-block align-middle mx-[.15rem] w-[9px] h-[9px] rounded-full bg-accent2 border border-bg2" /> marca acordes trocados manualmente.
+            </p>
             {s.capo > 0 && <p className="hint small">Diagramas relativos ao capotraste na {s.capo}ª casa.</p>}
             {overriddenSymbols.size > 0 && (
               <button className="btn ghost wide" onClick={onRestoreAllOverrides}>
@@ -413,14 +430,14 @@ export function ChordsPanel({ s, view, dispatch, customTunings, onSaveCustomTuni
         {tab === 'voz' && <VoiceLabTab />}
       </div>
 
-      <div className="chordspanel-footer">
+      <div className="sticky -bottom-4 z-[1] flex flex-col gap-2 m-[.8rem_-1rem_-1rem] p-[.6rem_1rem] bg-bg2 border-t border-line [&>.toggle]:w-full [&>.toggle>button]:flex-1">
         {tab === 'afinacao' && (
           <div className="toggle">
             <button className={defaults.instrument === 'guitar' ? 'on' : ''} onClick={() => patchDefaults({ instrument: 'guitar' })}>Violão</button>
             <button className={defaults.instrument === 'piano' ? 'on' : ''} onClick={() => patchDefaults({ instrument: 'piano' })}>Piano</button>
           </div>
         )}
-        <div className="toggle chordsheet-tabs">
+        <div className="toggle flex w-full [&>button]:flex-1">
           <button className={tab === 'afinacao' ? 'on' : ''} onClick={() => setTab('afinacao')}>Afinação</button>
           <button className={tab === 'conferencia' ? 'on' : ''} onClick={() => setTab('conferencia')}>Conferência</button>
           <button className={tab === 'voz' ? 'on' : ''} onClick={() => setTab('voz')}>Voz</button>

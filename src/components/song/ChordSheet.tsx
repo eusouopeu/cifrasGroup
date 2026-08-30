@@ -23,6 +23,11 @@ import { GuitarDiagram, PianoDiagram } from '../ChordDiagram'
 /** Quantas digitações o carrossel oferece — mais que isso vira repetição de formas quase iguais. */
 const MAX_VOICINGS = 12
 
+const ALT_BTN =
+  'bg-bg3 border border-line rounded-lg p-[.35rem_.6rem] flex flex-col items-start w-[116px] box-border max-[620px]:min-h-9 ' +
+  '[&>span:first-child]:text-accent [&>span:first-child]:font-bold [&>span:first-child]:text-[.85rem] ' +
+  '[&>span:not(:first-child)]:text-[.66rem] [&>span:not(:first-child)]:text-dim'
+
 type Tab = 'facil' | 'manual'
 
 export function ChordSheet({ symbol, instrument, threshold, tuning, isOverridden, preferredFingerprint, onPick, onReset, onPreferVoicing, onClose }: {
@@ -51,7 +56,7 @@ export function ChordSheet({ symbol, instrument, threshold, tuning, isOverridden
   const primaryReason = sub?.reason.split(' · ').filter((r) => r !== 'construção mais simples').join(' · ')
 
   return (
-    <div className="chordfloat">
+    <div className="absolute top-0 left-0 right-0 z-[12] max-h-[62vh] overflow-y-auto bg-bg2 border-b border-line rounded-b-[14px] shadow-[0_8px_20px_rgba(0,0,0,.35)] p-[.8rem_1rem] max-[620px]:max-h-[72vh] max-[620px]:p-[.7rem_.8rem]">
       <div className="sheet-head">
         <h3 className="mono">{symbol}</h3>
         <button className="icon" onClick={onClose} aria-label="Fechar ficha do acorde"><X /></button>
@@ -68,7 +73,7 @@ export function ChordSheet({ symbol, instrument, threshold, tuning, isOverridden
       )}
 
       {instrument === 'piano' ? (
-        <div className="sheet-piano"><PianoDiagram symbol={symbol} size={1.4} /></div>
+        <div className="flex justify-center py-2.5"><PianoDiagram symbol={symbol} size={1.4} /></div>
       ) : (
         <VoicingCarousel
           key={`voicing-${symbol}`}
@@ -80,15 +85,15 @@ export function ChordSheet({ symbol, instrument, threshold, tuning, isOverridden
         />
       )}
 
-      <div className="toggle chordsheet-tabs">
+      <div className="toggle flex w-full [&>button]:flex-1">
         <button className={tab === 'facil' ? 'on' : ''} onClick={() => setTab('facil')}>Versões mais fáceis</button>
         <button className={tab === 'manual' ? 'on' : ''} onClick={() => setTab('manual')}>Trocar manualmente</button>
       </div>
 
       {tab === 'facil' && (
         sub ? (
-          <div className="altlist">
-            <button className="alt" onClick={() => onPick(sub.to)}>
+          <div className="flex flex-wrap gap-[.35rem]">
+            <button className={ALT_BTN} onClick={() => onPick(sub.to)}>
               <span className="mono">{sub.to}</span>
               <span>{Math.round(sub.score * 100)}% igual{primaryReason ? ` · ${primaryReason}` : ''}</span>
               {(sub.lost.length > 0 || sub.added.length > 0) && (
@@ -100,7 +105,7 @@ export function ChordSheet({ symbol, instrument, threshold, tuning, isOverridden
               )}
             </button>
             {sub.alternatives.map((a) => (
-              <button key={a.symbol} className="alt" onClick={() => onPick(a.symbol)}>
+              <button key={a.symbol} className={ALT_BTN} onClick={() => onPick(a.symbol)}>
                 <span className="mono">{a.symbol}</span>
                 <span>{Math.round(a.score * 100)}% igual</span>
                 {(a.lost.length > 0 || a.added.length > 0) && (
@@ -146,7 +151,7 @@ function VoicingCarousel({ symbol, voicings, tuning, preferredFingerprint, onPre
   const isPreferred = fingerprint === preferredFingerprint
 
   return (
-    <div className="voicing-carousel">
+    <div className="flex items-center justify-center gap-[.2rem] m-[.4rem_0_.6rem] [&_.icon:disabled]:opacity-25">
       <button
         className="icon"
         aria-label="Digitação anterior"
@@ -155,17 +160,19 @@ function VoicingCarousel({ symbol, voicings, tuning, preferredFingerprint, onPre
       >
         <ChevronLeft />
       </button>
-      <div className="voicing-carousel-main">
-        <span className="voicing-carousel-count">{safe + 1} de {voicings.length}</span>
+      <div className="flex flex-col items-center gap-[.15rem] min-w-0">
+        <span className="text-[.7rem] text-dim">{safe + 1} de {voicings.length}</span>
         <button
-          className={`voicing-pick${isPreferred ? ' preferred' : ''}`}
+          className={`bg-none border-2 rounded-[10px] p-[.2rem] leading-none ${
+            isPreferred ? 'border-accent2 bg-[color-mix(in_srgb,var(--accent2)_10%,transparent)]' : 'border-transparent'
+          }`}
           onClick={() => onPreferVoicing(fingerprint)}
           aria-label="Usar esta digitação na faixa de acordes desta música"
           title="Usar esta digitação na faixa de acordes desta música"
         >
           <GuitarDiagram symbol={symbol} voicing={v} size={1.3} tuning={tuning} />
         </button>
-        <span className="voicing-meta">
+        <span className="voicing-meta max-w-none whitespace-nowrap">
           {v.barre !== null ? `pestana na ${v.barre}ª casa` : 'sem pestana'} · {v.open} solta{v.open === 1 ? '' : 's'} · {v.muted} muda{v.muted === 1 ? '' : 's'}
         </span>
       </div>
@@ -221,18 +228,30 @@ function ManualPicker({ current, isOverridden, onPick, onReset }: {
   }
 
   return (
-    <div className="manual">
+    <div className="my-1.5 mb-3">
       <div className="suffixrow">
         {sameNature.map((sym) => (
-          <button key={sym} className="suffixbtn mono" onClick={() => onPick(sym)}>{sym}</button>
+          <button
+            key={sym}
+            className="mono bg-bg3 border border-line rounded-md p-[.18rem_.4rem] text-[.74rem] text-accent2 hover:border-accent2 max-[620px]:min-h-9"
+            onClick={() => onPick(sym)}
+          >
+            {sym}
+          </button>
         ))}
         {otherNature.map((sym) => (
-          <button key={sym} className="suffixbtn mono minor" onClick={() => onPick(sym)}>{sym}</button>
+          <button
+            key={sym}
+            className="mono bg-bg3 border border-line rounded-md p-[.18rem_.4rem] text-[.74rem] text-danger hover:border-danger max-[620px]:min-h-9"
+            onClick={() => onPick(sym)}
+          >
+            {sym}
+          </button>
         ))}
       </div>
-      <div className="freechord">
+      <div className="flex gap-[.4rem] my-1">
         <input
-          className={`mono${freeInvalid ? ' invalid' : ''}`}
+          className={`mono flex-1 bg-bg2 border rounded-lg text-fg p-[.45rem_.6rem] text-[.85rem] max-[620px]:min-h-10 ${freeInvalid ? 'border-danger' : 'border-line'}`}
           placeholder="digitar outro acorde, ex.: F#7(#9)"
           aria-label="Digitar outro acorde"
           value={freeText}
@@ -241,7 +260,7 @@ function ManualPicker({ current, isOverridden, onPick, onReset }: {
         />
         <button className="btn" disabled={!freeParsed} onClick={submitFree}>usar</button>
         <button
-          className="icon undo-override"
+          className="icon text-dim disabled:opacity-30"
           onClick={onReset}
           disabled={!isOverridden}
           aria-label="Desfazer troca manual deste acorde"

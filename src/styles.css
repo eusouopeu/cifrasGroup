@@ -85,6 +85,7 @@
   --genre-a: #e2618f; --genre-b: #9b7cf0; --genre-d: #d1a13a;
 }
 
+@layer components {
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
 body {
@@ -202,13 +203,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
   background-attachment: local, local, scroll, scroll;
 }
 .toolbar::-webkit-scrollbar { display: none; }
-.tool { flex: 0 0 auto; background: var(--bg3); border: 1px solid var(--line); border-radius: 8px; padding: .3rem .6rem; display: flex; flex-direction: column; align-items: flex-start; line-height: 1.2; }
-.tool.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--bg3)); }
-.tool-label { font-size: .66rem; text-transform: uppercase; letter-spacing: .05em; color: var(--dim); }
-.tool-value { font-size: .8rem; }
-/* chama atenção por alguns segundos quando algo muda o estado deste botão
-   sem o usuário ter tocado nele diretamente (ex.: nível 2 desligado sozinho) */
-.tool.flash { animation: tool-flash 1s ease-in-out 4; }
+/* chama atenção por alguns segundos quando algo muda o estado do botão de
+   ferramenta sem o usuário ter tocado nele diretamente (ex.: nível 2
+   desligado sozinho) — token de animação Tailwind, usado via animate-tool-flash
+   em song/parts.tsx (ToolButton) */
+@theme {
+  --animate-tool-flash: tool-flash 1s ease-in-out 4;
+}
 @keyframes tool-flash {
   0%, 100% { border-color: var(--line); background: var(--bg3); }
   50% { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 18%, var(--bg3)); }
@@ -238,22 +239,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .row.center { justify-content: center; }
 .hint.center { text-align: center; }
 .row input[type=range] { flex: 1; }
-.keydisplay { flex: 1; text-align: center; color: var(--accent2); font-size: .85rem; }
 
-.levels { display: grid; gap: .4rem; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
-.level, .palette { background: var(--bg3); border: 1px solid var(--line); border-radius: 9px; padding: .55rem .7rem; text-align: left; display: flex; flex-direction: column; gap: .2rem; }
-.level.selected, .palette.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--bg3)); }
-.level span, .palette span { font-size: .74rem; color: var(--dim); }
-.palettes { display: grid; gap: .4rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-.palette .preview { color: var(--accent); font-weight: 700; font-size: .78rem; }
-
-.keylist { display: flex; flex-direction: column; gap: 2px; }
-.keyrow { display: grid; grid-template-columns: 58px 1fr 30px 62px 2fr; align-items: center; gap: .5rem; background: none; border: 1px solid transparent; border-radius: 6px; padding: .25rem .4rem; text-align: left; font-size: .76rem; }
-.keyrow:hover { background: var(--bg3); }
-.keyrow.current { border-color: var(--accent); }
-.keyrow-ease { color: var(--accent); font-weight: 700; text-align: right; }
-.keyrow-capo { color: var(--dim); }
-.keyrow-chords { color: var(--accent2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bar { display: block; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
 .bar i { display: block; height: 100%; background: var(--accent); }
 
@@ -270,24 +256,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .toggle button.on { background: var(--accent); color: #14161a; font-weight: 600; }
 
 
-.bpmbox { background: var(--bg3); border: 1px solid var(--line); border-radius: 10px; padding: .6rem .7rem; margin-bottom: .8rem; }
-.bpmbox input[type=range] { width: 100%; margin: .5rem 0 .4rem; }
-.bpmvalue { flex: 1; text-align: center; display: flex; align-items: baseline; justify-content: center; gap: .25rem; }
-.bpmvalue strong { font-size: 1.5rem; }
-.bpmvalue span { font-size: .7rem; color: var(--dim); }
 .btn.round { min-width: 44px; padding: .5rem .4rem; text-align: center; }
 .chip { background: var(--bg2); border: 1px solid var(--line); border-radius: 20px; padding: .4rem .8rem; font-size: .78rem; min-height: 36px; }
 .chip.on { background: var(--accent); border-color: var(--accent); color: #14161a; font-weight: 600; }
 
 /* ---------- afinações personalizadas ---------- */
 .icon.active { border: 1px solid var(--accent); color: var(--accent); border-radius: 8px; }
-.panel-title-row { display: inline-flex; align-items: center; gap: .5rem; }
-.panel-title-extra { display: inline-flex; }
-.panel-title-extra .icon { padding: 0; }
 .panel-section { margin-bottom: 1.3rem; }
-.round-play { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg2); }
-.round-play svg { width: 15px; height: 15px; }
-.round-play.on { background: var(--accent); border-color: var(--accent); color: #14161a; }
 .tuningbuilder { background: var(--bg3); border: 1px solid var(--line); border-radius: 10px; padding: .7rem .8rem; margin: .6rem 0; }
 .manualtuning { display: flex; flex-wrap: wrap; gap: .5rem; margin: .4rem 0; }
 .manualtuning .field { width: 76px; }
@@ -303,13 +278,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .chordgrid > * { flex: 0 0 auto; scroll-snap-align: start; }
 .chordgrid::-webkit-scrollbar { height: 4px; }
 .chordgrid::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
-.chordslot { position: relative; background: none; border: none; padding: 0; color: inherit; font: inherit; text-align: inherit; cursor: pointer; }
-.overridden-dot {
-  position: absolute; top: -3px; right: -3px; z-index: 1;
-  width: 9px; height: 9px; border-radius: 50%;
-  background: var(--accent2); border: 1px solid var(--bg2);
-}
-.overridden-dot.inline { position: static; display: inline-block; vertical-align: middle; margin: 0 .15rem; }
 .chordcard { background: var(--bg3); border: 1px solid var(--line); border-radius: 9px; padding: .4rem; text-align: center; }
 .chordgrid .chordcard { min-width: 104px; }
 /* o teclado é largo: no modo faixa ele rola dentro do próprio cartão */
@@ -341,50 +309,22 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .k-black.on { fill: var(--accent2); }
 
 /* ---------- ficha do acorde ---------- */
-/* flutua sobre o topo da cifra em vez de tampar a tela inteira: dá pra ler e
-   rolar o resto da letra por baixo, sempre com a referência do acorde à vista */
-.chordfloat {
-  position: absolute; top: 0; left: 0; right: 0; z-index: 12;
-  max-height: 62vh; overflow-y: auto;
-  background: var(--bg2); border-bottom: 1px solid var(--line);
-  border-radius: 0 0 14px 14px; box-shadow: 0 8px 20px rgba(0, 0, 0, .35);
-  padding: .8rem 1rem;
-}
 .sheet-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: flex-end; justify-content: center; z-index: 20; }
 .sheet { background: var(--bg2); border: 1px solid var(--line); border-radius: 14px 14px 0 0; width: 100%; max-width: 640px; max-height: 88vh; overflow-y: auto; padding: 1rem; }
 .sheet.small { border-radius: 14px; margin-bottom: 10vh; max-width: 420px; }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; }
 .sheet-head h3 { color: var(--accent); font-size: 1.3rem; }
-.sheet-piano { display: flex; justify-content: center; padding: .6rem 0; }
 .spelling { display: flex; gap: .4rem; flex-wrap: wrap; margin: .5rem 0 .8rem; }
 .degree { background: var(--bg3); border: 1px solid var(--line); border-radius: 7px; padding: .25rem .5rem; display: flex; flex-direction: column; align-items: center; min-width: 42px; }
 .degree b { font-family: var(--mono); font-size: .85rem; }
 .degree i { font-style: normal; font-size: .62rem; color: var(--dim); }
-.altlist { display: flex; flex-wrap: wrap; gap: .35rem; }
-.alt { background: var(--bg3); border: 1px solid var(--line); border-radius: 8px; padding: .35rem .6rem; display: flex; flex-direction: column; align-items: flex-start; width: 116px; box-sizing: border-box; }
-.alt span:first-child { color: var(--accent); font-weight: 700; font-size: .85rem; }
-.alt span:not(:first-child) { font-size: .66rem; color: var(--dim); }
-.alt .degrees { color: var(--accent2); }
-.manual { margin: .4rem 0 .8rem; }
 .rootrow, .suffixrow { display: flex; flex-wrap: wrap; gap: .25rem; margin-bottom: .4rem; }
-.freechord { display: flex; gap: .4rem; margin: .3rem 0; }
-.freechord input { flex: 1; background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; color: var(--fg); padding: .45rem .6rem; font-size: .85rem; }
-.freechord input.invalid { border-color: var(--danger); }
 .hint.danger { color: var(--danger); }
 .hint.warn { color: var(--accent); }
 .rootbtn { background: var(--bg3); border: 1px solid var(--line); border-radius: 6px; padding: .2rem .45rem; font-size: .78rem; font-family: var(--mono); }
 .rootbtn.on { background: var(--accent); color: #14161a; border-color: var(--accent); font-weight: 700; }
-.suffixbtn { background: var(--bg3); border: 1px solid var(--line); border-radius: 6px; padding: .18rem .4rem; font-size: .74rem; color: var(--accent2); }
-.suffixbtn:hover { border-color: var(--accent2); }
-.suffixbtn.minor { color: var(--danger); }
-.suffixbtn.minor:hover { border-color: var(--danger); }
-.tageditor { margin-bottom: .8rem; }
 .tagchips { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: .4rem; }
 .tagchip { display: inline-flex; align-items: center; gap: .25rem; background: var(--bg3); border: 1px solid var(--line); border-radius: 20px; padding: .2rem .3rem .2rem .6rem; font-size: .78rem; }
-.tagchip-remove { background: none; border: none; color: var(--dim); font-size: .9rem; padding: 0 .3rem; line-height: 1; display: inline-flex; align-items: center; }
-.tagchip-remove svg { width: 12px; height: 12px; }
-.tagchip-remove:hover { color: var(--danger); }
-.tageditor input { flex: 1; background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; color: var(--fg); padding: .45rem .6rem; font-size: .85rem; }
 /* ---------- gravador de prática (flutuante) ----------
    mesma "família" visual do botão flutuante de importar (aba Início, agora
    em utilities Tailwind em LibraryHome.tsx): raio, sombra, cor sólida de
@@ -451,38 +391,7 @@ button.recrow { display: flex; align-items: center; gap: .5rem; }
   background: var(--bg2); border-radius: 50%;
 }
 
-/* ---------- carrossel de digitações (ficha do acorde) ---------- */
-.voicing-carousel { display: flex; align-items: center; justify-content: center; gap: .2rem; margin: .4rem 0 .6rem; }
-.voicing-carousel-main { display: flex; flex-direction: column; align-items: center; gap: .15rem; min-width: 0; }
-.voicing-carousel-count { font-size: .7rem; color: var(--dim); }
-.voicing-carousel .voicing-meta { max-width: none; white-space: nowrap; }
-.voicing-carousel .icon:disabled { opacity: .25; }
-.voicing-pick { background: none; border: 2px solid transparent; border-radius: 10px; padding: .2rem; line-height: 0; }
-.voicing-pick.preferred { border-color: var(--accent2); background: color-mix(in srgb, var(--accent2) 10%, transparent); }
-.voicing-prefer-hint { font-size: .62rem; color: var(--dim); display: flex; align-items: center; gap: .2rem; text-align: center; }
-.voicing-prefer-hint svg { width: 12px; height: 12px; color: var(--accent2); }
 
-/* abas "versões mais fáceis" / "trocar manualmente" na ficha do acorde */
-.chordsheet-tabs { display: flex; width: 100%; }
-.chordsheet-tabs button { flex: 1; }
-
-/* pílulas da aba Acordes presas embaixo do painel (não em cima do conteúdo)
-   pra não pular de lugar quando o conteúdo de cada aba muda de altura —
-   a folha (.sheet) é quem rola; isto fica grudado no fundo dela */
-.chordspanel-content { min-height: 120px; }
-.chordspanel-footer {
-  position: sticky; bottom: -1rem; z-index: 1;
-  display: flex; flex-direction: column; gap: .5rem;
-  margin: .8rem -1rem -1rem; padding: .6rem 1rem;
-  background: var(--bg2); border-top: 1px solid var(--line);
-}
-.chordspanel-footer .toggle { width: 100%; }
-.chordspanel-footer .toggle button { flex: 1; }
-.undo-override:disabled { opacity: .3; }
-.undo-override { color: var(--dim); }
-
-/* detectar tom pelo microfone (aba Tom → Análise funcional) */
-.keydetect { margin: .5rem 0 .8rem; }
 .inline-icon { width: 16px; height: 16px; vertical-align: -3px; margin-right: .3rem; }
 
 /* modo conferência de acordes (aba Acordes → Conferência) */
@@ -507,34 +416,25 @@ button.recrow { display: flex; align-items: center; gap: .5rem; }
 
 /* ---------- ajustes de celular ---------- */
 @media (max-width: 620px) {
-  .keyrow { grid-template-columns: 48px 1fr 26px 54px; min-height: 40px; }
-  .keyrow-chords { display: none; }
-
   .library { padding: calc(.8rem + env(safe-area-inset-top)) .8rem 3rem; }
 
   /* o painel aberto não pode engolir a cifra inteira */
   .panel { max-height: 46vh; padding: .7rem .8rem 1rem; }
   .panel h3 { position: sticky; top: 0; background: var(--bg2); margin: -.7rem -.8rem .5rem; padding: .7rem .8rem .4rem; z-index: 1; }
 
-  .levels, .palettes, .rhythmgrid { grid-template-columns: 1fr; }
-  .rhythmgrid { display: grid; }
   .toolbar { padding: .4rem .5rem; }
-  .tool { min-height: 42px; justify-content: center; }
   .btn { min-height: 40px; }
   .icon { min-width: 40px; min-height: 40px; }
-  .alt, .rootbtn, .suffixbtn { min-height: 36px; }
-  .freechord input { min-height: 40px; }
+  .rootbtn { min-height: 36px; }
   .sheet { border-radius: 16px 16px 0 0; padding: .9rem .8rem calc(.9rem + env(safe-area-inset-bottom)); }
-  .chordfloat { max-height: 72vh; padding: .7rem .8rem; }
 
   /* linha comprida de cifra rola na horizontal em vez de quebrar */
   .chordstrip-scroll { padding: .35rem 1.9rem .35rem .4rem; }
   .songhead { padding: calc(.4rem + env(safe-area-inset-top)) .5rem .4rem; }
 }
 
-/* ---------- afinador ---------- */
-
 /* animações de destaque só para quem não pediu menos movimento no sistema */
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+}
 }
