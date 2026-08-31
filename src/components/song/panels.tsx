@@ -169,7 +169,7 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
 
       {tab === 'analise' && (
         <div className="panel-section">
-          <p className="hint small">Toque numa nota para trocar a tônica, ou detecte automaticamente cantando/tocando a música.</p>
+          <p className="hint small">Toque numa nota pra mudar a tônica, ou detecte pelo microfone.</p>
           <KeyDetectButton onDetected={onAnalysisKey} />
           <div className="rootrow">
             {Array.from({ length: 12 }, (_, i) => (
@@ -183,12 +183,12 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
               </button>
             ))}
           </div>
-          <div className="sublist" style={{ marginTop: '.7rem' }}>
+          <h4 style={{ marginTop: '.9rem' }}>Grau de cada acorde na tonalidade</h4>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(76px,1fr))] gap-1.5">
             {view.displayedChords.map((c) => (
-              <div key={c.symbol} className="subrow">
-                <span className="mono from">{c.symbol}</span>
-                <ArrowRight className="arrow-icon" />
-                <span className="mono to">{romanNumeral(c.symbol, analysisKeyPc) ?? '?'}</span>
+              <div key={c.symbol} className="flex flex-col items-center gap-0.5 bg-bg3 border border-line rounded-lg py-1.5">
+                <span className="mono text-[.82rem] font-semibold">{c.symbol}</span>
+                <span className="mono text-[.72rem] text-accent font-bold">{romanNumeral(c.symbol, analysisKeyPc) ?? '?'}</span>
               </div>
             ))}
           </div>
@@ -228,14 +228,16 @@ export function SimplifyPanel({ s, view, dispatch, mapSymbol }: {
       )}
       <h4>Trocas aplicadas ({view.substitutions.size})</h4>
       {view.substitutions.size === 0 && <p className="hint">Nenhuma troca: os acordes já estão simples o bastante para o limiar escolhido.</p>}
-      <div className="sublist">
+      <div className="flex flex-col gap-1.5">
         {[...view.substitutions.values()].map((sub) => (
-          <div key={sub.from} className="subrow">
-            <span className="mono from">{sub.from}</span>
-            <ArrowRight className="arrow-icon" />
-            <span className="mono to">{mapSymbol(sub.from)}</span>
-            <span className="score">{Math.round(sub.score * 100)}% igual</span>
-            <span className="reason">
+          <div key={sub.from} className="bg-bg3 border border-line rounded-lg px-2.5 py-2">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="mono text-dim line-through text-[.82rem]">{sub.from}</span>
+              <ArrowRight className="w-3.5 h-3.5 text-dim flex-shrink-0" />
+              <span className="mono text-accent font-bold text-[.85rem]">{mapSymbol(sub.from)}</span>
+              <span className="ml-auto text-accent2 text-[.72rem] font-medium whitespace-nowrap">{Math.round(sub.score * 100)}% igual</span>
+            </div>
+            <p className="text-dim text-[.72rem] leading-snug mt-1">
               {sub.reason}
               {(sub.lost.length > 0 || sub.added.length > 0) && (
                 <>
@@ -245,7 +247,7 @@ export function SimplifyPanel({ s, view, dispatch, mapSymbol }: {
                   {sub.added.length > 0 && <>ganhou <span className="mono">{sub.added.join(', ')}</span></>}
                 </>
               )}
-            </span>
+            </p>
           </div>
         ))}
       </div>
