@@ -96,12 +96,6 @@ body {
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
 }
-/* texto corrido justificado onde faz sentido — não em botões, rótulos,
-   cabeçalhos ou na cifra (o alinhamento monoespaçado dos acordes quebraria) */
-p, .hint, li {
-  text-align: justify;
-  text-align-last: left;
-}
 /* alvos de toque: nada abaixo de 40px de altura no celular */
 button, select, input[type=file] + * { touch-action: manipulation; }
 input[type=range] { height: 34px; accent-color: var(--accent); }
@@ -299,6 +293,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .rootbtn.on { background: var(--accent); color: #14161a; border-color: var(--accent); font-weight: 700; }
 .tagchips { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: .4rem; }
 .tagchip { display: inline-flex; align-items: center; gap: .25rem; background: var(--bg3); border: 1px solid var(--line); border-radius: 20px; padding: .2rem .3rem .2rem .6rem; font-size: .78rem; }
+.tagchip.on { background: var(--accent); border-color: var(--accent); color: #14161a; font-weight: 600; }
 /* ---------- gravador de prática (flutuante) ----------
    mesma "família" visual do botão flutuante de importar (aba Início, agora
    em utilities Tailwind em LibraryHome.tsx): raio, sombra, cor sólida de

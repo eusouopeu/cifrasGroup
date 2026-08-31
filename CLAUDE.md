@@ -106,6 +106,24 @@ reaproveitando as classes de `styles.css` (`.btn`, `.icon`, `.chip`, `.sheet`,
 `.panel-section` etc.) para os padrões de design system em vez de duplicá-los
 com utilities soltas.
 
+### Cards com ações escondidas (swipe)
+
+`SongCard` (usado em Início e Listas) esconde duplicar/apagar atrás do card,
+revelados arrastando horizontalmente (pointer events com captura só após um
+deslocamento mínimo — capturar o ponteiro no `pointerdown` cru quebra o clique
+de botões internos, foi tentado e falhou) ou pelo botão "⋮" (alternativa sem
+gesto, exigida pelas diretrizes de acessibilidade: toda ação por gesto precisa
+de equivalente por toque/teclado). Painel de ações fica com `aria-hidden` e
+`tabIndex={-1}` quando fechado. Reaproveitar esse padrão para qualquer lista
+de cards que precise do mesmo tipo de ação secundária.
+
+### Aba "Voz" mora em Afinação, não em Acordes
+
+VoiceLab (retrato de timbre por microfone) foi movido do painel Acordes da
+tela da música para dentro da aba raiz Afinação (toggle Afinação/Voz), porque
+não é uma função de acorde — ficava enterrada no 3º nível de navegação sem
+necessidade.
+
 ## Testes
 
 - Por rodada de alterações, realizar apenas os **2 ou 3 testes mais essenciais** — não mais que isso.

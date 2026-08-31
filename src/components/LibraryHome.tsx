@@ -55,6 +55,7 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
   }
 
   const clearFilters = () => { setTagFilter(null); setMaxChordsFilter(''); setDifficultyFilter(null); setGenreFilter(new Set()) }
+  const clearSearchAndFilters = () => { setQuery(''); clearFilters() }
 
   return (
     <div className="library">
@@ -119,7 +120,7 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
               {usedGenres.map((g) => (
                 <button
                   key={g}
-                  className={`bg-white text-[#1b1d21] border border-line rounded-full px-3 py-1.5 text-[.78rem]${genreFilter.has(g) ? ' bg-accent border-accent text-[#14161a] font-semibold' : ''}`}
+                  className={`chip${genreFilter.has(g) ? ' on' : ''}`}
                   aria-pressed={genreFilter.has(g)}
                   onClick={() => toggleGenre(g)}
                 >
@@ -134,7 +135,7 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
               {allTags.map((t) => (
                 <button
                   key={t}
-                  className={`tagchip cursor-pointer${tagFilter === t ? ' bg-accent border-accent text-[#14161a] font-semibold' : ''}`}
+                  className={`tagchip cursor-pointer${tagFilter === t ? ' on' : ''}`}
                   aria-pressed={tagFilter === t}
                   onClick={() => setTagFilter(tagFilter === t ? null : t)}
                 >
@@ -146,7 +147,13 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
         </>
       )}
 
-      {filtered.length === 0 && <p className="hint">Nada aqui ainda. Importe uma cifra para começar.</p>}
+      {songs.length === 0 && <p className="hint">Nada aqui ainda. Importe uma cifra para começar.</p>}
+      {songs.length > 0 && filtered.length === 0 && (
+        <p className="hint">
+          Nenhuma música encontrada com esse termo/filtros.{' '}
+          <button className="icon small" onClick={clearSearchAndFilters}>limpar busca e filtros</button>
+        </p>
+      )}
       <div className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(230px,1fr))] mt-2 max-[620px]:grid-cols-1">
         {filtered.map((s) => (
           <SongCard key={s.id} song={s} onOpen={() => onOpen(s.id)} onDelete={() => onDeleteSong(s.id)} onDuplicate={() => onDuplicateSong(s.id)} />

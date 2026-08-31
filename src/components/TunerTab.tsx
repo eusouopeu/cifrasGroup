@@ -3,13 +3,17 @@ import { Tuner } from './Tuner'
 import { FontSizeToggleButton, InstrumentToggleButton } from './DisplayControls'
 import { ThemeToggleButton } from './ThemeControls'
 import { TuningPicker } from './TuningPicker'
+import { VoiceLabTab } from './song/VoiceLab'
 import { tuningById, type Tuning } from '../theory/tunings'
+
+type Tab = 'afinacao' | 'voz'
 
 export function TunerTab({ customTunings, onSaveCustomTuning, onDeleteCustomTuning }: {
   customTunings: Tuning[]
   onSaveCustomTuning: (tuning: Tuning) => void
   onDeleteCustomTuning: (id: string) => void
 }) {
+  const [tab, setTab] = useState<Tab>('afinacao')
   const [tuningId, setTuningId] = useState('standard')
   const tuning = tuningById(tuningId, customTunings)
 
@@ -22,15 +26,26 @@ export function TunerTab({ customTunings, onSaveCustomTuning, onDeleteCustomTuni
         <ThemeToggleButton />
       </header>
 
-      <TuningPicker
-        value={tuningId}
-        onChange={setTuningId}
-        customTunings={customTunings}
-        onSaveCustomTuning={onSaveCustomTuning}
-        onDeleteCustomTuning={onDeleteCustomTuning}
-      />
+      <div className="toggle flex w-full mb-3 [&>button]:flex-1">
+        <button className={tab === 'afinacao' ? 'on' : ''} onClick={() => setTab('afinacao')}>Afinação</button>
+        <button className={tab === 'voz' ? 'on' : ''} onClick={() => setTab('voz')}>Voz</button>
+      </div>
 
-      <Tuner embedded tuning={tuning} />
+      {tab === 'afinacao' && (
+        <>
+          <TuningPicker
+            value={tuningId}
+            onChange={setTuningId}
+            customTunings={customTunings}
+            onSaveCustomTuning={onSaveCustomTuning}
+            onDeleteCustomTuning={onDeleteCustomTuning}
+          />
+
+          <Tuner embedded tuning={tuning} />
+        </>
+      )}
+
+      {tab === 'voz' && <VoiceLabTab />}
     </div>
   )
 }

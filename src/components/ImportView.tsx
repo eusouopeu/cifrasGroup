@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Search, Zap } from 'lucide-react'
 import { guessKey, parseCifra, uniqueChords } from '../cifra/parse'
 import { ImportCancelledError, importFromCifraClubUrl, isCifraClubUrl, nativeImportAvailable } from '../native/cifraClubImport'
 import { nameOf } from '../theory/notes'
@@ -48,6 +48,8 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
   const [linkUrl, setLinkUrl] = useState(initialUrl ?? '')
   const [linkStatus, setLinkStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [linkError, setLinkError] = useState<string | null>(null)
+  // importação rápida: mesma busca, mas pula a pré-visualização e vai direto pra música
+  const [quickStatus, setQuickStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [fileName, setFileName] = useState<string | null>(null)
   const autoRan = useRef(false)
   const abortRef = useRef<AbortController | null>(null)
@@ -77,6 +79,28 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
     }
   }
 
+  const runQuickImportFromLink = async (url: string) => {
+    if (!url.trim()) return
+    setQuickStatus('loading')
+    setLinkError(null)
+    const controller = new AbortController()
+    abortRef.current = controller
+    try {
+      const result = await importFromCifraClubUrl(url.trim(), 25000, controller.signal)
+      onImport({ title: result.title, artist: result.artist, source: result.sourceUrl, raw: result.raw })
+    } catch (err) {
+      if (err instanceof ImportCancelledError) {
+        setQuickStatus('idle')
+        return
+      }
+      setQuickStatus('error')
+      setLinkError(err instanceof Error ? err.message : String(err))
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null
+    }
+  }
+
+  const linkBusy = linkStatus === 'loading' || quickStatus === 'loading'
   const cancelImport = () => abortRef.current?.abort()
 
   // dispara sozinho quando o app é aberto por um compartilhamento
@@ -106,25 +130,41 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
             <input
               className="flex-1 min-w-0 bg-bg2 border border-line rounded-lg text-fg p-[.55rem_.7rem] text-[.85rem]"
               value={linkUrl}
-              onChange={(e) => { setLinkUrl(e.target.value); if (linkStatus === 'error') { setLinkStatus('idle'); setLinkError(null) } }}
+              onChange={(e) => {
+                setLinkUrl(e.target.value)
+                if (linkStatus === 'error') { setLinkStatus('idle'); setLinkError(null) }
+                if (quickStatus === 'error') { setQuickStatus('idle'); setLinkError(null) }
+              }}
               placeholder="https://www.cifraclub.com.br/artista/musica/"
               inputMode="url"
               autoCapitalize="none"
               autoCorrect="off"
             />
             <button
-              className="btn primary"
-              disabled={linkStatus === 'loading' || !isCifraClubUrl(linkUrl)}
+              className="icon !bg-accent !text-[#14161a] rounded-lg w-10 h-10 flex-shrink-0"
+              disabled={linkBusy || !isCifraClubUrl(linkUrl)}
               onClick={() => void runImportFromLink(linkUrl)}
+              aria-label="Pré-visualizar antes de importar"
+              title="Pré-visualizar antes de importar"
             >
-              {linkStatus === 'loading' ? 'importando…' : 'buscar'}
+              {linkStatus === 'loading' ? '…' : <Search />}
             </button>
-            {linkStatus === 'loading' && (
+            <button
+              className="icon !bg-accent !text-[#14161a] rounded-lg w-10 h-10 flex-shrink-0"
+              disabled={linkBusy || !isCifraClubUrl(linkUrl)}
+              onClick={() => void runQuickImportFromLink(linkUrl)}
+              aria-label="Importação rápida (pula a pré-visualização)"
+              title="Importação rápida (pula a pré-visualização)"
+            >
+              {quickStatus === 'loading' ? '…' : <Zap />}
+            </button>
+            {linkBusy && (
               <button className="btn ghost" onClick={cancelImport}>cancelar</button>
             )}
           </div>
           {linkStatus === 'error' && linkError && <p className="hint text-danger">{linkError}</p>}
-          {linkUrl && !isCifraClubUrl(linkUrl) && linkStatus !== 'loading' && (
+          {quickStatus === 'error' && linkError && <p className="hint text-danger">{linkError}</p>}
+          {linkUrl && !isCifraClubUrl(linkUrl) && !linkBusy && (
             <p className="hint small">Esse link não parece ser de uma música do CifraClub.</p>
           )}
         </div>
@@ -162,9 +202,8 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
         <label className="field wide">
           Cifra
           <textarea
-            className="mono !text-[.82rem] !leading-[1.45] whitespace-pre overflow-x-auto"
+            className="mono !text-[.82rem] !leading-[1.45] whitespace-pre h-64 resize-none overflow-auto"
             value={raw}
-            rows={16}
             spellCheck={false}
             placeholder={'C           G\nletra da música aqui\n\nAm          F\ncontinua...'}
             onChange={(e) => setRaw(e.target.value)}

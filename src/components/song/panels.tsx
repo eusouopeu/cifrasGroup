@@ -21,7 +21,6 @@ import { RhythmCard } from '../RhythmView'
 import { TuningPicker } from '../TuningPicker'
 import { LevelButton, Panel, TagEditor } from './parts'
 import { ChordConferenceTab } from './ChordConference'
-import { VoiceLabTab } from './VoiceLab'
 import type { SongDispatch } from './hooks'
 
 type KeyTab = 'tom' | 'analise'
@@ -354,7 +353,7 @@ export function RhythmPanel({ s, rhythm, dispatch, metronome, onPlay }: {
   )
 }
 
-type ChordsTab = 'afinacao' | 'conferencia' | 'voz'
+type ChordsTab = 'afinacao' | 'conferencia'
 
 export function ChordsPanel({ s, view, dispatch, customTunings, onSaveCustomTuning, onDeleteCustomTuning, overriddenSymbols, onInspect, onOpenTuner, onRestoreAllOverrides }: {
   s: SongSettings
@@ -427,7 +426,6 @@ export function ChordsPanel({ s, view, dispatch, customTunings, onSaveCustomTuni
         )}
 
         {tab === 'conferencia' && <ChordConferenceTab tuning={tuning} />}
-        {tab === 'voz' && <VoiceLabTab />}
       </div>
 
       <div className="sticky -bottom-4 z-[1] flex flex-col gap-2 m-[.8rem_-1rem_-1rem] p-[.6rem_1rem] bg-bg2 border-t border-line [&>.toggle]:w-full [&>.toggle>button]:flex-1">
@@ -440,7 +438,6 @@ export function ChordsPanel({ s, view, dispatch, customTunings, onSaveCustomTuni
         <div className="toggle flex w-full [&>button]:flex-1">
           <button className={tab === 'afinacao' ? 'on' : ''} onClick={() => setTab('afinacao')}>Afinação</button>
           <button className={tab === 'conferencia' ? 'on' : ''} onClick={() => setTab('conferencia')}>Conferência</button>
-          <button className={tab === 'voz' ? 'on' : ''} onClick={() => setTab('voz')}>Voz</button>
         </div>
       </div>
     </Panel>
