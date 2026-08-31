@@ -7,7 +7,10 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { Bookmark, Download, Layers, Pause, Pencil, Play, Trash2 } from 'lucide-react'
+import { saveAppFile } from '../../native/fileStorage'
 import { formatBytes, type Recording } from '../../store/recordings'
+import { useToast } from '../Toast'
+import { recordingFilename } from './recordingFile'
 
 function formatDuration(ms: number): string {
   const totalSec = Math.round(ms / 1000)
@@ -20,15 +23,10 @@ function formatDate(ts: number): string {
   return new Date(ts).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
-function extensionFor(mime: string, kind: 'audio' | 'video'): string {
-  if (mime.includes('webm')) return 'webm'
-  if (mime.includes('mp4')) return 'mp4'
-  if (mime.includes('ogg')) return 'ogg'
-  return kind === 'video' ? 'webm' : 'webm'
-}
-
-export function RecordingRow({ recording, expanded, onToggleExpand, onRename, onTogglePin, onDelete, layerable, layered, onToggleLayer, showSong }: {
+export function RecordingRow({ recording, songTitle, expanded, onToggleExpand, onRename, onTogglePin, onDelete, layerable, layered, onToggleLayer, showSong }: {
   recording: Recording
+  /** nome da música — usado para nomear o arquivo salvo em Documentos */
+  songTitle: string
   expanded: boolean
   onToggleExpand: () => void
   onRename: (title: string) => void
@@ -55,6 +53,7 @@ export function RecordingRow({ recording, expanded, onToggleExpand, onRename, on
   }, [expanded])
 
   const label = recording.title || formatDate(recording.createdAt)
+  const showToast = useToast()
 
   const togglePlay = () => {
     const el = mediaRef.current
@@ -68,11 +67,10 @@ export function RecordingRow({ recording, expanded, onToggleExpand, onRename, on
   }
 
   const download = () => {
-    const ext = extensionFor(recording.blob.type, recording.kind)
-    const a = document.createElement('a')
-    a.href = urlRef.current!
-    a.download = `${label.replace(/[/\\]/g, '-')}.${ext}`
-    a.click()
+    const filename = recordingFilename(songTitle, label.replace(/[/\\]/g, '-'), recording.createdAt, recording.blob.type, recording.kind)
+    void saveAppFile(recording.kind === 'video' ? 'videos' : 'audios', filename, recording.blob).then((res) => {
+      showToast(res.savedToDevice ? 'Gravação salva em Documentos/CifrasGroup.' : 'Gravação baixada.')
+    })
   }
 
   const rowBase = 'bg-bg3 border rounded-[9px] p-[.5rem_.6rem] text-left w-full'

@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
-  Download,
   Grid2x2,
   Mic,
   Minus,
@@ -34,6 +33,7 @@ import { RhythmGrid } from './RhythmView'
 import { Tuner } from './Tuner'
 import { useMetronome } from '../audio/useMetronome'
 import { useWakeLock } from '../hooks/useWakeLock'
+import { saveAppFile } from '../native/fileStorage'
 import { useToast } from './Toast'
 import { ChordMarker } from './song/ChordMarker'
 import { ChordSheet } from './song/ChordSheet'
@@ -161,21 +161,6 @@ export function SongView({
     setScrollBarOpen(true)
   }
 
-  const exportText = () => viewToText(view, song.title, song.artist)
-  const shareOrDownload = async () => {
-    const text = exportText()
-    const file = new File([text], `${song.title || 'cifra'}.txt`, { type: 'text/plain' })
-    if (navigator.share && navigator.canShare?.({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: song.title }); return } catch { /* usuário cancelou */ return }
-    }
-    const blob = new Blob([text], { type: 'text/plain' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = `${song.title || 'cifra'}.txt`
-    a.click()
-    URL.revokeObjectURL(a.href)
-  }
-
   const startEditingRaw = () => {
     setChordStrip(null)
     setRawDraft(song.raw)
@@ -185,7 +170,12 @@ export function SongView({
   const saveEditingRaw = () => {
     onRawChange(rawDraft)
     setEditingRaw(false)
-    showToast('Cifra atualizada.')
+    // toda cifra editada é salva também como .txt na pasta do app em
+    // Documentos — sem precisar de um botão de "baixar" à parte
+    const savedText = viewToText(buildView(rawDraft, s), song.title, song.artist)
+    void saveAppFile('cifras', `${song.title || 'cifra'}.txt`, savedText).then((res) => {
+      showToast(res.savedToDevice ? 'Cifra atualizada e salva em Documentos/CifrasGroup.' : 'Cifra atualizada.')
+    })
   }
 
   const mapSymbol = (orig: string) => view.map.get(orig) ?? orig
@@ -263,14 +253,6 @@ export function SongView({
           title="Acordes (afinação, conferência, voz)"
         >
           <Grid2x2 />
-        </button>
-        <button
-          className="icon"
-          onClick={() => void shareOrDownload()}
-          aria-label={typeof navigator.share === 'function' ? 'Compartilhar cifra' : 'Baixar cifra'}
-          title="Baixar cifra (.txt)"
-        >
-          <Download />
         </button>
       </header>
 
@@ -583,7 +565,7 @@ export function SongView({
         </div>
       )}
 
-      {panel === 'gravar' && !editingRaw && <Recorder songId={song.id} mode={recordMode} />}
+      {panel === 'gravar' && !editingRaw && <Recorder songId={song.id} songTitle={song.title} mode={recordMode} />}
 
       {tunerOpen && <Tuner onClose={() => setTunerOpen(false)} tuning={tuning} />}
     </div>

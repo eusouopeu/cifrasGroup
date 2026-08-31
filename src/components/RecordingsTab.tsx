@@ -101,6 +101,7 @@ export function RecordingsTab({ songs }: { songs: Record<string, Song> }) {
                       <RecordingRow
                         key={r.id}
                         recording={r}
+                        songTitle={song.title}
                         expanded={expanded === r.id}
                         onToggleExpand={() => setExpanded((cur) => (cur === r.id ? null : r.id))}
                         onRename={(title) => void renameRecording(id, r.id, title).then((next) => mutate(id, next))}

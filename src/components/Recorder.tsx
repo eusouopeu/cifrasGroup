@@ -17,7 +17,9 @@ import {
   type RecordingKind,
 } from '../store/recordings'
 import { startMixSession, type MixSession } from '../audio/recordMix'
+import { saveAppFile } from '../native/fileStorage'
 import { RecordingRow } from './song/RecordingRow'
+import { recordingFilename } from './song/recordingFile'
 
 /** desliga o processamento de chamada de voz (eco/ruído/ganho automático) —
  *  comprime e "lava" o som, péssimo pra violão/canto. Bitrate acima do
@@ -54,7 +56,7 @@ type Status = 'idle' | 'starting' | 'recording' | 'denied' | 'unsupported'
 /** câmera "sempre ligada" enquanto o modo vídeo está selecionado — mesmo antes de apertar gravar */
 type CameraStatus = 'idle' | 'starting' | 'ready' | 'denied'
 
-export function Recorder({ songId, mode }: { songId: string; mode: RecordingKind }) {
+export function Recorder({ songId, songTitle, mode }: { songId: string; songTitle: string; mode: RecordingKind }) {
   const [recordings, setRecordings] = useState<Recording[] | null>(null)
   const [status, setStatus] = useState<Status>('idle')
   const [cameraStatus, setCameraStatus] = useState<CameraStatus>('idle')
@@ -193,6 +195,9 @@ export function Recorder({ songId, mode }: { songId: string; mode: RecordingKind
       mixRef.current?.stop()
       mixRef.current = null
       void saveRecording(songId, blob, durationMs, kind, layered).then(setRecordings)
+      // além de guardar no app (pra tocar/empilhar), salva uma cópia em
+      // Documentos/CifrasGroup no aparelho — é o arquivo "de verdade" que sai do app
+      void saveAppFile(kind === 'video' ? 'videos' : 'audios', recordingFilename(songTitle, '', Date.now(), blob.type, kind), blob)
     }
     mediaRecorderRef.current = mr
     startTimeRef.current = Date.now()
@@ -238,6 +243,7 @@ export function Recorder({ songId, mode }: { songId: string; mode: RecordingKind
               <RecordingRow
                 key={r.id}
                 recording={r}
+                songTitle={songTitle}
                 expanded={expandedId === r.id}
                 onToggleExpand={() => setExpandedId((cur) => (cur === r.id ? null : r.id))}
                 onRename={(title) => void renameRecording(songId, r.id, title).then(setRecordings)}
