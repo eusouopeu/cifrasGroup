@@ -46,7 +46,12 @@ function normalizeSuffix(raw: string): string {
   s = s.replace(/[°º∘]/g, 'dim7')
   s = s.replace(/♯/g, '#').replace(/♭/g, 'b')
   s = s.replace(/6\s*\/\s*9/g, '69') // "C6/9" é sufixo, não baixo
-  s = s.replace(/[()\[\]\s,]/g, '')
+  // notação com alteração depois do grau ("13-", "9+", "5-") é comum em
+  // cifras brasileiras — reordena para o formato canônico (alteração antes)
+  s = s.replace(/(4|5|6|9|11|13)([-+])/g, (_m, deg, sign) => (sign === '-' ? 'b' : '#') + deg)
+  // barra restante aqui só pode ser separador de tensões dentro de parênteses
+  // ("4/9" = add4 + add9) — a barra de baixo já foi extraída antes desta função
+  s = s.replace(/[()\[\]\s,/]/g, '')
   // "7M" e "M7" valem maj7 em qualquer posição, não só no início:
   // "Cm(7M)" chega aqui como "m7M" e precisa virar "mmaj7".
   s = s.replace(/7M/g, 'maj7')
@@ -64,10 +69,10 @@ function normalizeSuffix(raw: string): string {
   return s
 }
 
-const TENSION_TOKEN = /^(b|#|\+|-)?(5|6|9|11|13)/
+const TENSION_TOKEN = /^(b|#|\+|-)?(4|5|6|9|11|13)/
 
 function tensionSemitones(alter: string, degree: string): number | null {
-  const base: Record<string, number> = { '9': 2, '11': 5, '13': 9, '5': 7, '6': 9 }
+  const base: Record<string, number> = { '4': 5, '9': 2, '11': 5, '13': 9, '5': 7, '6': 9 }
   let v = base[degree]
   if (v === undefined) return null
   if (alter === 'b' || alter === '-') v -= 1
@@ -93,7 +98,16 @@ export function parseChord(raw: string): Chord | null {
 
   let rest = m[3].replace(/6\s*\/\s*9/g, '69') // "C6/9" é sufixo, não inversão
   let bassPc: number | null = null
-  const slash = rest.indexOf('/')
+  // barra de baixo só conta fora de parênteses — "G7(4/9)" é add4+add9, não
+  // um acorde com baixo diferente; "G7(4)/9" ou "C/G" continuam funcionando
+  let slash = -1
+  let depth = 0
+  for (let i = 0; i < rest.length; i++) {
+    const ch = rest[i]
+    if (ch === '(') depth++
+    else if (ch === ')') depth--
+    else if (ch === '/' && depth === 0) { slash = i; break }
+  }
   if (slash >= 0) {
     const bassRaw = rest.slice(slash + 1)
     const bp = pcOf(bassRaw)

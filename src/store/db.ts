@@ -37,6 +37,8 @@ export interface SongSettings {
    * grid de "construção dos acordes".
    */
   preferredVoicings: Record<string, string>
+  /** tokens que o parser não reconheceu como acorde, mas o usuário marcou manualmente na edição da cifra */
+  manualChordTokens: string[]
 }
 
 export interface PracticeStats {
@@ -96,6 +98,7 @@ export const DEFAULT_SETTINGS: SongSettings = {
   scrollSpeed: 0,
   tuning: 'standard',
   preferredVoicings: {},
+  manualChordTokens: [],
 }
 
 export const DEFAULT_PRACTICE: PracticeStats = { count: 0, totalMs: 0, lastPlayedAt: null }

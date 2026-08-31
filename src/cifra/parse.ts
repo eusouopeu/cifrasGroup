@@ -40,7 +40,7 @@ function isTabLine(line: string): boolean {
   return dashes >= 6 && dashes / Math.max(1, line.trim().length) > 0.4
 }
 
-function tokenize(line: string): { token: string; col: number }[] {
+export function tokenize(line: string): { token: string; col: number }[] {
   const out: { token: string; col: number }[] = []
   const re = /\S+/g
   let m: RegExpExecArray | null
@@ -48,21 +48,29 @@ function tokenize(line: string): { token: string; col: number }[] {
   return out
 }
 
-/** Uma linha é de acordes quando todos os tokens significativos são acordes. */
-function analyzeChordLine(line: string): ChordHit[] | null {
+/** Remove separadores comuns de linha de acorde nas pontas de um token: `| ( ) ,` */
+export function cleanChordToken(token: string): string {
+  return token.replace(/^[|(]+|[|),]+$/g, '')
+}
+
+/**
+ * Uma linha é de acordes quando todos os tokens significativos são acordes —
+ * ou foram marcados manualmente como acorde pelo usuário (edição de cifra).
+ */
+function analyzeChordLine(line: string, manualChordTokens?: Set<string>): ChordHit[] | null {
   const tokens = tokenize(line)
   if (tokens.length === 0) return null
   const hits: ChordHit[] = []
   for (const { token, col } of tokens) {
     // o token cru vem primeiro: "C7M(9)" não pode perder os parênteses
-    if (isChordToken(token)) {
+    if (isChordToken(token) || manualChordTokens?.has(token)) {
       hits.push({ col, symbol: token })
       continue
     }
     // só então tenta remover separadores comuns de linha de acorde: | ( ) ,
-    const clean = token.replace(/^[|(]+|[|),]+$/g, '')
+    const clean = cleanChordToken(token)
     if (clean === '' || clean === '|' || clean === '%') continue
-    if (!isChordToken(clean)) return null
+    if (!isChordToken(clean) && !manualChordTokens?.has(clean)) return null
     hits.push({ col, symbol: clean })
   }
   return hits.length > 0 ? hits : null
@@ -93,7 +101,11 @@ function stripSourceTags(text: string): string {
     .replace(/^\s*\[\/?tab\]\s*$/gim, '')
 }
 
-export function parseCifra(raw: string, meta?: { title?: string; artist?: string }): ParsedCifra {
+export function parseCifra(
+  raw: string,
+  meta?: { title?: string; artist?: string },
+  manualChordTokens?: Set<string>,
+): ParsedCifra {
   const rawLines = stripSourceTags(raw).replace(/\r\n?/g, '\n').split('\n')
   const lines: CifraLine[] = []
 
@@ -131,13 +143,13 @@ export function parseCifra(raw: string, meta?: { title?: string; artist?: string
 
     const cp = expandChordPro(line)
     if (cp) {
-      const hits = analyzeChordLine(cp.chordLine)
+      const hits = analyzeChordLine(cp.chordLine, manualChordTokens)
       lines.push({ kind: 'chords', text: cp.chordLine, chords: hits ?? [] })
       if (cp.lyricLine.trim()) lines.push({ kind: 'lyrics', text: cp.lyricLine, chords: [] })
       continue
     }
 
-    const hits = analyzeChordLine(line)
+    const hits = analyzeChordLine(line, manualChordTokens)
     if (hits) lines.push({ kind: 'chords', text: line, chords: hits })
     else lines.push({ kind: 'lyrics', text: line, chords: [] })
   }

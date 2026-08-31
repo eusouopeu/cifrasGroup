@@ -62,7 +62,7 @@ function buildSectionKeys(parsed: ParsedCifra, afterPalette: Map<string, string>
 }
 
 export function buildView(raw: string, settings: SongSettings): CifraView {
-  const parsed = parseCifra(raw)
+  const parsed = parseCifra(raw, undefined, new Set(settings.manualChordTokens))
   const uniques = uniqueChords(parsed)
   const seq = chordSequence(parsed)
 

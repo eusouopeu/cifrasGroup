@@ -112,6 +112,21 @@ describe('parseChord — baixo e casos inválidos', () => {
     expect(parseChord('Db')!.rootPc).toBe(1)
     expect(parseChord('F#')!.rootPc).toBe(6)
   })
+
+  it('alteração depois do grau (notação brasileira): E7(13-), Em7(5-)', () => {
+    const a = parseChord('E7(13-)')!
+    expect(a.tensions).toContain(8) // b13
+    const b = parseChord('Em7(5-)')!
+    expect(b.triad).toBe('dim')
+    expect(b.seventh).toBe('b7')
+  })
+
+  it('tensões múltiplas separadas por barra dentro de parênteses não são baixo: G7(4/9)', () => {
+    const c = parseChord('G7(4/9)')!
+    expect(c.bassPc).toBeNull()
+    expect(c.tensions).toContain(5) // add4
+    expect(c.tensions).toContain(2) // add9
+  })
 })
 
 describe('transposeSymbol', () => {

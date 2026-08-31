@@ -35,6 +35,7 @@ import { Tuner } from './Tuner'
 import { useMetronome } from '../audio/useMetronome'
 import { useWakeLock } from '../hooks/useWakeLock'
 import { useToast } from './Toast'
+import { ChordMarker } from './song/ChordMarker'
 import { ChordSheet } from './song/ChordSheet'
 import { ChordStrip } from './song/ChordStrip'
 import { EditTitle, ToolButton } from './song/parts'
@@ -103,6 +104,7 @@ export function SongView({
   const [level2JustOff, setLevel2JustOff] = useState(false)
   const [editingTitle, setEditingTitle] = useState(false)
   const [editingRaw, setEditingRaw] = useState(false)
+  const [editSubTab, setEditSubTab] = useState<'texto' | 'marcar'>('texto')
   const [rawDraft, setRawDraft] = useState(song.raw)
   const [tunerOpen, setTunerOpen] = useState(false)
   const [manualAnalysisKey, setManualAnalysisKey] = useState<number | null>(null)
@@ -114,6 +116,7 @@ export function SongView({
     setManualAnalysisKey(null)
     setChordStrip(null)
     setEditingRaw(false)
+    setEditSubTab('texto')
   }, [song.id])
 
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -132,7 +135,7 @@ export function SongView({
   const view = useMemo(
     () => buildView(song.raw, s),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [song.raw, s.simplifyLevel, s.threshold, s.paletteId, s.transpose, s.overrides],
+    [song.raw, s.simplifyLevel, s.threshold, s.paletteId, s.transpose, s.overrides, s.manualChordTokens],
   )
   const rhythm = rhythmById(s.rhythmId)
   const metronome = useMetronome(rhythm, s.bpm, s.playPattern, s.playClick)
@@ -176,6 +179,7 @@ export function SongView({
   const startEditingRaw = () => {
     setChordStrip(null)
     setRawDraft(song.raw)
+    setEditSubTab('texto')
     setEditingRaw(true)
   }
   const saveEditingRaw = () => {
@@ -203,6 +207,9 @@ export function SongView({
   // partir dos acordes tal como vieram na cifra, nunca da versão exibida
   const originalSeq = useMemo(() => chordSequence(view.parsed), [view.parsed])
   const detectedKey = useMemo(() => guessKeyModeFromSymbols(originalSeq), [originalSeq])
+  // tom exibido depois de transpor — mostra o nome do tom em si (ex.: "D#m"),
+  // não o deslocamento em semitons ("+1"), que não diz nada sem o tom original de cabeça
+  const transposedKey = useMemo(() => guessKeyModeFromSymbols(displayedSeq), [displayedSeq])
   const guessedPaletteId = useMemo(() => {
     const counts = new Map<string, number>()
     for (const sym of originalSeq) counts.set(sym, (counts.get(sym) ?? 0) + 1)
@@ -271,7 +278,7 @@ export function SongView({
         <ToolButton active={panel === 'tom'} onClick={() => togglePanel('tom')} label="Tom" value={
           view.effectiveTranspose === 0
             ? (detectedKey ? nameOf(detectedKey.pc, preferFlatsForKey(detectedKey.pc)) + (detectedKey.minor ? 'm' : '') : 'Original')
-            : (view.effectiveTranspose > 0 ? '+' : '') + view.effectiveTranspose
+            : (transposedKey ? nameOf(transposedKey.pc, preferFlatsForKey(transposedKey.pc)) + (transposedKey.minor ? 'm' : '') : (view.effectiveTranspose > 0 ? '+' : '') + view.effectiveTranspose)
         } />
         <ToolButton active={panel === 'simplificar'} onClick={() => togglePanel('simplificar')} label="Nível" value={String(s.simplifyLevel)} flash={level2JustOff} />
         <ToolButton active={panel === 'cor'} onClick={() => togglePanel('cor')} label="Emoção" value={
@@ -375,15 +382,29 @@ export function SongView({
           ref={scrollRef}
         >
           {editingRaw ? (
-            <textarea
-              className="mono w-full h-full min-h-full resize-none border-0 outline-none bg-transparent text-fg leading-[1.5] whitespace-pre [overflow-wrap:normal]"
-              aria-label="Texto da cifra"
-              value={rawDraft}
-              spellCheck={false}
-              autoFocus
-              style={{ fontSize: `${display.fontSize}px` }}
-              onChange={(e) => setRawDraft(e.target.value)}
-            />
+            <>
+              <div className="flex gap-2 mb-3">
+                <button className={`chip${editSubTab === 'texto' ? ' on' : ''}`} onClick={() => setEditSubTab('texto')}>Texto</button>
+                <button className={`chip${editSubTab === 'marcar' ? ' on' : ''}`} onClick={() => setEditSubTab('marcar')}>Marcar acordes</button>
+              </div>
+              {editSubTab === 'texto' ? (
+                <textarea
+                  className="mono w-full h-full min-h-full resize-none border-0 outline-none bg-transparent text-fg leading-[1.5] whitespace-pre [overflow-wrap:normal]"
+                  aria-label="Texto da cifra"
+                  value={rawDraft}
+                  spellCheck={false}
+                  autoFocus
+                  style={{ fontSize: `${display.fontSize}px` }}
+                  onChange={(e) => setRawDraft(e.target.value)}
+                />
+              ) : (
+                <ChordMarker
+                  raw={rawDraft}
+                  manualChordTokens={new Set(s.manualChordTokens)}
+                  onToggle={(token) => dispatch({ type: 'toggleManualChordToken', token })}
+                />
+              )}
+            </>
           ) : (
             <>
               <CifraText

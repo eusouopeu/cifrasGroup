@@ -5,10 +5,11 @@
  */
 import { useState } from 'react'
 import { ArrowRight, Minus, Music, Play, Plus, RotateCw, Square, Volume2 } from 'lucide-react'
+import { guessKeyModeFromSymbols } from '../../cifra/parse'
 import type { CifraView } from '../../cifra/view'
 import { RHYTHMS, type Rhythm } from '../../data/rhythms'
 import { romanNumeral } from '../../theory/functional'
-import { nameOf, pcOf } from '../../theory/notes'
+import { nameOf, pcOf, preferFlatsForKey } from '../../theory/notes'
 import { captureMicPCM, detectKey } from '../../audio/analysis'
 import { PALETTES, applyPalette } from '../../theory/palettes'
 import { tuningById, type Tuning } from '../../theory/tunings'
@@ -22,6 +23,13 @@ import { TuningPicker } from '../TuningPicker'
 import { LevelButton, Panel, TagEditor } from './parts'
 import { ChordConferenceTab } from './ChordConference'
 import type { SongDispatch } from './hooks'
+
+/** Nome do tom (ex.: "D#m") a partir dos acordes já transpostos de uma opção de tom — em vez de mostrar só o deslocamento em semitons ("+1"). */
+function keyOptionName(chords: string[]): string {
+  const guess = guessKeyModeFromSymbols(chords)
+  if (!guess) return '—'
+  return nameOf(guess.pc, preferFlatsForKey(guess.pc)) + (guess.minor ? 'm' : '')
+}
 
 type KeyTab = 'tom' | 'analise'
 
@@ -129,7 +137,7 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
                   }`}
                   onClick={() => dispatch({ type: 'setKey', semitones: k.semitones, capo: k.capo })}
                 >
-                  <span>{k.semitones === 0 ? '0' : `${k.semitones > 0 ? '+' : ''}${k.semitones}`}</span>
+                  <span className="mono">{keyOptionName(k.chords)}</span>
                   <span className="bar"><i style={{ width: `${k.ease}%` }} /></span>
                   <span className="text-accent font-bold text-right">{k.ease}</span>
                   <span className="text-dim">{k.capo > 0 ? `capo ${k.capo}ª` : '—'}</span>
@@ -148,9 +156,7 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
                   <div key={k.label} className="subrow">
                     <span className="mono from">{k.label}</span>
                     <ArrowRight className="arrow-icon" />
-                    <span className="mono to">
-                      {k.best.semitones === 0 ? 'original' : `${k.best.semitones > 0 ? '+' : ''}${k.best.semitones}`}
-                    </span>
+                    <span className="mono to">{k.best.semitones === 0 ? 'original' : keyOptionName(k.best.chords)}</span>
                     <span className="score">{k.best.ease}/100 fácil</span>
                     <span className="reason">{k.best.capo > 0 ? `capo na ${k.best.capo}ª casa` : 'sem capo'}</span>
                   </div>
@@ -216,7 +222,7 @@ export function SimplifyPanel({ s, view, dispatch, mapSymbol }: {
       </label>
       {s.simplifyLevel === 2 && best && (
         <p className="hint">
-          Melhor tom encontrado: <strong>{best.semitones === 0 ? 'o original' : `${best.semitones > 0 ? '+' : ''}${best.semitones} semitons`}</strong>
+          Melhor tom encontrado: <strong>{best.semitones === 0 ? 'o original' : keyOptionName(best.chords)}</strong>
           {best.capo > 0 && <> — ponha o capotraste na <strong>{best.capo}ª casa</strong> para soar no tom original.</>}
         </p>
       )}

@@ -50,6 +50,7 @@ export type SongAction =
   | { type: 'clearOverride'; original: string }
   | { type: 'clearAllOverrides' }
   | { type: 'setPreferredVoicing'; symbol: string; fingerprint: string }
+  | { type: 'toggleManualChordToken'; token: string }
 
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, Number.isFinite(n) ? n : min))
 
@@ -100,6 +101,10 @@ export function songSettingsPatch(s: SongSettings, action: SongAction): Partial<
       return { overrides: {} }
     case 'setPreferredVoicing':
       return { preferredVoicings: { ...s.preferredVoicings, [action.symbol]: action.fingerprint } }
+    case 'toggleManualChordToken': {
+      const has = s.manualChordTokens.includes(action.token)
+      return { manualChordTokens: has ? s.manualChordTokens.filter((t) => t !== action.token) : [...s.manualChordTokens, action.token] }
+    }
   }
 }
 

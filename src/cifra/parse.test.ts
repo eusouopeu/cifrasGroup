@@ -48,6 +48,12 @@ describe('parseCifra — reconhecimento de linhas', () => {
     const p = parseCifra('Isso aqui não é uma linha de acordes')
     expect(p.lines[0].kind).toBe('lyrics')
   })
+
+  it('token marcado manualmente vira acorde mesmo sem o parser reconhecer', () => {
+    const p = parseCifra('Xyz C', undefined, new Set(['Xyz']))
+    expect(p.lines[0].kind).toBe('chords')
+    expect(p.lines[0].chords.map((c) => c.symbol)).toEqual(['Xyz', 'C'])
+  })
 })
 
 describe('parseCifra — formatos de outras origens', () => {

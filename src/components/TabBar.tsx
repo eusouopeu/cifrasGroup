@@ -24,7 +24,7 @@ export function TabBar({ active, onChange }: { active: LibraryTab; onChange: (ta
             title={t.label}
             onClick={() => onChange(t.id)}
           >
-            <t.icon fill={on ? 'currentColor' : 'none'} />
+            <t.icon strokeWidth={on ? 2.5 : 2} />
           </button>
         )
       })}
