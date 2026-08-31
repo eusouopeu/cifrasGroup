@@ -56,6 +56,8 @@ export interface Song {
   source: string | null
   /** texto original da cifra, nunca modificado */
   raw: string
+  /** `raw` de antes da última edição de texto — permite desfazer 1 nível; limpo depois de usado */
+  previousRaw?: string
   /** anotações livres do usuário (ex.: "repetir refrão 2x") */
   notes: string
   /** tags livres do usuário, para busca e filtro na biblioteca (ex.: "roda", "iniciante") */

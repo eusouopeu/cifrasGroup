@@ -7,7 +7,7 @@ const REVEAL_WIDTH = 88
 /** arrasto mínimo para considerar "abrir" ao soltar, em vez de voltar pro lugar */
 const SWIPE_THRESHOLD = 36
 
-export function SongCard({ song, onOpen, onDelete, onDuplicate, deleteLabel = 'apagar', onMoveUp, onMoveDown }: {
+export function SongCard({ song, onOpen, onDelete, onDuplicate, deleteLabel = 'apagar', onMoveUp, onMoveDown, showChords = true }: {
   song: Song
   onOpen: () => void
   onDelete: () => void
@@ -15,6 +15,8 @@ export function SongCard({ song, onOpen, onDelete, onDuplicate, deleteLabel = 'a
   deleteLabel?: string
   onMoveUp?: () => void
   onMoveDown?: () => void
+  /** prévia dos acordes mais usados — só faz sentido onde o repertório importa (Listas), não na busca geral (Início) */
+  showChords?: boolean
 }) {
   const chords = song.meta.topChords
   const s = song.settings
@@ -109,7 +111,7 @@ export function SongCard({ song, onOpen, onDelete, onDuplicate, deleteLabel = 'a
         >
           <strong>{song.title}</strong>
           {song.artist && <span className="text-dim text-[.8rem]">{song.artist}</span>}
-          <span className="mono text-accent2 text-[.78rem]">{chords.join(' ')}</span>
+          {showChords && <span className="mono text-accent2 text-[.78rem]">{chords.join(' ')}</span>}
           <span className="flex flex-wrap gap-1">
             {visibleBadges.map((b) => <i key={b} className="not-italic text-[.68rem] bg-bg3 border border-line rounded text-dim px-1.5">{b}</i>)}
             {hiddenCount > 0 && (

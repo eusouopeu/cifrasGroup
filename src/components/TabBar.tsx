@@ -18,13 +18,14 @@ export function TabBar({ active, onChange }: { active: LibraryTab; onChange: (ta
         return (
           <button
             key={t.id}
-            className={`tabbar-item${on ? ' on' : ''}`}
+            className={`tabbar-item flex-col gap-0.5${on ? ' on' : ''}`}
             aria-current={on ? 'page' : undefined}
             aria-label={t.label}
             title={t.label}
             onClick={() => onChange(t.id)}
           >
             <t.icon strokeWidth={on ? 2.5 : 2} />
+            <span className="text-[10px] font-bold leading-none">{t.label}</span>
           </button>
         )
       })}

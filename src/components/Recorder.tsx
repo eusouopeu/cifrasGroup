@@ -6,7 +6,7 @@
  * gravações desta música.
  */
 import { useEffect, useRef, useState } from 'react'
-import { Folder, Square, X } from 'lucide-react'
+import { Folder, Mic, Square, Video, X } from 'lucide-react'
 import {
   deleteRecording,
   listRecordings,
@@ -56,7 +56,12 @@ type Status = 'idle' | 'starting' | 'recording' | 'denied' | 'unsupported'
 /** câmera "sempre ligada" enquanto o modo vídeo está selecionado — mesmo antes de apertar gravar */
 type CameraStatus = 'idle' | 'starting' | 'ready' | 'denied'
 
-export function Recorder({ songId, songTitle, mode }: { songId: string; songTitle: string; mode: RecordingKind }) {
+export function Recorder({ songId, songTitle, mode, onModeChange }: {
+  songId: string
+  songTitle: string
+  mode: RecordingKind
+  onModeChange: (mode: RecordingKind) => void
+}) {
   const [recordings, setRecordings] = useState<Recording[] | null>(null)
   const [status, setStatus] = useState<Status>('idle')
   const [cameraStatus, setCameraStatus] = useState<CameraStatus>('idle')
@@ -260,6 +265,29 @@ export function Recorder({ songId, songTitle, mode }: { songId: string; songTitl
               {layerIds.size} gravaç{layerIds.size === 1 ? 'ão marcada' : 'ões marcadas'} pra tocar junto na próxima gravação de áudio.
             </p>
           )}
+        </div>
+      )}
+
+      {status !== 'recording' && status !== 'starting' && (
+        <div className="flex bg-bg2 border border-line rounded-full overflow-hidden shadow-[0_4px_14px_rgba(0,0,0,.3)]">
+          <button
+            className={`w-9 h-9 flex items-center justify-center bg-none border-0 [&>svg]:w-4 [&>svg]:h-4 ${mode === 'audio' ? 'text-accent' : 'text-dim'}`}
+            aria-pressed={mode === 'audio'}
+            onClick={() => onModeChange('audio')}
+            aria-label="Gravar áudio"
+            title="Gravar áudio"
+          >
+            <Mic />
+          </button>
+          <button
+            className={`w-9 h-9 flex items-center justify-center bg-none border-0 border-l border-line [&>svg]:w-4 [&>svg]:h-4 ${mode === 'video' ? 'text-accent' : 'text-dim'}`}
+            aria-pressed={mode === 'video'}
+            onClick={() => onModeChange('video')}
+            aria-label="Gravar vídeo"
+            title="Gravar vídeo"
+          >
+            <Video />
+          </button>
         </div>
       )}
 

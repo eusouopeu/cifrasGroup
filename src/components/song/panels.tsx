@@ -88,19 +88,11 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
   const modulations = view.sectionKeys.filter((k) => k.differsFromGlobal)
 
   return (
-    <Panel
-      title="Tom e capotraste"
-      headerExtra={
-        <button className="icon small" onClick={() => dispatch({ type: 'resetKey' })} aria-label="Voltar ao original" title="Voltar ao original">
-          <RotateCw />
-        </button>
-      }
-    >
-      <div className="toggle flex w-full [&>button]:flex-1">
-        <button className={tab === 'tom' ? 'on' : ''} onClick={() => setTab('tom')}>Tom</button>
-        <button className={tab === 'analise' ? 'on' : ''} onClick={() => setTab('analise')}>Análise funcional</button>
-      </div>
-
+    <section className="panel">
+      {/* conteúdo variável primeiro; título e abas por último — presos embaixo
+          (ver .chordspanel-footer) pra não pular de lugar quando o conteúdo de
+          cada aba muda de altura (ranking de tons, modulações, grade de graus) */}
+      <div className="min-h-[160px]">
       {tab === 'tom' && (
         <>
           <div className="panel-section">
@@ -194,7 +186,21 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
           </div>
         </div>
       )}
-    </Panel>
+      </div>
+
+      <div className="sticky -bottom-4 z-[1] flex flex-col gap-2 m-[.8rem_-1rem_-1rem] p-[.6rem_1rem] bg-bg2 border-t border-line">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-[.95rem]">Tom e capotraste</h3>
+          <button className="icon small" onClick={() => dispatch({ type: 'resetKey' })} aria-label="Voltar ao original" title="Voltar ao original">
+            <RotateCw />
+          </button>
+        </div>
+        <div className="toggle flex w-full [&>button]:flex-1">
+          <button className={tab === 'tom' ? 'on' : ''} onClick={() => setTab('tom')}>Tom</button>
+          <button className={tab === 'analise' ? 'on' : ''} onClick={() => setTab('analise')}>Análise funcional</button>
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -206,15 +212,10 @@ export function SimplifyPanel({ s, view, dispatch, mapSymbol }: {
 }) {
   const best = view.keyRanking[0]
   return (
-    <Panel title="Simplificação automática">
-      <div className="grid gap-1.5 [grid-template-columns:repeat(auto-fit,minmax(190px,1fr))] max-[620px]:grid-cols-1">
-        <LevelButton active={s.simplifyLevel === 0} onClick={() => dispatch({ type: 'setSimplifyLevel', level: 0 })}
-          title="Desligado" desc="Cifra exatamente como veio." />
-        <LevelButton active={s.simplifyLevel === 1} onClick={() => dispatch({ type: 'setSimplifyLevel', level: 1 })}
-          title="Nível 1 — acordes" desc="Troca acordes complexos por versões equivalentes mais fáceis, preservando o som." />
-        <LevelButton active={s.simplifyLevel === 2} onClick={() => dispatch({ type: 'setSimplifyLevel', level: 2 })}
-          title="Nível 2 — acordes + tom" desc="Faz o nível 1 e ainda transpõe para o tom mais fácil no violão." />
-      </div>
+    <section className="panel">
+      {/* conteúdo variável primeiro (lista de trocas cresce e encolhe); título e
+          botões de nível por último — presos embaixo pra não pular de lugar */}
+      <div className="min-h-[100px]">
       <label className="field wide">
         Semelhança mínima com o acorde original: <strong>{Math.round(s.threshold * 100)}%</strong>
         <input type="range" min={0.5} max={1} step={0.01} value={s.threshold}
@@ -251,7 +252,20 @@ export function SimplifyPanel({ s, view, dispatch, mapSymbol }: {
           </div>
         ))}
       </div>
-    </Panel>
+      </div>
+
+      <div className="sticky -bottom-4 z-[1] flex flex-col gap-2 m-[.8rem_-1rem_-1rem] p-[.6rem_1rem] bg-bg2 border-t border-line">
+        <h3 className="text-[.95rem]">Simplificação automática</h3>
+        <div className="grid gap-1.5 [grid-template-columns:repeat(auto-fit,minmax(190px,1fr))] max-[620px]:grid-cols-1">
+          <LevelButton active={s.simplifyLevel === 0} onClick={() => dispatch({ type: 'setSimplifyLevel', level: 0 })}
+            title="Desligado" desc="Cifra exatamente como veio." />
+          <LevelButton active={s.simplifyLevel === 1} onClick={() => dispatch({ type: 'setSimplifyLevel', level: 1 })}
+            title="Nível 1 — acordes" desc="Troca acordes complexos por versões equivalentes mais fáceis, preservando o som." />
+          <LevelButton active={s.simplifyLevel === 2} onClick={() => dispatch({ type: 'setSimplifyLevel', level: 2 })}
+            title="Nível 2 — acordes + tom" desc="Faz o nível 1 e ainda transpõe para o tom mais fácil no violão." />
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -268,7 +282,7 @@ export function PalettePanel({ s, view, dispatch }: { s: SongSettings; view: Cif
             onClick={() => dispatch({ type: 'setPalette', id: p.id })}
           >
             <strong>{p.name}</strong>
-            <span className="mono !text-accent !font-bold !text-[.78rem]">{previewPalette(view.displayedChords.map((c) => c.symbol), p.id)}</span>
+            <span className="mono !text-accent !font-bold !text-[.78rem]">{previewPalette(view.prePaletteChords.map((c) => c.symbol), p.id)}</span>
             <span>{p.description}</span>
           </button>
         ))}

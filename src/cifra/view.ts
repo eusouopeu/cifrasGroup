@@ -29,6 +29,11 @@ export interface CifraView {
   effectiveTranspose: number
   suggestedCapo: number
   displayedChords: { symbol: string; count: number }[]
+  /** acordes depois do nível 1 mas ANTES de qualquer paleta — base estável para
+   *  as prévias do painel de emoção, que não podem partir da paleta anterior
+   *  (senão trocar de emoção repetidas vezes vai compondo transformação em cima
+   *  de transformação, ao invés de sempre partir do mesmo lugar) */
+  prePaletteChords: { symbol: string; count: number }[]
 }
 
 /**
@@ -106,6 +111,15 @@ export function buildView(raw: string, settings: SongSettings): CifraView {
     .map(([symbol, count]) => ({ symbol, count }))
     .sort((a, b) => b.count - a.count)
 
+  const prePaletteCounts = new Map<string, number>()
+  for (const s of seq) {
+    const d = afterL1.get(s) ?? s
+    prePaletteCounts.set(d, (prePaletteCounts.get(d) ?? 0) + 1)
+  }
+  const prePaletteChords = [...prePaletteCounts.entries()]
+    .map(([symbol, count]) => ({ symbol, count }))
+    .sort((a, b) => b.count - a.count)
+
   return {
     parsed,
     map,
@@ -115,6 +129,7 @@ export function buildView(raw: string, settings: SongSettings): CifraView {
     effectiveTranspose: transpose,
     suggestedCapo,
     displayedChords,
+    prePaletteChords,
   }
 }
 

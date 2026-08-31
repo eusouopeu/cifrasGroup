@@ -15,6 +15,7 @@ import {
   RotateCw,
   Square,
   SquarePen,
+  Undo2,
   Video,
   X,
 } from 'lucide-react'
@@ -69,6 +70,7 @@ export function SongView({
   onNotesChange,
   onTagsChange,
   onRawChange,
+  onUndoRawChange,
   onPracticeSession,
   customTunings,
   onSaveCustomTuning,
@@ -85,6 +87,8 @@ export function SongView({
   onTagsChange: (tags: string[]) => void
   /** edição do texto da cifra em si (letra e acordes originais) */
   onRawChange: (raw: string) => void
+  /** desfaz a última edição do texto da cifra — só existe enquanto song.previousRaw estiver preenchido */
+  onUndoRawChange: () => void
   /** chamado quando o metrônomo é desligado, com a duração da sessão em ms */
   onPracticeSession: (ms: number) => void
   /** afinações criadas pelo usuário — theory/tunings.ts só tem os presets fixos */
@@ -209,13 +213,9 @@ export function SongView({
   const togglePanel = (p: Panel) => setPanel(panel === p ? null : p)
   const tuning = tuningById(s.tuning, customTunings)
 
-  // o mesmo toggle escolhe o modo (áudio/vídeo) e abre/fecha o gravador —
-  // tocar de novo no modo já ativo fecha, tocar no outro modo troca e mantém aberto
-  const openRecorder = (mode: RecordingKind) => {
-    if (panel === 'gravar' && recordMode === mode) { setPanel(null); return }
-    setRecordMode(mode)
-    setPanel('gravar')
-  }
+  // um botão só abre/fecha o gravador; a escolha de modo (áudio/vídeo) mora
+  // dentro do próprio gravador flutuante, não duplicada como dois botões aqui
+  const toggleRecorder = () => setPanel((p) => (p === 'gravar' ? null : 'gravar'))
 
   // tocar num acorde da letra abre a faixa de acordes (e destaca o tocado);
   // a ficha completa fica a um toque, a partir da faixa
@@ -246,6 +246,16 @@ export function SongView({
         >
           <Pencil />
         </button>
+        {song.previousRaw !== undefined && (
+          <button
+            className="icon"
+            onClick={onUndoRawChange}
+            aria-label="Desfazer última edição do texto da cifra"
+            title="Desfazer última edição do texto da cifra"
+          >
+            <Undo2 />
+          </button>
+        )}
         <button
           className={`icon${panel === 'acordes' ? ' active' : ''}`}
           onClick={() => togglePanel('acordes')}
@@ -536,8 +546,7 @@ export function SongView({
           </div>
           <div className="flex items-center gap-3.5 flex-none max-[620px]:gap-[.55rem]">
             {[
-              { active: panel === 'gravar' && recordMode === 'audio', onClick: () => openRecorder('audio'), label: 'Gravar áudio', Icon: Mic },
-              { active: panel === 'gravar' && recordMode === 'video', onClick: () => openRecorder('video'), label: 'Gravar vídeo', Icon: Video },
+              { active: panel === 'gravar', onClick: toggleRecorder, label: 'Gravar', Icon: recordMode === 'video' ? Video : Mic },
               { active: panel === 'notas', onClick: () => togglePanel('notas'), label: 'Notas', Icon: SquarePen },
             ].map(({ active, onClick, label, Icon }) => (
               <button
@@ -565,7 +574,9 @@ export function SongView({
         </div>
       )}
 
-      {panel === 'gravar' && !editingRaw && <Recorder songId={song.id} songTitle={song.title} mode={recordMode} />}
+      {panel === 'gravar' && !editingRaw && (
+        <Recorder songId={song.id} songTitle={song.title} mode={recordMode} onModeChange={setRecordMode} />
+      )}
 
       {tunerOpen && <Tuner onClose={() => setTunerOpen(false)} tuning={tuning} />}
     </div>

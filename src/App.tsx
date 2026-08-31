@@ -15,7 +15,8 @@ import { DEFAULT_PRACTICE, DEFAULT_SETTINGS, loadDBAsync, mergeDB, newId, saveDB
 import { buildBackup, countRecordings, parseBackup, quickBackupText, restoreBackupRecordings, type Backup } from './store/backup'
 import { deleteCustomTuning, loadCustomTunings, saveCustomTuning } from './store/customTunings'
 import { getDisplayDefaults } from './store/defaults'
-import { deleteAllRecordings, listRecordings, restoreRecordings } from './store/recordings'
+import { deleteAllRecordings } from './store/recordings'
+import { maybeRunAutoBackup } from './store/autoBackup'
 import { computeSongMeta } from './cifra/meta'
 import type { Tuning } from './theory/tunings'
 
@@ -27,8 +28,14 @@ function newSongSettings(): SongSettings {
   return { ...DEFAULT_SETTINGS, tuning }
 }
 
+const DEMO_SEEDED_KEY = 'cifrasgroup:demoSeeded'
+
+/** Só semeia a música de exemplo uma vez na vida do app — sem isso, quem apaga
+ *  o exemplo de propósito via voltar a vê-lo na próxima vez que a biblioteca ficar vazia. */
 function withDemoSong(loaded: DB): DB {
   if (Object.keys(loaded.songs).length > 0) return loaded
+  if (localStorage.getItem(DEMO_SEEDED_KEY)) return loaded
+  localStorage.setItem(DEMO_SEEDED_KEY, '1')
   const id = newId()
   loaded.songs[id] = {
     id,
@@ -74,7 +81,10 @@ export default function App() {
   useEffect(() => {
     let cancelled = false
     void loadDBAsync().then((loaded) => {
-      if (!cancelled) setDb(withDemoSong(loaded))
+      if (cancelled) return
+      const withDemo = withDemoSong(loaded)
+      setDb(withDemo)
+      void maybeRunAutoBackup(withDemo)
     })
     void loadCustomTunings().then((loaded) => {
       if (!cancelled) setCustomTunings(loaded)
@@ -158,11 +168,29 @@ export default function App() {
   }
 
   // editar o texto da cifra muda tudo o que é derivado dela: dificuldade,
-  // contagem de acordes e prévia da biblioteca vêm de `meta`, calculado uma vez
+  // contagem de acordes e prévia da biblioteca vêm de `meta`, calculado uma vez.
+  // guarda o texto anterior pra dar 1 nível de desfazer (colar errado, apagar
+  // trecho sem querer) sem precisar de histórico completo
   const changeRaw = (id: string, raw: string) => {
     setDb({
       ...db,
-      songs: { ...db.songs, [id]: { ...db.songs[id], raw, meta: computeSongMeta(raw), updatedAt: Date.now() } },
+      songs: {
+        ...db.songs,
+        [id]: { ...db.songs[id], previousRaw: db.songs[id].raw, raw, meta: computeSongMeta(raw), updatedAt: Date.now() },
+      },
+    })
+  }
+
+  const undoRawChange = (id: string) => {
+    setDb((prev) => {
+      if (!prev) return prev
+      const song = prev.songs[id]
+      if (song?.previousRaw === undefined) return prev
+      const raw = song.previousRaw
+      return {
+        ...prev,
+        songs: { ...prev.songs, [id]: { ...song, raw, previousRaw: undefined, meta: computeSongMeta(raw), updatedAt: Date.now() } },
+      }
     })
   }
 
@@ -245,6 +273,7 @@ export default function App() {
           onRename={(title, artist) => patchSong(song.id, { title, artist })}
           onNotesChange={(notes) => patchSong(song.id, { notes })}
           onRawChange={(raw) => changeRaw(song.id, raw)}
+          onUndoRawChange={() => undoRawChange(song.id)}
           onTagsChange={(tags) => patchSong(song.id, { tags })}
           onPracticeSession={(ms) => logPractice(song.id, ms)}
           customTunings={customTunings}
@@ -278,6 +307,10 @@ export default function App() {
     )
   }
 
+  // as gravações de prática ficam num IndexedDB separado (store/recordings) e só
+  // são apagadas de verdade depois da janela de desfazer expirar — enquanto isso
+  // continuam intactas no aparelho, mesmo se o app fechar antes do toast sumir
+  const DELETE_UNDO_MS = 8000
   const onDeleteSong = (id: string) => {
     const prev = db
     const song = db.songs[id]
@@ -285,17 +318,18 @@ export default function App() {
     const songs = { ...db.songs }
     delete songs[id]
     setDb({ ...db, songs, lists: db.lists.map((l) => ({ ...l, songIds: l.songIds.filter((x) => x !== id) })) })
-    // as gravações de prática ficam num IndexedDB separado (store/recordings)
-    // e não somem sozinhas com a música — apagadas aqui, restauradas se desfizer
-    void listRecordings(id).then((recs) => {
-      void deleteAllRecordings(id)
-      showToast(`"${song.title}" apagada.`, {
-        actionLabel: 'Desfazer',
-        onAction: () => {
-          setDb(prev)
-          void restoreRecordings(id, recs)
-        },
-      })
+    let undone = false
+    const timer = window.setTimeout(() => {
+      if (!undone) void deleteAllRecordings(id)
+    }, DELETE_UNDO_MS)
+    showToast(`"${song.title}" apagada.`, {
+      duration: DELETE_UNDO_MS,
+      actionLabel: 'Desfazer',
+      onAction: () => {
+        undone = true
+        window.clearTimeout(timer)
+        setDb(prev)
+      },
     })
   }
 
@@ -365,6 +399,7 @@ export default function App() {
         {libraryTab === 'gravacoes' && <RecordingsTab songs={db.songs} />}
         {libraryTab === 'config' && (
           <SettingsTab
+            songs={db.songs}
             customTunings={customTunings}
             onExport={() => downloadFullBackup(db, 'cifrasgroup-backup.json')}
             onImport={(json) => {

@@ -7,6 +7,8 @@ import { SongCard } from './SongCard'
 import { FontSizeToggleButton, InstrumentToggleButton } from './DisplayControls'
 import { ThemeToggleButton } from './ThemeControls'
 
+type SortBy = 'recente' | 'menosPraticadas' | 'semTocar'
+
 export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }: {
   db: DB
   onOpen: (id: string, listId?: string) => void
@@ -20,8 +22,19 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
   const [maxChordsFilter, setMaxChordsFilter] = useState<number | ''>('')
   const [difficultyFilter, setDifficultyFilter] = useState<Difficulty | null>(null)
   const [genreFilter, setGenreFilter] = useState<Set<string>>(new Set())
+  const [sortBy, setSortBy] = useState<SortBy>('recente')
 
-  const songs = useMemo(() => Object.values(db.songs).sort((a, b) => b.updatedAt - a.updatedAt), [db.songs])
+  const songs = useMemo(() => {
+    const list = Object.values(db.songs)
+    switch (sortBy) {
+      case 'menosPraticadas':
+        return list.sort((a, b) => a.practice.count - b.practice.count || b.updatedAt - a.updatedAt)
+      case 'semTocar':
+        return list.sort((a, b) => (a.practice.lastPlayedAt ?? 0) - (b.practice.lastPlayedAt ?? 0))
+      default:
+        return list.sort((a, b) => b.updatedAt - a.updatedAt)
+    }
+  }, [db.songs, sortBy])
 
   // gênero é o único filtro que ainda depende de olhar cada música (via o
   // ritmo escolhido) — dificuldade e nº de acordes já vêm prontos em song.meta
@@ -68,6 +81,18 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
 
       <div className="flex items-center gap-2 mt-2.5">
         <input className="search flex-1" aria-label="Buscar por título ou artista" placeholder="Buscar por título ou artista" value={query} onChange={(e) => setQuery(e.target.value)} />
+        {songs.length > 1 && (
+          <select
+            className="bg-bg2 border border-line rounded-lg text-fg px-2 py-1.5 text-[.8rem] flex-shrink-0"
+            aria-label="Ordenar biblioteca"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortBy)}
+          >
+            <option value="recente">recentes</option>
+            <option value="menosPraticadas">menos praticadas</option>
+            <option value="semTocar">sem tocar há mais tempo</option>
+          </select>
+        )}
         {songs.length > 0 && (
           <button
             className={`icon relative flex-shrink-0${filtersOpen ? ' active' : ''}`}
@@ -156,7 +181,7 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
       )}
       <div className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(230px,1fr))] mt-2 max-[620px]:grid-cols-1">
         {filtered.map((s) => (
-          <SongCard key={s.id} song={s} onOpen={() => onOpen(s.id)} onDelete={() => onDeleteSong(s.id)} onDuplicate={() => onDuplicateSong(s.id)} />
+          <SongCard key={s.id} song={s} onOpen={() => onOpen(s.id)} onDelete={() => onDeleteSong(s.id)} onDuplicate={() => onDuplicateSong(s.id)} showChords={false} />
         ))}
       </div>
 
