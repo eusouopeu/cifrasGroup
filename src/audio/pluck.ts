@@ -11,7 +11,7 @@
 
 let ctx: AudioContext | null = null
 
-function audioContext(): AudioContext {
+export function audioContext(): AudioContext {
   if (!ctx) {
     const Ctor: typeof AudioContext =
       window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
@@ -45,8 +45,12 @@ function karplusStrong(ac: AudioContext, freq: number, seconds: number): AudioBu
   return buf
 }
 
-/** Toca uma nota com timbre de corda pinçada. `freq` em Hz. */
-export function pluckNote(freq: number, seconds = 1.8): void {
+/**
+ * Toca uma nota com timbre de corda pinçada. `freq` em Hz.
+ * `destination` custom: usado pelos exercícios de ouvido pra rotear o pluck
+ * por um nó de efeito Web Audio antes da saída.
+ */
+export function pluckNote(freq: number, seconds = 1.8, destination?: AudioNode): void {
   const ac = audioContext()
   if (ac.state === 'suspended') void ac.resume()
   const src = ac.createBufferSource()
@@ -56,6 +60,6 @@ export function pluckNote(freq: number, seconds = 1.8): void {
   tone.frequency.value = Math.min(ac.sampleRate / 2 - 1000, freq * 12)
   const gain = ac.createGain()
   gain.gain.value = 0.9
-  src.connect(tone).connect(gain).connect(ac.destination)
+  src.connect(tone).connect(gain).connect(destination ?? ac.destination)
   src.start()
 }
