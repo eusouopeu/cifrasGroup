@@ -1,13 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Filter, Plus, X } from 'lucide-react'
 import type { DB } from '../store/db'
 import type { Difficulty } from '../cifra/meta'
+import { loadLibraryPrefs, saveLibraryPrefs, type SortBy } from '../store/libraryPrefs'
 import { rhythmById } from '../data/rhythms'
 import { SongCard } from './SongCard'
 import { FontSizeToggleButton, InstrumentToggleButton } from './DisplayControls'
 import { ThemeToggleButton } from './ThemeControls'
-
-type SortBy = 'recente' | 'menosPraticadas' | 'semTocar'
 
 export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }: {
   db: DB
@@ -16,13 +15,27 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
   onDeleteSong: (id: string) => void
   onDuplicateSong: (id: string) => void
 }) {
+  // filtros e ordenação são lembrados entre visitas (store/libraryPrefs.ts):
+  // esta tela é desmontada ao abrir uma música ou trocar de aba, e recomeçar do
+  // zero a cada volta obrigava a refazer o filtro o tempo todo. A busca por
+  // texto fica de fora de propósito — um termo esquecido faria a biblioteca
+  // parecer vazia ao abrir o app
+  const [prefs] = useState(loadLibraryPrefs)
   const [query, setQuery] = useState('')
-  const [filtersOpen, setFiltersOpen] = useState(false)
-  const [tagFilter, setTagFilter] = useState<string | null>(null)
-  const [maxChordsFilter, setMaxChordsFilter] = useState<number | ''>('')
-  const [difficultyFilter, setDifficultyFilter] = useState<Difficulty | null>(null)
-  const [genreFilter, setGenreFilter] = useState<Set<string>>(new Set())
-  const [sortBy, setSortBy] = useState<SortBy>('recente')
+  const [tagFilter, setTagFilter] = useState<string | null>(prefs.tagFilter)
+  const [maxChordsFilter, setMaxChordsFilter] = useState<number | ''>(prefs.maxChordsFilter)
+  const [difficultyFilter, setDifficultyFilter] = useState<Difficulty | null>(prefs.difficultyFilter)
+  const [genreFilter, setGenreFilter] = useState<Set<string>>(() => new Set(prefs.genreFilter))
+  const [sortBy, setSortBy] = useState<SortBy>(prefs.sortBy)
+  // com filtro salvo, o painel já abre visível: filtro escondido que ninguém
+  // lembra de ter ligado faz a biblioteca parecer que perdeu músicas
+  const [filtersOpen, setFiltersOpen] = useState(
+    prefs.tagFilter !== null || prefs.maxChordsFilter !== '' || prefs.difficultyFilter !== null || prefs.genreFilter.length > 0,
+  )
+
+  useEffect(() => {
+    saveLibraryPrefs({ sortBy, tagFilter, maxChordsFilter, difficultyFilter, genreFilter: [...genreFilter] })
+  }, [sortBy, tagFilter, maxChordsFilter, difficultyFilter, genreFilter])
 
   const songs = useMemo(() => {
     const list = Object.values(db.songs)

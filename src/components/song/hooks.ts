@@ -33,10 +33,21 @@ export function useSongSettings(
   }
 }
 
-/** Rolagem automática da cifra, em pixels por segundo proporcionais à velocidade escolhida. */
-export function useAutoScroll(scrollRef: RefObject<HTMLDivElement | null>, speed: number): void {
+/**
+ * Rolagem automática da cifra, em pixels por segundo já calculados pelo
+ * chamador (manual, na escala 0..SCROLL_MAX, ou derivada do bpm — ver
+ * store/songActions.ts).
+ */
+export function useAutoScroll(scrollRef: RefObject<HTMLDivElement | null>, pxPerSecond: number): void {
+  // a velocidade muda a cada ponto do slider (e a cada bpm quando sincronizada
+  // com o metrônomo); num ref, o laço continua o mesmo em vez de ser derrubado
+  // e recriado — refazer o efeito no meio da rolagem dava um solavanco
+  const speedRef = useRef(pxPerSecond)
+  speedRef.current = pxPerSecond
+  const running = pxPerSecond > 0
+
   useEffect(() => {
-    if (speed <= 0) return
+    if (!running) return
     let raf = 0
     let last = performance.now()
     let acc = 0
@@ -47,7 +58,7 @@ export function useAutoScroll(scrollRef: RefObject<HTMLDivElement | null>, speed
       const dt = Math.min((now - last) / 1000, 0.1)
       last = now
       if (el) {
-        acc += speed * 8 * dt
+        acc += speedRef.current * dt
         const whole = Math.floor(acc)
         if (whole > 0) {
           el.scrollTop += whole
@@ -58,7 +69,36 @@ export function useAutoScroll(scrollRef: RefObject<HTMLDivElement | null>, speed
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [scrollRef, speed])
+  }, [scrollRef, running])
+}
+
+/**
+ * Altura real de uma linha da cifra renderizada, medida no DOM (distância
+ * entre duas linhas consecutivas, o que já inclui o entrelinhas).
+ *
+ * É o que traduz "um compasso" em pixels na rolagem sincronizada com o bpm.
+ * Medida, e não calculada a partir do tamanho da fonte, porque o entrelinhas
+ * vem do CSS e a fonte é monoespaçada com métrica própria.
+ */
+export function useCifraLineHeight(scrollRef: RefObject<HTMLDivElement | null>, ...deps: unknown[]): number | null {
+  const [lineHeight, setLineHeight] = useState<number | null>(null)
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const measure = () => {
+      const lines = el.querySelectorAll<HTMLElement>('[data-line-index]')
+      if (lines.length < 2) { setLineHeight(null); return }
+      const delta = lines[1].getBoundingClientRect().top - lines[0].getBoundingClientRect().top
+      setLineHeight(delta > 0 ? delta : null)
+    }
+    measure()
+    // trocar de orientação/tamanho de janela muda a quebra de linha e a altura
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scrollRef, ...deps])
+  return lineHeight
 }
 
 export interface SectionLoop {

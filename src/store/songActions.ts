@@ -15,6 +15,32 @@ export const BPM_MAX = 240
 export const SCROLL_MAX = 20
 export const CAPO_MAX = 12
 
+/** pixels por segundo de cada ponto da escala 1..SCROLL_MAX da rolagem manual */
+const SCROLL_PX_PER_STEP = 8
+/** compassos por linha da cifra, quando não há batida escolhida para dizer o compasso */
+export const DEFAULT_BEATS_PER_LINE = 4
+
+/** Velocidade da rolagem manual (escala 0..SCROLL_MAX) em pixels por segundo. */
+export function manualScrollPxPerSecond(speed: number): number {
+  return Math.max(0, speed) * SCROLL_PX_PER_STEP
+}
+
+/**
+ * Velocidade de rolagem que faz a cifra descer uma linha por compasso no
+ * andamento do metrônomo — em vez de uma escala de 1 a 20 sem relação nenhuma
+ * com a música, que só se acerta no olho, tentativa e erro, tocando.
+ *
+ * @param bpm andamento do metrônomo
+ * @param beatsPerLine tempos que cada linha da cifra vale (o compasso da batida)
+ * @param lineHeightPx altura real de uma linha renderizada, medida no DOM
+ */
+export function bpmScrollPxPerSecond(bpm: number, beatsPerLine: number, lineHeightPx: number): number {
+  if (!Number.isFinite(bpm) || !Number.isFinite(beatsPerLine) || !Number.isFinite(lineHeightPx)) return 0
+  if (bpm <= 0 || beatsPerLine <= 0 || lineHeightPx <= 0) return 0
+  const linesPerSecond = bpm / 60 / beatsPerLine
+  return linesPerSecond * lineHeightPx
+}
+
 /** Tamanhos de texto oferecidos ao usuário — em vez de escolher o valor em px direto. */
 export const FONT_SIZES = { P: 13, M: 16, G: 19, GG: 23 } as const
 export type FontSizeLabel = keyof typeof FONT_SIZES
@@ -45,6 +71,7 @@ export type SongAction =
   | { type: 'toggleClick' }
   | { type: 'setScrollSpeed'; value: number }
   | { type: 'scrollSpeedBy'; delta: number }
+  | { type: 'toggleScrollSyncBpm' }
   | { type: 'setTuning'; id: string }
   | { type: 'overrideChord'; original: string; symbol: string }
   | { type: 'clearOverride'; original: string }
@@ -88,6 +115,8 @@ export function songSettingsPatch(s: SongSettings, action: SongAction): Partial<
     case 'scrollSpeedBy':
       // subir a partir de "parada" começa numa velocidade já perceptível
       return { scrollSpeed: clamp(s.scrollSpeed === 0 && action.delta > 0 ? 6 : s.scrollSpeed + action.delta, 0, SCROLL_MAX) }
+    case 'toggleScrollSyncBpm':
+      return { scrollSyncBpm: !s.scrollSyncBpm }
     case 'setTuning':
       return { tuning: action.id }
     case 'overrideChord':

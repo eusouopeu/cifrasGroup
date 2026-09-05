@@ -15,6 +15,7 @@ import {
   RotateCw,
   Square,
   SquarePen,
+  Timer,
   Undo2,
   Video,
   X,
@@ -26,7 +27,7 @@ import { nameOf, preferFlatsForKey } from '../theory/notes'
 import { guessPaletteFromSymbols, PALETTES } from '../theory/palettes'
 import { tuningById, type Tuning } from '../theory/tunings'
 import type { Song, SongSettings } from '../store/db'
-import { SCROLL_MAX } from '../store/songActions'
+import { bpmScrollPxPerSecond, DEFAULT_BEATS_PER_LINE, manualScrollPxPerSecond, SCROLL_MAX } from '../store/songActions'
 import { useDisplayDefaults } from './DisplayControls'
 import { CifraText } from './CifraText'
 import { Recorder } from './Recorder'
@@ -39,7 +40,7 @@ import { useToast } from './Toast'
 import { ChordMarker } from './song/ChordMarker'
 import { ChordSheet } from './song/ChordSheet'
 import { ChordStrip } from './song/ChordStrip'
-import { EditTitle, ToolButton } from './song/parts'
+import { BottomBar, EditTitle, StripBar, ToolButton, TransportButton } from './song/parts'
 import {
   ChordsPanel,
   KeyPanel,
@@ -50,6 +51,7 @@ import {
 } from './song/panels'
 import {
   useAutoScroll,
+  useCifraLineHeight,
   usePracticeTracking,
   useSectionLoop,
   useSongSettings,
@@ -145,7 +147,17 @@ export function SongView({
   const metronome = useMetronome(rhythm, s.bpm, s.playPattern, s.playClick)
   const play = metronome.toggle
   const loop = useSectionLoop(scrollRef, showToast)
-  useAutoScroll(scrollRef, s.scrollSpeed)
+
+  // rolagem sincronizada com o metrônomo: uma linha da cifra por compasso.
+  // Depende de medir a linha renderizada, então refaz a medida quando muda o
+  // que altera a altura da linha (texto, fonte, tablatura escondida, edição)
+  const lineHeight = useCifraLineHeight(scrollRef, song.raw, display.fontSize, display.hideTabs, editingRaw)
+  const beatsPerLine = Number(rhythm?.meter.split('/')[0]) || DEFAULT_BEATS_PER_LINE
+  const syncedPxPerSecond = bpmScrollPxPerSecond(s.bpm, beatsPerLine, lineHeight ?? 0)
+  // sem linha medida (cifra de uma linha só, ou ainda não renderizada) a
+  // sincronia não tem como ser calculada: cai na velocidade manual
+  const syncOn = s.scrollSyncBpm && syncedPxPerSecond > 0
+  useAutoScroll(scrollRef, s.scrollSpeed <= 0 ? 0 : syncOn ? syncedPxPerSecond : manualScrollPxPerSecond(s.scrollSpeed))
   useSongShortcuts(play, dispatch)
   usePracticeTracking(metronome.running, onPracticeSession)
   // tocando, ninguém encosta no celular por minutos — sem isso a tela apaga
@@ -443,50 +455,70 @@ export function SongView({
       </div>
 
       {scrollBarOpen && !editingRaw && (
-        <div className="sticky bottom-0 z-[6] flex items-center gap-1.5 py-1.5 px-[.6rem] bg-bg3 border-t border-line">
-          <button
-            className="icon"
+        <StripBar>
+          <TransportButton
+            size="sm"
             onClick={() => dispatch({ type: 'setScrollSpeed', value: s.scrollSpeed > 0 ? 0 : Number(localStorage.getItem(LAST_SCROLL_SPEED_KEY)) || 6 })}
-            aria-label={s.scrollSpeed > 0 ? 'Pausar rolagem automática' : 'Retomar rolagem automática'}
+            label={s.scrollSpeed > 0 ? 'Pausar rolagem automática' : 'Retomar rolagem automática'}
           >
             {s.scrollSpeed > 0 ? <Pause /> : <Play />}
-          </button>
-          <button
-            className={`icon${loop.active ? ' active' : ''}`}
+          </TransportButton>
+          <TransportButton
+            size="sm"
+            active={loop.active}
             onClick={loop.toggle}
-            aria-label={loop.active ? 'Desativar loop do trecho' : 'Ativar loop do trecho selecionado na cifra'}
+            label={loop.active ? 'Desativar loop do trecho' : 'Ativar loop do trecho selecionado na cifra'}
             title={loop.active ? 'Loop ativo — toque para desativar' : 'Selecione um trecho da letra e toque para repeti-lo em loop'}
           >
             <RotateCw />
-          </button>
-          <span className="text-[.95rem] leading-none opacity-75" aria-hidden="true">🐢</span>
-          <input
-            className="flex-1 min-w-0 accent-accent max-[620px]:min-h-8"
-            type="range"
-            min={0}
-            max={SCROLL_MAX}
-            step={1}
-            value={s.scrollSpeed}
-            aria-label="Velocidade da rolagem automática"
-            onChange={(e) => {
-              const value = Number(e.target.value)
-              if (value > 0) localStorage.setItem(LAST_SCROLL_SPEED_KEY, String(value))
-              dispatch({ type: 'setScrollSpeed', value })
-            }}
-          />
-          <span className="text-[.95rem] leading-none opacity-75" aria-hidden="true">🐇</span>
-          <button
-            className="icon"
+          </TransportButton>
+          <TransportButton
+            size="sm"
+            active={s.scrollSyncBpm}
+            onClick={() => dispatch({ type: 'toggleScrollSyncBpm' })}
+            label={s.scrollSyncBpm ? 'Voltar à velocidade manual de rolagem' : 'Rolar no andamento do metrônomo'}
+            title={s.scrollSyncBpm ? 'Rolando no andamento: uma linha por compasso' : 'Rolar no andamento do metrônomo (uma linha por compasso)'}
+          >
+            <Timer />
+          </TransportButton>
+          {s.scrollSyncBpm ? (
+            <span className="flex-1 min-w-0 text-[.72rem] text-dim overflow-hidden text-ellipsis whitespace-nowrap">
+              {syncOn
+                ? `${s.bpm} bpm · uma linha a cada ${beatsPerLine} tempos`
+                : 'sem linhas suficientes para medir o compasso — usando a velocidade manual'}
+            </span>
+          ) : (
+            <>
+              <span className="text-[.95rem] leading-none opacity-75" aria-hidden="true">🐢</span>
+              <input
+                className="flex-1 min-w-0 accent-accent max-[620px]:min-h-8"
+                type="range"
+                min={0}
+                max={SCROLL_MAX}
+                step={1}
+                value={s.scrollSpeed}
+                aria-label="Velocidade da rolagem automática"
+                onChange={(e) => {
+                  const value = Number(e.target.value)
+                  if (value > 0) localStorage.setItem(LAST_SCROLL_SPEED_KEY, String(value))
+                  dispatch({ type: 'setScrollSpeed', value })
+                }}
+              />
+              <span className="text-[.95rem] leading-none opacity-75" aria-hidden="true">🐇</span>
+            </>
+          )}
+          <TransportButton
+            size="sm"
             onClick={() => { dispatch({ type: 'setScrollSpeed', value: 0 }); setScrollBarOpen(false) }}
-            aria-label="Fechar controle de rolagem"
+            label="Fechar controle de rolagem"
           >
             <X />
-          </button>
-        </div>
+          </TransportButton>
+        </StripBar>
       )}
 
       {rhythm && metronome.running && !editingRaw && (
-        <div className="sticky bottom-0 z-[6] flex items-center gap-2.5 py-1.5 px-[.6rem] bg-bg3 border-t border-line overflow-hidden">
+        <StripBar>
           <button
             className={`icon${s.playPattern ? ' active' : ''}`}
             onClick={() => dispatch({ type: 'togglePattern' })}
@@ -499,27 +531,26 @@ export function SongView({
           <div className="flex-1 min-w-0 overflow-hidden">
             <RhythmGrid rhythm={rhythm} activeStep={metronome.step} />
           </div>
-        </div>
+        </StripBar>
       )}
 
       {/* barra de transporte: fica no rodapé, ao alcance do polegar — durante a
           edição da cifra vira só os botões de cancelar/salvar */}
       {editingRaw ? (
-        <div className="sticky bottom-0 z-[5] flex items-center justify-between gap-2.5 py-2 px-[.7rem] pb-[calc(.5rem+env(safe-area-inset-bottom))] bg-bg2 border-t border-line shadow-[0_-4px_16px_rgba(0,0,0,.18)] max-[620px]:gap-[.35rem] max-[620px]:p-[.4rem_.4rem_calc(.4rem+env(safe-area-inset-bottom))]">
+        <BottomBar>
           <button className="btn wide ghost !flex-1 !text-center !mb-0" onClick={() => setEditingRaw(false)}>cancelar</button>
           <button className="btn wide primary !flex-1 !text-center !mb-0" onClick={saveEditingRaw}>salvar</button>
-        </div>
+        </BottomBar>
       ) : (
-        <div className="sticky bottom-0 z-[5] flex items-center justify-between gap-[.7rem] py-2 px-[.7rem] pb-[calc(.5rem+env(safe-area-inset-bottom))] bg-bg2 border-t border-line shadow-[0_-4px_16px_rgba(0,0,0,.18)] max-[620px]:gap-[.35rem] max-[620px]:p-[.4rem_.4rem_calc(.4rem+env(safe-area-inset-bottom))]">
-          <button
-            className={`flex-none w-[52px] h-[52px] rounded-full border border-line grid place-items-center [&>svg]:w-[22px] [&>svg]:h-[22px] max-[620px]:w-[46px] max-[620px]:h-[46px] max-[620px]:[&>svg]:w-5 max-[620px]:[&>svg]:h-5 ${
-              metronome.running ? 'bg-accent border-accent text-[#14161a]' : 'bg-bg3'
-            }`}
+        <BottomBar>
+          <TransportButton
+            size="lg"
+            filled={metronome.running}
             onClick={play}
-            aria-label={metronome.running ? 'Parar metrônomo' : 'Iniciar metrônomo'}
+            label={metronome.running ? 'Parar metrônomo' : 'Iniciar metrônomo'}
           >
             {metronome.running ? <Square /> : <Play />}
-          </button>
+          </TransportButton>
           <div className="flex items-center gap-1 flex-none max-[620px]:gap-[.2rem]">
             <button
               className="flex-none bg-none border-0 text-left flex flex-col leading-[1.15] p-[.2rem_.15rem] min-h-[52px] justify-center max-[620px]:py-[.2rem] max-[620px]:px-0 [&>*:first-child>strong]:text-[1.1rem] max-[620px]:[&>*:first-child>strong]:text-base [&>*]:text-[.7rem] [&>*]:text-dim [&>*]:max-w-[100px] [&>*]:overflow-hidden [&>*]:text-ellipsis [&>*]:whitespace-nowrap max-[620px]:[&>*]:max-w-[62px] max-[620px]:[&>*]:text-[.64rem]"
@@ -529,49 +560,29 @@ export function SongView({
               <span><strong>{s.bpm}</strong> bpm</span>
               <span>{rhythm ? rhythm.name : 'só pulso'}</span>
             </button>
-            <button
-              className="w-[34px] h-[34px] rounded-full border border-line bg-bg3 text-fg grid place-items-center p-0 [&>svg]:w-4 [&>svg]:h-4 max-[620px]:w-[30px] max-[620px]:h-[30px] max-[620px]:[&>svg]:w-3.5 max-[620px]:[&>svg]:h-3.5"
-              onClick={() => dispatch({ type: 'bpmBy', delta: -1 })}
-              aria-label="Diminuir 1 bpm"
-            >
+            <TransportButton size="sm" onClick={() => dispatch({ type: 'bpmBy', delta: -1 })} label="Diminuir 1 bpm">
               <Minus />
-            </button>
-            <button
-              className="w-[34px] h-[34px] rounded-full border border-line bg-bg3 text-fg grid place-items-center p-0 [&>svg]:w-4 [&>svg]:h-4 max-[620px]:w-[30px] max-[620px]:h-[30px] max-[620px]:[&>svg]:w-3.5 max-[620px]:[&>svg]:h-3.5"
-              onClick={() => dispatch({ type: 'bpmBy', delta: 1 })}
-              aria-label="Aumentar 1 bpm"
-            >
+            </TransportButton>
+            <TransportButton size="sm" onClick={() => dispatch({ type: 'bpmBy', delta: 1 })} label="Aumentar 1 bpm">
               <Plus />
-            </button>
+            </TransportButton>
           </div>
           <div className="flex items-center gap-3.5 flex-none max-[620px]:gap-[.55rem]">
-            {[
-              { active: panel === 'gravar', onClick: toggleRecorder, label: 'Gravar', Icon: recordMode === 'video' ? Video : Mic },
-              { active: panel === 'notas', onClick: () => togglePanel('notas'), label: 'Notas', Icon: SquarePen },
-            ].map(({ active, onClick, label, Icon }) => (
-              <button
-                key={label}
-                className={`flex-none w-[42px] h-[42px] rounded-full border grid place-items-center [&>svg]:w-[19px] [&>svg]:h-[19px] max-[620px]:w-[38px] max-[620px]:h-[38px] max-[620px]:[&>svg]:w-[17px] max-[620px]:[&>svg]:h-[17px] ${
-                  active ? 'bg-[color-mix(in_srgb,var(--accent)_16%,var(--bg3))] border-accent text-accent' : 'border-line bg-bg3 text-dim'
-                }`}
-                onClick={onClick}
-                aria-label={label}
-                title={label}
-              >
-                <Icon />
-              </button>
-            ))}
-            <button
-              className={`flex-none w-[42px] h-[42px] rounded-full border grid place-items-center [&>svg]:w-[19px] [&>svg]:h-[19px] max-[620px]:w-[38px] max-[620px]:h-[38px] max-[620px]:[&>svg]:w-[17px] max-[620px]:[&>svg]:h-[17px] ${
-                s.scrollSpeed > 0 ? 'bg-[color-mix(in_srgb,var(--accent)_16%,var(--bg3))] border-accent text-accent' : 'border-line bg-bg3 text-dim'
-              }`}
-              onClick={toggleScroll}
-              aria-label="Rolagem automática"
+            <TransportButton
+              active={panel === 'gravar'}
+              onClick={toggleRecorder}
+              label="Gravar"
             >
+              {recordMode === 'video' ? <Video /> : <Mic />}
+            </TransportButton>
+            <TransportButton active={panel === 'notas'} onClick={() => togglePanel('notas')} label="Notas">
+              <SquarePen />
+            </TransportButton>
+            <TransportButton active={s.scrollSpeed > 0} onClick={toggleScroll} label="Rolagem automática">
               {s.scrollSpeed > 0 ? <Pause /> : <ArrowDown />}
-            </button>
+            </TransportButton>
           </div>
-        </div>
+        </BottomBar>
       )}
 
       {panel === 'gravar' && !editingRaw && (

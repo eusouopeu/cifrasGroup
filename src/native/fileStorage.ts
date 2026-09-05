@@ -12,12 +12,14 @@ import { Directory, Encoding, Filesystem } from '@capacitor/filesystem'
 
 const APP_FOLDER = 'CifrasGroup'
 
-export type AppFileKind = 'cifras' | 'audios' | 'videos'
+export type AppFileKind = 'cifras' | 'audios' | 'videos' | 'backups'
 
 const SUBFOLDER: Record<AppFileKind, string> = {
   cifras: 'Cifras',
   audios: 'Audios',
   videos: 'Videos',
+  // mesma pasta do backup automático semanal (store/autoBackup.ts)
+  backups: 'Backups',
 }
 
 function sanitizeFilename(name: string): string {

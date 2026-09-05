@@ -20,12 +20,23 @@ export function RecordingsTab({ songs }: { songs: Record<string, Song> }) {
   const [kindTab, setKindTab] = useState<Record<string, Kind>>({})
   const [expanded, setExpanded] = useState<string | null>(null)
 
+  // recarrega quando o conjunto de músicas muda (apagou uma, importou backup) e
+  // quando o app volta do segundo plano — antes a lista era lida uma única vez
+  // na montagem, então uma gravação feita fora daqui só aparecia ao reabrir o app
+  const songIdsKey = Object.keys(songs).sort().join(',')
   useEffect(() => {
     let cancelled = false
-    void listAllRecordings(Object.keys(songs)).then((r) => { if (!cancelled) setBySong(r) })
-    return () => { cancelled = true }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    const reload = () => {
+      void listAllRecordings(songIdsKey ? songIdsKey.split(',') : []).then((r) => { if (!cancelled) setBySong(r) })
+    }
+    reload()
+    const onVisible = () => { if (document.visibilityState === 'visible') reload() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      cancelled = true
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [songIdsKey])
 
   const mutate = (songId: string, list: Recording[]) => {
     setBySong((cur) => {

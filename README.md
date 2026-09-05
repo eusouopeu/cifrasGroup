@@ -73,11 +73,14 @@ para afinar de ouvido quando o ambiente está barulhento demais para o microfone
 - Listas que guardam tom, capotraste, nível de simplificação, paleta, batida,
   velocidade de rolagem e tamanho do texto de cada música
 - Tablaturas ocultas por padrão, tamanho de texto ajustável, rolagem automática
-  com controle de velocidade no rodapé
+  com controle de velocidade no rodapé — ou atrelada ao metrônomo, descendo uma
+  linha da cifra por compasso no andamento escolhido
 - Edição do texto da cifra dentro do app, e troca manual de qualquer acorde
 - Tela mantida acesa enquanto se toca (rolagem, metrônomo ou modo apresentação)
 - Gravação de prática por música, com marcador para não descartar as boas
-- Backup e restauração em JSON, **com as gravações junto**
+- Busca, filtros e ordenação da biblioteca lembrados entre visitas
+- Backup e restauração em JSON, **com as gravações junto**, salvo na pasta do
+  app em `Documentos/CifrasGroup/Backups` (e um backup automático semanal lá)
 
 ## Importar cifras
 

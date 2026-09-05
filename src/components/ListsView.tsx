@@ -75,7 +75,7 @@ function ListSection({ list, db, onOpen, onDeleteList, onRemoveFromList, onDupli
         >
           {open ? <ChevronDown /> : <ChevronRight />} {list.name} <span className="count">{songs.length}</span>
         </button>
-        {list.id !== 'favoritas' && <button className="icon small" aria-label={`Apagar a lista ${list.name}`} onClick={() => onDeleteList(list.id)}>apagar</button>}
+        <button className="icon small" aria-label={`Apagar a lista ${list.name}`} onClick={() => onDeleteList(list.id)}>apagar</button>
       </div>
       {open && (
         songs.length === 0

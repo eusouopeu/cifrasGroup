@@ -28,6 +28,8 @@ export interface SongSettings {
   /** trocas manuais feitas pelo usuário: símbolo original -> símbolo escolhido */
   overrides: Record<string, string>
   scrollSpeed: number
+  /** rolagem automática atrelada ao andamento: uma linha da cifra por compasso do metrônomo */
+  scrollSyncBpm: boolean
   /** id do catálogo em theory/tunings.ts */
   tuning: string
   /**
@@ -98,6 +100,7 @@ export const DEFAULT_SETTINGS: SongSettings = {
   playClick: true,
   overrides: {},
   scrollSpeed: 0,
+  scrollSyncBpm: false,
   tuning: 'standard',
   preferredVoicings: {},
   manualChordTokens: [],
@@ -105,8 +108,11 @@ export const DEFAULT_SETTINGS: SongSettings = {
 
 export const DEFAULT_PRACTICE: PracticeStats = { count: 0, totalMs: 0, lastPlayedAt: null }
 
+// nenhuma lista de fábrica: a "Favoritas" que era semeada aqui nunca teve como
+// ser preenchida (não existe botão de favoritar em lugar nenhum do app) e ainda
+// era protegida contra apagar, então ficava para sempre vazia na tela de Listas
 function emptyDB(): DB {
-  return { version: 1, songs: {}, lists: [{ id: 'favoritas', name: 'Favoritas', description: '', songIds: [], createdAt: Date.now() }] }
+  return { version: 1, songs: {}, lists: [] }
 }
 
 function normalize(db: DB): DB {

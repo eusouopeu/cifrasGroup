@@ -5,15 +5,24 @@ import { nameOf, SHARP_NAMES } from '../theory/notes'
 import { stringFrequencies, tuningById, type Tuning } from '../theory/tunings'
 import { pluckNote } from '../audio/pluck'
 import { getEssentia, pitchFromBuffer } from '../audio/analysis'
+import { stabilizeCents } from '../audio/pitchDisplay'
 
 const STANDARD_TUNING = tuningById('standard')
 
 /** abaixo disso, a confiança do PitchYin é fraca/ambígua demais pra confiar */
 const CLARITY_THRESHOLD = 0.4
 /** quantas leituras recentes entram na mediana que amortece os saltos */
-const PITCH_HISTORY_SIZE = 6
-/** o quanto a leitura suavizada anda em direção à mediana a cada quadro (0..1) */
-const PITCH_SMOOTHING = 0.35
+const PITCH_HISTORY_SIZE = 12
+/**
+ * O quanto a leitura suavizada anda em direção à mediana a cada quadro (0..1).
+ *
+ * Era 0.35: o ponteiro perseguia cada micro-variação da corda (o próprio
+ * decaimento da nota muda a afinação em alguns cents) e ficava indo e voltando
+ * sem parar, o que torna impossível decidir se já está afinado. Mais baixo, o
+ * ponteiro leva uns décimos de segundo a mais para chegar, mas *para* quando
+ * chega — que é o que se usa para afinar.
+ */
+const PITCH_SMOOTHING = 0.12
 /** abaixo disso o sinal é silêncio — nem vale rodar a detecção de altura */
 const RMS_THRESHOLD = 0.01
 
@@ -127,7 +136,16 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
                 const med = median(hist)
                 const next = smoothedRef.current === null ? med : smoothedRef.current + (med - smoothedRef.current) * PITCH_SMOOTHING
                 smoothedRef.current = next
-                setReading(freqToReading(next))
+                // zona morta no que é exibido: variação de menos de ~2,5 cents
+                // não mexe no ponteiro nem no número (audio/pitchDisplay.ts)
+                setReading((prev) => {
+                  const fresh = freqToReading(next)
+                  const cents = stabilizeCents(prev && prev.pc === fresh.pc && prev.octave === fresh.octave ? prev.cents : null, fresh.cents)
+                  if (prev && prev.pc === fresh.pc && prev.octave === fresh.octave && prev.cents === cents && Math.abs(prev.freq - fresh.freq) < 0.15) {
+                    return prev
+                  }
+                  return { ...fresh, cents }
+                })
               }
             }
           }
@@ -309,7 +327,7 @@ function TunerGauge({ reading, inTune, cents, embedded }: { reading: Reading; in
           y2={pivotY - Math.cos((angle * Math.PI) / 180) * needleLen}
           strokeWidth={2.5}
           strokeLinecap="round"
-          className={`transition-all duration-75 ease-linear ${inTune ? 'stroke-accent2' : 'stroke-accent'}`}
+          className={`transition-all duration-300 ease-out ${inTune ? 'stroke-accent2' : 'stroke-accent'}`}
         />
         <circle cx={pivotX} cy={pivotY} r={7} strokeWidth={2} className="fill-bg3 stroke-line" />
       </svg>

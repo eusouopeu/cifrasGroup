@@ -117,6 +117,37 @@ de equivalente por toque/teclado). Painel de ações fica com `aria-hidden` e
 `tabIndex={-1}` quando fechado. Reaproveitar esse padrão para qualquer lista
 de cards que precise do mesmo tipo de ação secundária.
 
+### Barra de transporte da tela da música
+
+Os botões redondos do rodapé e as barras fixas vivem em `src/components/song/parts.tsx`
+(`TransportButton` com tamanhos `sm`/`md`/`lg`, `BottomBar`, `StripBar`). Antes cada
+botão repetia as mesmas ~10 utilities Tailwind com todas as variantes `max-[620px]:`
+dentro de `SongView.tsx`, e um ajuste de tamanho tinha de ser refeito em cinco cópias.
+Qualquer botão novo do rodapé usa esses componentes.
+
+### Rolagem automática
+
+Duas fontes de velocidade, ambas em px/s e calculadas em `store/songActions.ts`
+(`manualScrollPxPerSecond`, `bpmScrollPxPerSecond`): o slider manual e a sincronia
+com o metrônomo (`SongSettings.scrollSyncBpm`), que desce uma linha da cifra por
+compasso. A altura da linha é **medida no DOM** (`useCifraLineHeight`), nunca
+calculada a partir do tamanho da fonte. `useAutoScroll` só recebe o resultado.
+
+### Arquivos que o app gera
+
+Tudo o que o app grava (cifra em .txt, gravações, backup manual e o automático
+semanal) passa por `native/fileStorage.ts#saveAppFile`, que escreve em
+`Documentos/CifrasGroup/<subpasta>` no app nativo e cai no download comum no
+navegador. Não usar `<a download>` direto: no WebView do Android o arquivo não
+fica em lugar nenhum que o usuário ache depois.
+
+### Preferências de tela lembradas
+
+Filtros e ordenação da biblioteca ficam em `store/libraryPrefs.ts` (localStorage,
+lido campo a campo para um valor estranho não quebrar a tela). A busca por texto
+fica de fora de propósito. Telas são desmontadas ao trocar de aba, então estado
+de filtro que o usuário escolheu precisa morar fora do componente.
+
 ### Aba "Voz" mora em Afinação, não em Acordes
 
 VoiceLab (retrato de timbre por microfone) foi movido do painel Acordes da

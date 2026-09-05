@@ -93,7 +93,8 @@ export function SettingsTab({ songs, customTunings, onExport, onImport }: {
         <h4>Backup</h4>
         <p className="hint small">
           O arquivo leva músicas, listas, configurações de cada música e também as gravações de prática —
-          por isso pode ficar grande e demorar alguns segundos para ser gerado.
+          por isso pode ficar grande e demorar alguns segundos para ser gerado. No celular ele é salvo direto em
+          <strong> Documentos/CifrasGroup/Backups</strong>, junto com o backup automático semanal.
         </p>
         <div className="row tight">
           <button

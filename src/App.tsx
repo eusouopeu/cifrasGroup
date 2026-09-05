@@ -11,6 +11,7 @@ import { ImportView } from './components/ImportView'
 import { SongView } from './components/SongView'
 import { useToast } from './components/Toast'
 import { initShareTarget } from './native/shareTarget'
+import { saveAppFile } from './native/fileStorage'
 import { DEFAULT_PRACTICE, DEFAULT_SETTINGS, loadDBAsync, mergeDB, newId, saveDBAsync, type DB, type SongSettings } from './store/db'
 import { buildBackup, countRecordings, parseBackup, quickBackupText, restoreBackupRecordings, type Backup } from './store/backup'
 import { deleteCustomTuning, loadCustomTunings, saveCustomTuning } from './store/customTunings'
@@ -54,18 +55,17 @@ function withDemoSong(loaded: DB): DB {
   return loaded
 }
 
-function downloadText(text: string, filename: string) {
-  const blob = new Blob([text], { type: 'application/json' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(a.href)
-}
-
-/** Backup completo (músicas, listas e gravações de prática) como arquivo JSON. */
-async function downloadFullBackup(db: DB, filename: string) {
-  downloadText(await buildBackup(db), filename)
+/**
+ * Backup completo (músicas, listas e gravações de prática) como arquivo JSON,
+ * gravado na pasta do app em Documentos — o mesmo caminho das cifras, das
+ * gravações e do backup automático semanal.
+ *
+ * Antes era um download de blob (`<a download>`), que no WebView do app nativo
+ * não deixa o arquivo em lugar nenhum que o usuário consiga achar depois. No
+ * navegador, saveAppFile continua caindo no download comum.
+ */
+async function saveFullBackup(db: DB, filename: string) {
+  return saveAppFile('backups', filename, await buildBackup(db))
 }
 
 export default function App() {
@@ -401,7 +401,11 @@ export default function App() {
           <SettingsTab
             songs={db.songs}
             customTunings={customTunings}
-            onExport={() => downloadFullBackup(db, 'cifrasgroup-backup.json')}
+            onExport={() =>
+              saveFullBackup(db, `cifrasgroup-backup-${new Date().toISOString().slice(0, 10)}.json`).then((res) => {
+                if (res.savedToDevice) showToast(`Backup salvo em ${res.path}.`, { duration: 8000 })
+              })
+            }
             onImport={(json) => {
               const next = parseBackup(json)
               if (!next) { showToast('Arquivo de backup inválido.'); return }
@@ -420,7 +424,7 @@ export default function App() {
           onChoose={(mode) => {
             const incoming = importChoice
             if (!incoming) return
-            downloadText(quickBackupText(db), `cifrasgroup-backup-antes-de-importar-${Date.now()}.json`)
+            void saveAppFile('backups', `cifrasgroup-backup-antes-de-importar-${Date.now()}.json`, quickBackupText(db))
             // na mesclagem as músicas entram com ids novos; no "substituir tudo"
             // os ids do arquivo são os que valem, então o mapa é a identidade
             const { db: next, idMap } =
