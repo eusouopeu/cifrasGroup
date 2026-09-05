@@ -104,7 +104,7 @@ h1, h2, h3, h4 { margin: 0 0 .5rem; line-height: 1.2; }
 h2 { font-size: 1rem; margin-top: 1.5rem; text-transform: uppercase; letter-spacing: .06em; color: var(--dim); }
 h4 { font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; color: var(--dim); margin-top: 1rem; }
 a { color: var(--accent2); }
-.hint { color: var(--dim); font-size: .85rem; margin: .4rem 0; }
+.hint { color: var(--dim); font-size: .85rem; margin: .5rem 0; line-height: 1.5; }
 .hint.small, .small { font-size: .76rem; }
 .count { color: var(--dim); font-weight: 400; font-size: .8em; }
 

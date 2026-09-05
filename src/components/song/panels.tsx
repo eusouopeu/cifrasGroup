@@ -4,7 +4,7 @@
  * painel arriscar os outros.
  */
 import { useState } from 'react'
-import { ArrowRight, Minus, Music, Play, Plus, RotateCw, Square, Volume2 } from 'lucide-react'
+import { ArrowPathIcon, ArrowRightIcon, MinusIcon, PlayIcon, PlusIcon, StopIcon } from '@heroicons/react/24/outline'
 import { guessKeyModeFromSymbols } from '../../cifra/parse'
 import type { CifraView } from '../../cifra/view'
 import { RHYTHMS, type Rhythm } from '../../data/rhythms'
@@ -97,11 +97,11 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
         <>
           <div className="panel-section">
             <div className="row">
-              <button className="icon" onClick={() => dispatch({ type: 'transposeBy', semitones: -1 })} aria-label="−1 semitom"><Minus /></button>
+              <button className="icon" onClick={() => dispatch({ type: 'transposeBy', semitones: -1 })} aria-label="−1 semitom"><MinusIcon /></button>
               <div className="flex-1 text-center text-accent2 text-[.85rem]">
                 {view.displayedChords[0] ? <span className="mono">{view.displayedChords.slice(0, 4).map((c) => c.symbol).join('  ')}</span> : '—'}
               </div>
-              <button className="icon" onClick={() => dispatch({ type: 'transposeBy', semitones: 1 })} aria-label="+1 semitom"><Plus /></button>
+              <button className="icon" onClick={() => dispatch({ type: 'transposeBy', semitones: 1 })} aria-label="+1 semitom"><PlusIcon /></button>
             </div>
             <label className="field inline" style={{ marginTop: '.7rem' }}>
               Capotraste
@@ -147,7 +147,7 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
                 {modulations.map((k) => (
                   <div key={k.label} className="subrow">
                     <span className="mono from">{k.label}</span>
-                    <ArrowRight className="arrow-icon" />
+                    <ArrowRightIcon className="arrow-icon" />
                     <span className="mono to">{k.best.semitones === 0 ? 'original' : keyOptionName(k.best.chords)}</span>
                     <span className="score">{k.best.ease}/100 fácil</span>
                     <span className="reason">{k.best.capo > 0 ? `capo na ${k.best.capo}ª casa` : 'sem capo'}</span>
@@ -192,7 +192,7 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-[.95rem]">Tom e capotraste</h3>
           <button className="icon small" onClick={() => dispatch({ type: 'resetKey' })} aria-label="Voltar ao original" title="Voltar ao original">
-            <RotateCw />
+            <ArrowPathIcon />
           </button>
         </div>
         <div className="toggle flex w-full [&>button]:flex-1">
@@ -234,7 +234,7 @@ export function SimplifyPanel({ s, view, dispatch, mapSymbol }: {
           <div key={sub.from} className="bg-bg3 border border-line rounded-lg px-2.5 py-2">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="mono text-dim line-through text-[.82rem]">{sub.from}</span>
-              <ArrowRight className="w-3.5 h-3.5 text-dim flex-shrink-0" />
+              <ArrowRightIcon className="w-3.5 h-3.5 text-dim flex-shrink-0" />
               <span className="mono text-accent font-bold text-[.85rem]">{mapSymbol(sub.from)}</span>
               <span className="ml-auto text-accent2 text-[.72rem] font-medium whitespace-nowrap">{Math.round(sub.score * 100)}% igual</span>
             </div>
@@ -310,49 +310,54 @@ export function RhythmPanel({ s, rhythm, dispatch, metronome, onPlay }: {
     <Panel title="Ritmo">
       <div className="bg-bg3 border border-line rounded-[10px] p-[.6rem_.7rem] mb-3 [&_input[type=range]]:w-full [&_input[type=range]]:my-2 [&_input[type=range]]:mb-[.4rem]">
         <div className="row tight">
-          <button className="btn round" onClick={() => dispatch({ type: 'bpmBy', delta: -5 })}>−5</button>
-          <button className="btn round" onClick={() => dispatch({ type: 'bpmBy', delta: -1 })}>−1</button>
+          {/* o bpm se ajusta no rodapé da tela da música (−1/+1) e ao escolher
+              uma batida, que já traz o andamento sugerido dela */}
           <div className="flex-1 text-center flex items-baseline justify-center gap-1 [&>strong]:text-2xl [&>span]:text-[.7rem] [&>span]:text-dim">
             <strong>{s.bpm}</strong><span>bpm</span>
           </div>
-          <button className="btn round" onClick={() => dispatch({ type: 'bpmBy', delta: 1 })}>+1</button>
-          <button className="btn round" onClick={() => dispatch({ type: 'bpmBy', delta: 5 })}>+5</button>
-          {rhythm && (
-            <button className="btn ghost" onClick={() => dispatch({ type: 'setBpm', value: rhythm.bpmSuggested })}>
-              usar {rhythm.bpmSuggested} bpm
-            </button>
-          )}
         </div>
         <div className="row tight center">
-          <button
-            className={`icon${s.playClick ? ' active' : ''}`}
-            aria-pressed={s.playClick}
-            aria-label="Metrônomo (clique audível)"
-            title="Metrônomo (clique audível)"
-            onClick={() => dispatch({ type: 'toggleClick' })}
-          >
-            <Volume2 />
-          </button>
           <button
             className={`icon w-9 h-9 rounded-full border border-line bg-bg2 [&>svg]:w-[15px] [&>svg]:h-[15px] ${
               metronome.running ? 'bg-accent border-accent text-[#14161a]' : ''
             }`}
             onClick={onPlay}
-            aria-label={metronome.running ? 'Parar metrônomo' : 'Tocar metrônomo'}
+            aria-label={metronome.running ? 'Parar' : 'Tocar'}
             title="Tocar/parar para ouvir as mudanças"
           >
-            {metronome.running ? <Square /> : <Play />}
-          </button>
-          <button
-            className={`icon${s.playPattern ? ' active' : ''}`}
-            aria-pressed={s.playPattern}
-            aria-label="Tocar a batida, não só o pulso"
-            title="Tocar a batida, não só o pulso"
-            onClick={() => dispatch({ type: 'togglePattern' })}
-          >
-            <Music />
+            {metronome.running ? <StopIcon /> : <PlayIcon />}
           </button>
         </div>
+        {/* o que sai no alto-falante: a batida e o clique são independentes, dá
+            para tocar só a batida (sem o "tec-tec" do metrônomo por cima), só o
+            clique, ou os dois. Antes eram dois ícones sem rótulo, e ninguém
+            descobria que dava para desligar o metrônomo e manter a batida */}
+        <div className="row tight center mt-2 flex-wrap">
+          <span className="text-[.72rem] uppercase tracking-[.05em] text-dim">Tocar</span>
+          <button
+            className={`chip${s.playPattern ? ' on' : ''}`}
+            aria-pressed={s.playPattern}
+            disabled={!rhythm}
+            title={rhythm ? 'Tocar os golpes da batida' : 'Escolha uma batida abaixo'}
+            onClick={() => dispatch({ type: 'togglePattern' })}
+          >
+            batida
+          </button>
+          <button
+            className={`chip${s.playClick ? ' on' : ''}`}
+            aria-pressed={s.playClick}
+            title="Clique do metrônomo"
+            onClick={() => dispatch({ type: 'toggleClick' })}
+          >
+            metrônomo
+          </button>
+        </div>
+        {!s.playPattern && !s.playClick && (
+          <p className="hint small danger">Batida e metrônomo desligados: não vai sair som nenhum.</p>
+        )}
+        {s.playPattern && !rhythm && (
+          <p className="hint small">Escolha uma batida ou um dedilhado abaixo para ouvir os golpes.</p>
+        )}
       </div>
 
       <p className="hint small">↓ para baixo · ↑ para cima · × abafado · P polegar · ≡ acorde</p>

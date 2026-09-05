@@ -1,25 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import {
-  ArrowDown,
-  ArrowLeft,
-  ChevronLeft,
-  ChevronRight,
-  Grid2x2,
-  Mic,
-  Minus,
-  Music,
-  Pause,
-  Pencil,
-  Play,
-  Plus,
-  RotateCw,
-  Square,
-  SquarePen,
-  Timer,
-  Undo2,
-  Video,
-  X,
-} from 'lucide-react'
+import { ArrowDownIcon, ArrowLeftIcon, ArrowPathIcon, ArrowUturnLeftIcon, ChevronLeftIcon, ChevronRightIcon, ClockIcon, MicrophoneIcon, MinusIcon, MusicalNoteIcon, PauseIcon, PencilIcon, PencilSquareIcon, PlayIcon, PlusIcon, Squares2X2Icon, StopIcon, VideoCameraIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { chordSequence, guessKeyFromSymbols, guessKeyModeFromSymbols } from '../cifra/parse'
 import { buildView, viewToText } from '../cifra/view'
 import { rhythmById } from '../data/rhythms'
@@ -236,7 +216,7 @@ export function SongView({
   return (
     <div className="flex flex-col h-full">
       <header className="songhead">
-        <button className="icon" onClick={onBack} aria-label="Voltar"><ArrowLeft /></button>
+        <button className="icon" onClick={onBack} aria-label="Voltar"><ArrowLeftIcon /></button>
         {editingTitle ? (
           <EditTitle
             title={song.title}
@@ -249,14 +229,14 @@ export function SongView({
             <span>{song.artist || '—'}</span>
           </button>
         )}
-        <button className="icon" onClick={onSaveToList} aria-label="Salvar em lista"><Plus /></button>
+        <button className="icon" onClick={onSaveToList} aria-label="Salvar em lista"><PlusIcon /></button>
         <button
           className={`icon${editingRaw ? ' active' : ''}`}
           onClick={startEditingRaw}
           aria-label="Editar texto da cifra"
           title="Editar o texto da cifra (letra e acordes)"
         >
-          <Pencil />
+          <PencilIcon />
         </button>
         {song.previousRaw !== undefined && (
           <button
@@ -265,7 +245,7 @@ export function SongView({
             aria-label="Desfazer última edição do texto da cifra"
             title="Desfazer última edição do texto da cifra"
           >
-            <Undo2 />
+            <ArrowUturnLeftIcon />
           </button>
         )}
         <button
@@ -274,7 +254,7 @@ export function SongView({
           aria-label="Acordes"
           title="Acordes (afinação, conferência, voz)"
         >
-          <Grid2x2 />
+          <Squares2X2Icon />
         </button>
       </header>
 
@@ -307,7 +287,7 @@ export function SongView({
       {panel && panel !== 'notas' && panel !== 'gravar' && (
         <div className="sheet-backdrop" onClick={() => setPanel(null)}>
           <div className="sheet panel-sheet" onClick={(e) => e.stopPropagation()}>
-            <button className="icon panel-sheet-close" onClick={() => setPanel(null)} aria-label="Fechar painel"><X /></button>
+            <button className="icon panel-sheet-close" onClick={() => setPanel(null)} aria-label="Fechar painel"><XMarkIcon /></button>
             {panel === 'tom' && (
               <KeyPanel
                 s={s}
@@ -346,7 +326,7 @@ export function SongView({
       {panel === 'notas' && (
         <div className="sheet-backdrop centered-backdrop" onClick={() => setPanel(null)}>
           <div className="sheet centered-sheet" onClick={(e) => e.stopPropagation()}>
-            <button className="icon panel-sheet-close" onClick={() => setPanel(null)} aria-label="Fechar painel"><X /></button>
+            <button className="icon panel-sheet-close" onClick={() => setPanel(null)} aria-label="Fechar painel"><XMarkIcon /></button>
             <NotesPanel song={song} onNotesChange={onNotesChange} onTagsChange={onTagsChange} />
           </div>
         </div>
@@ -366,7 +346,7 @@ export function SongView({
             onClick={() => onNavigate(siblings.ids[siblings.index - 1])}
             aria-label="Música anterior da lista"
           >
-            <ChevronLeft />
+            <ChevronLeftIcon />
           </button>
           <span className="text-[.75rem] text-dim flex-1 text-center">{siblings.listName} · {siblings.index + 1}/{siblings.ids.length}</span>
           <button
@@ -375,7 +355,7 @@ export function SongView({
             onClick={() => onNavigate(siblings.ids[siblings.index + 1])}
             aria-label="Próxima música da lista"
           >
-            <ChevronRight />
+            <ChevronRightIcon />
           </button>
         </div>
       )}
@@ -461,7 +441,7 @@ export function SongView({
             onClick={() => dispatch({ type: 'setScrollSpeed', value: s.scrollSpeed > 0 ? 0 : Number(localStorage.getItem(LAST_SCROLL_SPEED_KEY)) || 6 })}
             label={s.scrollSpeed > 0 ? 'Pausar rolagem automática' : 'Retomar rolagem automática'}
           >
-            {s.scrollSpeed > 0 ? <Pause /> : <Play />}
+            {s.scrollSpeed > 0 ? <PauseIcon /> : <PlayIcon />}
           </TransportButton>
           <TransportButton
             size="sm"
@@ -470,7 +450,7 @@ export function SongView({
             label={loop.active ? 'Desativar loop do trecho' : 'Ativar loop do trecho selecionado na cifra'}
             title={loop.active ? 'Loop ativo — toque para desativar' : 'Selecione um trecho da letra e toque para repeti-lo em loop'}
           >
-            <RotateCw />
+            <ArrowPathIcon />
           </TransportButton>
           <TransportButton
             size="sm"
@@ -479,7 +459,7 @@ export function SongView({
             label={s.scrollSyncBpm ? 'Voltar à velocidade manual de rolagem' : 'Rolar no andamento do metrônomo'}
             title={s.scrollSyncBpm ? 'Rolando no andamento: uma linha por compasso' : 'Rolar no andamento do metrônomo (uma linha por compasso)'}
           >
-            <Timer />
+            <ClockIcon />
           </TransportButton>
           {s.scrollSyncBpm ? (
             <span className="flex-1 min-w-0 text-[.72rem] text-dim overflow-hidden text-ellipsis whitespace-nowrap">
@@ -512,7 +492,7 @@ export function SongView({
             onClick={() => { dispatch({ type: 'setScrollSpeed', value: 0 }); setScrollBarOpen(false) }}
             label="Fechar controle de rolagem"
           >
-            <X />
+            <XMarkIcon />
           </TransportButton>
         </StripBar>
       )}
@@ -525,7 +505,7 @@ export function SongView({
             aria-label={s.playPattern ? 'Não tocar a batida por cima do metrônomo' : 'Tocar a batida por cima do metrônomo'}
             title={s.playPattern ? 'Batida tocando — toque para silenciar' : 'Tocar a batida por cima do metrônomo'}
           >
-            <Music />
+            <MusicalNoteIcon />
           </button>
           <span className="flex-none text-[.72rem] text-dim max-w-[90px] overflow-hidden text-ellipsis whitespace-nowrap">{rhythm.name}</span>
           <div className="flex-1 min-w-0 overflow-hidden">
@@ -547,9 +527,9 @@ export function SongView({
             size="lg"
             filled={metronome.running}
             onClick={play}
-            label={metronome.running ? 'Parar metrônomo' : 'Iniciar metrônomo'}
+            label={metronome.running ? 'Parar' : 'Tocar (batida e/ou metrônomo)'}
           >
-            {metronome.running ? <Square /> : <Play />}
+            {metronome.running ? <StopIcon /> : <PlayIcon />}
           </TransportButton>
           <div className="flex items-center gap-1 flex-none max-[620px]:gap-[.2rem]">
             <button
@@ -561,10 +541,10 @@ export function SongView({
               <span>{rhythm ? rhythm.name : 'só pulso'}</span>
             </button>
             <TransportButton size="sm" onClick={() => dispatch({ type: 'bpmBy', delta: -1 })} label="Diminuir 1 bpm">
-              <Minus />
+              <MinusIcon />
             </TransportButton>
             <TransportButton size="sm" onClick={() => dispatch({ type: 'bpmBy', delta: 1 })} label="Aumentar 1 bpm">
-              <Plus />
+              <PlusIcon />
             </TransportButton>
           </div>
           <div className="flex items-center gap-3.5 flex-none max-[620px]:gap-[.55rem]">
@@ -573,13 +553,13 @@ export function SongView({
               onClick={toggleRecorder}
               label="Gravar"
             >
-              {recordMode === 'video' ? <Video /> : <Mic />}
+              {recordMode === 'video' ? <VideoCameraIcon /> : <MicrophoneIcon />}
             </TransportButton>
             <TransportButton active={panel === 'notas'} onClick={() => togglePanel('notas')} label="Notas">
-              <SquarePen />
+              <PencilSquareIcon />
             </TransportButton>
             <TransportButton active={s.scrollSpeed > 0} onClick={toggleScroll} label="Rolagem automática">
-              {s.scrollSpeed > 0 ? <Pause /> : <ArrowDown />}
+              {s.scrollSpeed > 0 ? <PauseIcon /> : <ArrowDownIcon />}
             </TransportButton>
           </div>
         </BottomBar>

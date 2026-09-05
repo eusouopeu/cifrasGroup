@@ -10,10 +10,10 @@
  * comum, mudar o tema num deles deixava o outro com o ícone desatualizado.
  */
 import { createContext, useContext, useState, type ReactNode } from 'react'
-import { Monitor, Moon, Sun } from 'lucide-react'
+import { ComputerDesktopIcon, MoonIcon, SunIcon } from '@heroicons/react/24/outline'
 import { getTheme, setTheme as persistTheme, THEME_OPTIONS, type ThemePref } from '../store/theme'
 
-const THEME_ICON: Record<ThemePref, typeof Sun> = { system: Monitor, light: Sun, dark: Moon }
+const THEME_ICON: Record<ThemePref, typeof SunIcon> = { system: ComputerDesktopIcon, light: SunIcon, dark: MoonIcon }
 const THEME_LABEL: Record<ThemePref, string> = { system: 'sistema', light: 'claro', dark: 'escuro' }
 
 const ThemeContext = createContext<[ThemePref, (theme: ThemePref) => void] | null>(null)

@@ -9,7 +9,7 @@
  * partir do acorde na faixa.
  */
 import { useEffect, useRef } from 'react'
-import { X } from 'lucide-react'
+import { XMarkIcon } from '@heroicons/react/24/outline'
 import type { Tuning } from '../../theory/tunings'
 import { allVoicings, voicingFingerprint } from '../../theory/voicings'
 import { GuitarDiagram, PianoDiagram } from '../ChordDiagram'
@@ -71,7 +71,7 @@ export function ChordStrip({ chords, instrument, tuning, focus, overridden, pref
         onClick={onClose}
         aria-label="Fechar faixa de acordes"
       >
-        <X />
+        <XMarkIcon />
       </button>
     </div>
   )

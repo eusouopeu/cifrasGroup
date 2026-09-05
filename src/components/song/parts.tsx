@@ -1,6 +1,6 @@
 /** Peças pequenas e sem lógica da tela da música. */
 import { useRef, useState } from 'react'
-import { X } from 'lucide-react'
+import { XMarkIcon } from '@heroicons/react/24/outline'
 import { FONT_SIZES, fontSizeLabelFor, type FontSizeLabel } from '../../store/songActions'
 
 /** Tamanho do texto em quatro passos (P/M/G/GG) em vez de um valor livre em px. */
@@ -158,7 +158,7 @@ export function TagEditor({ tags, onChange }: { tags: string[]; onChange: (tags:
               onClick={() => onChange(tags.filter((x) => x !== t))}
               aria-label={`Remover tag ${t}`}
             >
-              <X />
+              <XMarkIcon />
             </button>
           </span>
         ))}

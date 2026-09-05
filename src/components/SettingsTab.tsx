@@ -45,22 +45,25 @@ export function SettingsTab({ songs, customTunings, onExport, onImport }: {
         <ThemeToggleButton />
       </header>
 
-      <section className="mb-6">
+      <section className="mb-9">
         <h4>Tema</h4>
         <ThemePillPicker />
       </section>
 
-      <section className="mb-6">
-        <h4>Leitura da cifra</h4>
-        <div className="row tight">
+      {/* três controles diferentes empilhados: sem respiro entre eles, o bloco
+          lia como uma coisa só e ficava difícil saber o que cada um governa */}
+      <section className="mb-9 flex flex-col gap-5">
+        <h4 className="!mb-0">Leitura da cifra</h4>
+        <div>
           <span className="fieldlabel">Tamanho do texto</span>
+          <SizePicker value={defaults.fontSize} onChange={(px) => patchDefaults({ fontSize: px })} />
         </div>
-        <SizePicker value={defaults.fontSize} onChange={(px) => patchDefaults({ fontSize: px })} />
-        <label className="field wide checkbox">
+        <label className="field wide checkbox leading-[1.5]">
           <input type="checkbox" checked={defaults.hideTabs} onChange={(e) => patchDefaults({ hideTabs: e.target.checked })} />
           Esconder tablaturas
         </label>
-        <div className="row">
+        <div>
+          <span className="fieldlabel">Instrumento dos diagramas</span>
           <div className="toggle">
             <button className={defaults.instrument === 'guitar' ? 'on' : ''} onClick={() => patchDefaults({ instrument: 'guitar' })}>Violão</button>
             <button className={defaults.instrument === 'piano' ? 'on' : ''} onClick={() => patchDefaults({ instrument: 'piano' })}>Piano</button>
@@ -68,8 +71,8 @@ export function SettingsTab({ songs, customTunings, onExport, onImport }: {
         </div>
       </section>
 
-      <section className="mb-6">
-        <h4>Padrões para músicas novas</h4>
+      <section className="mb-9 flex flex-col gap-3">
+        <h4 className="!mb-0">Padrões para músicas novas</h4>
         <TuningPicker
           value={defaults.tuning}
           onChange={(id) => patchDefaults({ tuning: id })}
@@ -79,19 +82,19 @@ export function SettingsTab({ songs, customTunings, onExport, onImport }: {
       </section>
 
       {practiceSummary.totalSessions > 0 && (
-        <section className="mb-6">
+        <section className="mb-9">
           <h4>Prática</h4>
-          <p className="hint small">
-            <strong>{practiceSummary.totalSessions}</strong> sessão{practiceSummary.totalSessions === 1 ? '' : 'ões'} com o metrônomo ligado,
+          <p className="hint small leading-[1.5]">
+            <strong>{practiceSummary.totalSessions}</strong> sess{practiceSummary.totalSessions === 1 ? 'ão' : 'ões'} com o metrônomo ligado,
             {' '}totalizando <strong>{formatPracticeTotal(practiceSummary.totalMs)}</strong>.
             {' '}<strong>{practiceSummary.weekCount}</strong> música{practiceSummary.weekCount === 1 ? '' : 's'} praticada{practiceSummary.weekCount === 1 ? '' : 's'} nos últimos 7 dias.
           </p>
         </section>
       )}
 
-      <section className="mb-6">
+      <section className="mb-9 pb-4">
         <h4>Backup</h4>
-        <p className="hint small">
+        <p className="hint small leading-[1.5] mb-4">
           O arquivo leva músicas, listas, configurações de cada música e também as gravações de prática —
           por isso pode ficar grande e demorar alguns segundos para ser gerado. No celular ele é salvo direto em
           <strong> Documentos/CifrasGroup/Backups</strong>, junto com o backup automático semanal.

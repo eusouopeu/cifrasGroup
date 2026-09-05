@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ChevronDown, ChevronUp, Copy, MoreVertical, Trash2 } from 'lucide-react'
+import { ChevronDownIcon, ChevronUpIcon, DocumentDuplicateIcon, EllipsisVerticalIcon, TrashIcon } from '@heroicons/react/24/outline'
 import type { Song } from '../store/db'
 
 /** largura da faixa de ações (duplicar/apagar) escondida atrás do card */
@@ -84,7 +84,7 @@ export function SongCard({ song, onOpen, onDelete, onDuplicate, deleteLabel = 'a
           aria-label="Duplicar música"
           title="Duplicar"
         >
-          <Copy />
+          <DocumentDuplicateIcon />
         </button>
         <button
           className="icon text-[1.05rem] leading-none p-0 w-8 h-8 flex items-center justify-center text-danger"
@@ -93,7 +93,7 @@ export function SongCard({ song, onOpen, onDelete, onDuplicate, deleteLabel = 'a
           aria-label={deleteLabel === 'apagar' ? 'Apagar música' : deleteLabel}
           title={deleteLabel}
         >
-          <Trash2 />
+          <TrashIcon />
         </button>
       </div>
 
@@ -124,8 +124,8 @@ export function SongCard({ song, onOpen, onDelete, onDuplicate, deleteLabel = 'a
         <div className="flex gap-2 self-end items-center">
           {(onMoveUp || onMoveDown) && (
             <span className="flex [&_.icon:disabled]:opacity-30">
-              <button className="icon small" disabled={!onMoveUp} onClick={onMoveUp} aria-label="Mover para cima"><ChevronUp /></button>
-              <button className="icon small" disabled={!onMoveDown} onClick={onMoveDown} aria-label="Mover para baixo"><ChevronDown /></button>
+              <button className="icon small" disabled={!onMoveUp} onClick={onMoveUp} aria-label="Mover para cima"><ChevronUpIcon /></button>
+              <button className="icon small" disabled={!onMoveDown} onClick={onMoveDown} aria-label="Mover para baixo"><ChevronDownIcon /></button>
             </span>
           )}
           <button
@@ -134,7 +134,7 @@ export function SongCard({ song, onOpen, onDelete, onDuplicate, deleteLabel = 'a
             aria-expanded={x !== 0}
             onClick={() => setRevealed(x === 0)}
           >
-            <MoreVertical />
+            <EllipsisVerticalIcon />
           </button>
         </div>
       </div>

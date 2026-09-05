@@ -6,7 +6,7 @@
  * gravações desta música.
  */
 import { useEffect, useRef, useState } from 'react'
-import { Folder, Mic, Square, Video, X } from 'lucide-react'
+import { FolderIcon, MicrophoneIcon, StopIcon, VideoCameraIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import {
   deleteRecording,
   listRecordings,
@@ -239,7 +239,7 @@ export function Recorder({ songId, songTitle, mode, onModeChange }: {
         <div className="w-[min(370px,calc(100vw-1.6rem))] max-h-[60vh] overflow-y-auto bg-bg2 border border-line rounded-2xl p-[.7rem_.8rem] shadow-[0_8px_20px_rgba(0,0,0,.35)]">
           <div className="flex items-center justify-between mb-1.5">
             <strong>Gravações desta música</strong>
-            <button className="icon small" aria-label="Fechar lista" onClick={() => setListOpen(false)}><X /></button>
+            <button className="icon small" aria-label="Fechar lista" onClick={() => setListOpen(false)}><XMarkIcon /></button>
           </div>
           {recordings === null && <p className="hint small">Carregando…</p>}
           {recordings !== null && recordings.length === 0 && <p className="hint small">Nenhuma gravação ainda.</p>}
@@ -277,7 +277,7 @@ export function Recorder({ songId, songTitle, mode, onModeChange }: {
             aria-label="Gravar áudio"
             title="Gravar áudio"
           >
-            <Mic />
+            <MicrophoneIcon />
           </button>
           <button
             className={`w-9 h-9 flex items-center justify-center bg-none border-0 border-l border-line [&>svg]:w-4 [&>svg]:h-4 ${mode === 'video' ? 'text-accent' : 'text-dim'}`}
@@ -286,7 +286,7 @@ export function Recorder({ songId, songTitle, mode, onModeChange }: {
             aria-label="Gravar vídeo"
             title="Gravar vídeo"
           >
-            <Video />
+            <VideoCameraIcon />
           </button>
         </div>
       )}
@@ -307,7 +307,7 @@ export function Recorder({ songId, songTitle, mode, onModeChange }: {
             onClick={stopRecording}
             aria-label="Parar gravação"
           >
-            <Square />
+            <StopIcon />
           </button>
         </div>
         <button
@@ -317,7 +317,7 @@ export function Recorder({ songId, songTitle, mode, onModeChange }: {
           onClick={() => setListOpen((v) => !v)}
           aria-label={listOpen ? 'Fechar gravações' : 'Ver gravações'}
         >
-          <Folder />
+          <FolderIcon />
         </button>
       </div>
 

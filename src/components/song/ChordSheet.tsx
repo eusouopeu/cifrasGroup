@@ -12,7 +12,7 @@
  * das duas não fecha a ficha — dá pra comparar mais de uma antes de decidir.
  */
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Undo2, X } from 'lucide-react'
+import { ArrowUturnLeftIcon, ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { chordSpelling, parseChord } from '../../theory/chord'
 import { nameOf } from '../../theory/notes'
 import { simplifyChord } from '../../theory/simplify'
@@ -59,7 +59,7 @@ export function ChordSheet({ symbol, instrument, threshold, tuning, isOverridden
     <div className="absolute top-0 left-0 right-0 z-[12] max-h-[62vh] overflow-y-auto bg-bg2 border-b border-line rounded-b-[14px] shadow-[0_8px_20px_rgba(0,0,0,.35)] p-[.8rem_1rem] max-[620px]:max-h-[72vh] max-[620px]:p-[.7rem_.8rem]">
       <div className="sheet-head">
         <h3 className="mono">{symbol}</h3>
-        <button className="icon" onClick={onClose} aria-label="Fechar ficha do acorde"><X /></button>
+        <button className="icon" onClick={onClose} aria-label="Fechar ficha do acorde"><XMarkIcon /></button>
       </div>
       {chord && (
         <div className="spelling">
@@ -158,7 +158,7 @@ function VoicingCarousel({ symbol, voicings, tuning, preferredFingerprint, onPre
         disabled={voicings.length < 2}
         onClick={() => setIdx((i) => (i - 1 + voicings.length) % voicings.length)}
       >
-        <ChevronLeft />
+        <ChevronLeftIcon />
       </button>
       <div className="flex flex-col items-center gap-[.15rem] min-w-0">
         <span className="text-[.7rem] text-dim">{safe + 1} de {voicings.length}</span>
@@ -182,7 +182,7 @@ function VoicingCarousel({ symbol, voicings, tuning, preferredFingerprint, onPre
         disabled={voicings.length < 2}
         onClick={() => setIdx((i) => (i + 1) % voicings.length)}
       >
-        <ChevronRight />
+        <ChevronRightIcon />
       </button>
     </div>
   )
@@ -266,7 +266,7 @@ function ManualPicker({ current, isOverridden, onPick, onReset }: {
           aria-label="Desfazer troca manual deste acorde"
           title="Desfazer troca manual deste acorde"
         >
-          <Undo2 />
+          <ArrowUturnLeftIcon />
         </button>
       </div>
       {freeInvalid && <p className="hint small danger">Não reconheci esse acorde.</p>}

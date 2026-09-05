@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, Search, Zap } from 'lucide-react'
+import { ArrowLeftIcon, BoltIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { guessKey, parseCifra, uniqueChords } from '../cifra/parse'
 import { ImportCancelledError, importFromCifraClubUrl, isCifraClubUrl, nativeImportAvailable } from '../native/cifraClubImport'
 import { nameOf } from '../theory/notes'
@@ -115,7 +115,7 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
   return (
     <div className="max-w-[900px] mx-auto p-[calc(1rem+env(safe-area-inset-top))_1rem_4rem] max-[620px]:p-[calc(.8rem+env(safe-area-inset-top))_.8rem_3rem]">
       <header className="apphead">
-        <button className="icon" onClick={onCancel} aria-label="Voltar"><ArrowLeft /></button>
+        <button className="icon" onClick={onCancel} aria-label="Voltar"><ArrowLeftIcon /></button>
         <h1>Importar cifra</h1>
       </header>
 
@@ -147,7 +147,7 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
               aria-label="Pré-visualizar antes de importar"
               title="Pré-visualizar antes de importar"
             >
-              {linkStatus === 'loading' ? '…' : <Search />}
+              {linkStatus === 'loading' ? '…' : <MagnifyingGlassIcon />}
             </button>
             <button
               className="icon !bg-accent !text-[#14161a] rounded-lg w-10 h-10 flex-shrink-0"
@@ -156,7 +156,7 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
               aria-label="Importação rápida (pula a pré-visualização)"
               title="Importação rápida (pula a pré-visualização)"
             >
-              {quickStatus === 'loading' ? '…' : <Zap />}
+              {quickStatus === 'loading' ? '…' : <BoltIcon />}
             </button>
             {linkBusy && (
               <button className="btn ghost" onClick={cancelImport}>cancelar</button>

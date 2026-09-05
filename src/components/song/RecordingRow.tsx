@@ -6,7 +6,7 @@
  * apagar).
  */
 import { useEffect, useRef, useState } from 'react'
-import { Bookmark, Download, Layers, Pause, Pencil, Play, Trash2 } from 'lucide-react'
+import { ArrowDownTrayIcon, BookmarkIcon, PauseIcon, PencilIcon, PlayIcon, Square3Stack3DIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { saveAppFile } from '../../native/fileStorage'
 import { formatBytes, type Recording } from '../../store/recordings'
 import { useToast } from '../Toast'
@@ -88,7 +88,7 @@ export function RecordingRow({ recording, songTitle, expanded, onToggleExpand, o
             {formatDuration(recording.durationMs)} - {formatBytes(recording.blob.size)}
           </span>
         </span>
-        {recording.pinned && <Bookmark className="w-3.5 h-3.5 text-accent2 flex-shrink-0" fill="currentColor" />}
+        {recording.pinned && <BookmarkIcon className="w-3.5 h-3.5 text-accent2 flex-shrink-0" fill="currentColor" />}
       </button>
     )
   }
@@ -116,7 +116,7 @@ export function RecordingRow({ recording, songTitle, expanded, onToggleExpand, o
           </button>
         )}
         <button className="icon small" aria-label="Renomear gravação" onClick={() => { setDraft(recording.title ?? ''); setRenaming(true) }}>
-          <Pencil />
+          <PencilIcon />
         </button>
       </div>
 
@@ -136,7 +136,7 @@ export function RecordingRow({ recording, songTitle, expanded, onToggleExpand, o
 
       <div className="flex items-center gap-[.4rem]">
         <button className="icon" onClick={togglePlay} aria-label={playing ? 'Pausar' : 'Tocar'}>
-          {playing ? <Pause /> : <Play />}
+          {playing ? <PauseIcon /> : <PlayIcon />}
         </button>
         <input
           className="flex-1 min-w-0 accent-accent"
@@ -163,7 +163,7 @@ export function RecordingRow({ recording, songTitle, expanded, onToggleExpand, o
             title="Tocar junto na próxima gravação"
             onClick={onToggleLayer}
           >
-            <Layers />
+            <Square3Stack3DIcon />
           </button>
         )}
         <button
@@ -172,13 +172,13 @@ export function RecordingRow({ recording, songTitle, expanded, onToggleExpand, o
           title={recording.pinned ? 'Guardada em destaque' : 'Destacar'}
           onClick={onTogglePin}
         >
-          <Bookmark fill={recording.pinned ? 'currentColor' : 'none'} />
+          <BookmarkIcon fill={recording.pinned ? 'currentColor' : 'none'} />
         </button>
         <button className="icon small" aria-label="Baixar gravação" title="Baixar" onClick={download}>
-          <Download />
+          <ArrowDownTrayIcon />
         </button>
         <button className="icon small danger" aria-label="Apagar gravação" onClick={onDelete}>
-          <Trash2 />
+          <TrashIcon />
         </button>
       </div>
     </div>

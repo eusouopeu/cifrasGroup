@@ -5,7 +5,7 @@
  * uma tomada antiga.
  */
 import { useEffect, useState } from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { deleteRecording, listAllRecordings, renameRecording, togglePinned, type Recording } from '../store/recordings'
 import type { Song } from '../store/db'
 import { FontSizeToggleButton, InstrumentToggleButton } from './DisplayControls'
@@ -86,7 +86,7 @@ export function RecordingsTab({ songs }: { songs: Record<string, Song> }) {
           return (
             <div key={id} className="bg-bg2 border border-line rounded-[10px] overflow-hidden">
               <button className="w-full flex items-center gap-2 p-[.7rem_.8rem] bg-none border-0 text-inherit text-left" onClick={() => toggleSong(id)} aria-expanded={open}>
-                {open ? <ChevronDown className="w-4 h-4 text-dim flex-shrink-0" /> : <ChevronRight className="w-4 h-4 text-dim flex-shrink-0" />}
+                {open ? <ChevronDownIcon className="w-4 h-4 text-dim flex-shrink-0" /> : <ChevronRightIcon className="w-4 h-4 text-dim flex-shrink-0" />}
                 <span className="flex-1 min-w-0 flex flex-col gap-0.5 [&>strong]:overflow-hidden [&>strong]:text-ellipsis [&>strong]:whitespace-nowrap">
                   <strong>{song.title}</strong>
                   <span className="hint small">{song.artist || '—'}</span>

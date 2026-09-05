@@ -74,8 +74,15 @@ SEMPRE usar a skill `/caveman` (modo de comunicação ultra-comprimido) em toda 
 
 ## Padrões técnicos e visuais obrigatórios
 
-- Sempre usar **TypeScript**, **Tailwind CSS**, ícones **Lucide** e fonte **Montserrat** com
-  espaçamento entrelinhas (line-height) de 1.5.
+- Sempre usar **TypeScript**, **Tailwind CSS**, ícones **Heroicons**
+  (`@heroicons/react/24/outline`; a variante `/24/solid` só para marcar estado ativo,
+  como na barra de abas) e fonte **Montserrat** com espaçamento entrelinhas
+  (line-height) de 1.5 em textos corridos.
+- **Não usar Lucide** (nem qualquer outra biblioteca de ícones): o app foi migrado
+  de `lucide-react` para `@heroicons/react` em 05/09/2026 e não deve voltar atrás.
+  Heroicons não trazem largura/altura intrínsecas — o tamanho vem sempre do CSS
+  (`.icon svg`, `.tabbar-item svg` em `styles.css`, ou `[&>svg]:w-…` na classe do
+  botão). Ícone novo sem regra de tamanho renderiza gigante.
 - Dar preferência a **botões-ícone** em vez de botões com texto.
 
 ### Migração Tailwind + Lucide (concluída, 2026-08-30)
@@ -116,6 +123,22 @@ gesto, exigida pelas diretrizes de acessibilidade: toda ação por gesto precisa
 de equivalente por toque/teclado). Painel de ações fica com `aria-hidden` e
 `tabIndex={-1}` quando fechado. Reaproveitar esse padrão para qualquer lista
 de cards que precise do mesmo tipo de ação secundária.
+
+### Barra de abas sem rótulo
+
+`TabBar` mostra só o ícone (nome fica em `aria-label`/`title`) e troca o ícone
+vazado pelo preenchido na aba ativa. São cinco abas fixas nas mesmas posições;
+o texto de 10px embaixo do ícone só apertava a barra.
+
+### O que sai no alto-falante (painel Ritmo)
+
+Batida (`playPattern`) e clique do metrônomo (`playClick`) são independentes no
+motor (`audio/metronome.ts`) desde sempre, mas viviam em dois ícones sem rótulo
+e ninguém descobria que dava para tocar **só a batida**. Agora são dois chips
+rotulados ("Tocar: batida / metrônomo"), com aviso quando os dois estão
+desligados. O ajuste fino de bpm (−5/−1/+1/+5 e "usar N bpm") saiu do painel:
+o rodapé da tela da música já tem −1/+1 e escolher uma batida traz o andamento
+sugerido dela.
 
 ### Barra de transporte da tela da música
 
