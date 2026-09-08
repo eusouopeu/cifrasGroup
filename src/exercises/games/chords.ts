@@ -54,6 +54,7 @@ export function pickChordRound(level: number, rng: () => number = Math.random): 
 export const chordsGame: ExerciseDef = {
   id: 'chords',
   title: 'Reconhecer acordes',
+  description: 'Ouça um acorde e diga a qualidade: maior, menor, diminuto, com 7ª…',
   icon: MusicalNoteIcon,
   generateRound(level): Round {
     const { rootPc, correct, options } = pickChordRound(level)

@@ -42,6 +42,7 @@ function buildCompressionEffect(ratio: number, threshold: number) {
 export const compressionGame: ExerciseDef = {
   id: 'compression',
   title: 'Identificar compressão',
+  description: 'Perceba o quanto a dinâmica foi achatada: leve, médio ou pesado.',
   icon: ArrowsPointingInIcon,
   generateRound(level): Round {
     const options = optionsForLevel(level)

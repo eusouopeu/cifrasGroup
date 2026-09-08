@@ -30,6 +30,9 @@ export interface Round {
 export interface ExerciseDef {
   id: string
   title: string
+  /** uma linha dizendo o que o ouvido treina aqui — a lista de exercícios só
+   *  mostrava cinco botões idênticos, sem dizer por onde começar nem o que cai */
+  description: string
   icon: ComponentType<{ className?: string }>
   generateRound: (level: number) => Round
 }

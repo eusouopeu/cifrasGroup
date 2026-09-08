@@ -41,6 +41,7 @@ function buildDelayEffect(ms: number, feedbackAmount: number) {
 export const delayGame: ExerciseDef = {
   id: 'delay',
   title: 'Identificar delay',
+  description: 'Reconheça o tempo de repetição do eco, do curto ao longo.',
   icon: ClockIcon,
   generateRound(level): Round {
     const options = optionsForLevel(level)

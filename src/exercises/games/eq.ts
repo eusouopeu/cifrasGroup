@@ -40,6 +40,7 @@ function buildEqEffect(freqHz: number, gainDb: number) {
 export const eqGame: ExerciseDef = {
   id: 'eq',
   title: 'Identificar EQ',
+  description: 'Compare o som original com o filtrado e aponte a frequência realçada.',
   icon: AdjustmentsHorizontalIcon,
   generateRound(level): Round {
     const { freqHz, gainDb, tolerance } = pickEqRound(level)

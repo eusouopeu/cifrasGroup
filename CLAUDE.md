@@ -80,6 +80,8 @@ SEMPRE usar a skill `/caveman` (modo de comunicação ultra-comprimido) em toda 
   (line-height) de 1.5 em textos corridos.
 - **Não usar Lucide** (nem qualquer outra biblioteca de ícones): o app foi migrado
   de `lucide-react` para `@heroicons/react` em 05/09/2026 e não deve voltar atrás.
+  O pacote `lucide-react` foi desinstalado de vez em 08/09/2026 (estava no
+  `package.json` sem nenhum import).
   Heroicons não trazem largura/altura intrínsecas — o tamanho vem sempre do CSS
   (`.icon svg`, `.tabbar-item svg` em `styles.css`, ou `[&>svg]:w-…` na classe do
   botão). Ícone novo sem regra de tamanho renderiza gigante.
@@ -170,6 +172,37 @@ Filtros e ordenação da biblioteca ficam em `store/libraryPrefs.ts` (localStora
 lido campo a campo para um valor estranho não quebrar a tela). A busca por texto
 fica de fora de propósito. Telas são desmontadas ao trocar de aba, então estado
 de filtro que o usuário escolheu precisa morar fora do componente.
+
+### Busca da biblioteca
+
+`store/songSearch.ts#songMatchesQuery` compara o termo com título, artista, tags
+**e o texto da cifra**, tudo normalizado sem acento e sem caixa. Quem não lembra
+o nome procura por um trecho da letra — antes isso não achava nada. Qualquer
+lista nova que filtre músicas por texto usa essa função, não um `includes` local.
+
+### Resumo de prática aparece em duas telas
+
+`store/practiceSummary.ts` (`practiceSummary` + `formatPracticeTotal`) é a conta
+única usada por Início e por Configurações. Início mostra o trio de números logo
+abaixo da busca, que é onde o usuário passa todo dia; Configurações mantém a
+versão em prosa. Não duplicar a conta numa terceira tela — importar daqui.
+
+### Afinador só escuta quando mandam
+
+`Tuner` abre com o microfone **desligado** (`listenOn`, botão "começar a
+escutar" / "parar de escutar"), nas duas formas de uso (aba Afinação e folha
+aberta pela música). Com a escuta sempre ligada, o ponteiro reagia a TV, conversa
+e ruído ambiente sem ninguém ter tocado uma corda — é a regra geral de microfone
+contínuo deste CLAUDE.md aplicada aqui.
+
+### Cards dos exercícios
+
+Cada `ExerciseDef` tem `description`: uma linha dizendo o que o ouvido treina.
+A lista (`exercises/ExercisesTab.tsx`) mostra ícone, título, essa descrição,
+nível em pontinhos (`MAX_LEVEL` vem de `exercises/progress.ts`) e % de acerto.
+Antes eram cinco botões idênticos que só diferiam no número do nível — não dava
+para saber o que cada um cobrava nem por onde começar. Exercício novo entra com
+`description` preenchida.
 
 ### Aba "Voz" mora em Afinação, não em Acordes
 

@@ -13,7 +13,7 @@ export interface GameProgress {
 export const DEFAULT_GAME_PROGRESS: GameProgress = { level: 1, streak: 0, totalCorrect: 0, totalAttempts: 0 }
 
 const MIN_LEVEL = 1
-const MAX_LEVEL = 5
+export const MAX_LEVEL = 5
 const STREAK_TO_LEVEL_UP = 3
 
 function keyFor(gameId: string): string {

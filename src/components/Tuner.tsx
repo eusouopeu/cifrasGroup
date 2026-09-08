@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
-import { ArrowPathIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { ArrowPathIcon, MicrophoneIcon, StopIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { nameOf, SHARP_NAMES } from '../theory/notes'
 import { stringFrequencies, tuningById, type Tuning } from '../theory/tunings'
 import { pluckNote } from '../audio/pluck'
@@ -63,7 +63,11 @@ function freqToReading(freq: number): Reading {
  * @param embedded quando true, renderiza sem a folha modal (usado na aba "Afinação").
  */
 export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: { onClose?: () => void; tuning?: Tuning; embedded?: boolean }) {
-  const [status, setStatus] = useState<'starting' | 'listening' | 'denied' | 'unsupported'>('starting')
+  // o microfone só liga quando o usuário manda: com a tela aberta e a escuta
+  // sempre ativa, o ponteiro reagia a TV, conversa e ruído de fundo o tempo
+  // inteiro — e o app ficava gravando som sem ninguém ter pedido
+  const [listenOn, setListenOn] = useState(false)
+  const [status, setStatus] = useState<'off' | 'starting' | 'listening' | 'denied' | 'unsupported'>('off')
   const [reading, setReading] = useState<Reading | null>(null)
   const [permHelpOpen, setPermHelpOpen] = useState(false)
   const [attempt, setAttempt] = useState(0)
@@ -78,6 +82,11 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
   const lastAcceptedAtRef = useRef(0)
 
   useEffect(() => {
+    if (!listenOn) {
+      setStatus('off')
+      setReading(null)
+      return
+    }
     if (!navigator.mediaDevices?.getUserMedia) {
       setStatus('unsupported')
       return
@@ -161,7 +170,7 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
       streamRef.current?.getTracks().forEach((t) => t.stop())
       void audioCtxRef.current?.close()
     }
-  }, [attempt])
+  }, [attempt, listenOn])
 
   // altura real de cada corda solta desta afinação, para tocar a nota-alvo
   const targetFreqs = stringFrequencies(tuning.strings)
@@ -203,6 +212,17 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
         })}
       </div>
 
+      <div className="flex justify-center my-3">
+        <button
+          className={`btn${listenOn ? '' : ' primary'} [&>svg]:w-[18px] [&>svg]:h-[18px] flex items-center gap-2`}
+          onClick={() => setListenOn((v) => !v)}
+          aria-pressed={listenOn}
+        >
+          {listenOn ? <><StopIcon /> parar de escutar</> : <><MicrophoneIcon /> começar a escutar</>}
+        </button>
+      </div>
+
+      {status === 'off' && <p className="hint center">O microfone fica desligado até você tocar em "começar a escutar".</p>}
       {status === 'unsupported' && <p className="hint danger">Este navegador não dá acesso ao microfone.</p>}
       {status === 'denied' && (
         <div>

@@ -19,6 +19,7 @@ function buildPanEffect(pan: number) {
 export const panGame: ExerciseDef = {
   id: 'pan',
   title: 'Identificar pan',
+  description: 'Diga para que lado do estéreo o som foi deslocado.',
   icon: ArrowsRightLeftIcon,
   generateRound(level): Round {
     const l = clampLevel(level)

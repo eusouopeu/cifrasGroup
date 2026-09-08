@@ -5,17 +5,8 @@ import { TuningPicker } from './TuningPicker'
 import { SizePicker } from './song/parts'
 import { FontSizeToggleButton, InstrumentToggleButton, useDisplayDefaults } from './DisplayControls'
 import type { Song } from '../store/db'
+import { formatPracticeTotal, practiceSummary } from '../store/practiceSummary'
 import type { Tuning } from '../theory/tunings'
-
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000
-
-function formatPracticeTotal(ms: number): string {
-  const min = Math.round(ms / 60000)
-  if (min < 60) return `${min} min`
-  const h = Math.floor(min / 60)
-  const rest = min % 60
-  return rest === 0 ? `${h}h` : `${h}h${String(rest).padStart(2, '0')}`
-}
 
 export function SettingsTab({ songs, customTunings, onExport, onImport }: {
   songs: Record<string, Song>
@@ -28,13 +19,7 @@ export function SettingsTab({ songs, customTunings, onExport, onImport }: {
   const [defaults, patchDefaults] = useDisplayDefaults()
   const showToast = useToast()
 
-  const practiceSummary = useMemo(() => {
-    const list = Object.values(songs)
-    const totalSessions = list.reduce((n, s) => n + s.practice.count, 0)
-    const totalMs = list.reduce((n, s) => n + s.practice.totalMs, 0)
-    const weekCount = list.filter((s) => (s.practice.lastPlayedAt ?? 0) >= Date.now() - WEEK_MS).length
-    return { totalSessions, totalMs, weekCount }
-  }, [songs])
+  const summary = useMemo(() => practiceSummary(songs), [songs])
 
   return (
     <div className="library">
@@ -81,13 +66,13 @@ export function SettingsTab({ songs, customTunings, onExport, onImport }: {
         />
       </section>
 
-      {practiceSummary.totalSessions > 0 && (
+      {summary.totalSessions > 0 && (
         <section className="mb-9">
           <h4>Prática</h4>
           <p className="hint small leading-[1.5]">
-            <strong>{practiceSummary.totalSessions}</strong> sess{practiceSummary.totalSessions === 1 ? 'ão' : 'ões'} com o metrônomo ligado,
-            {' '}totalizando <strong>{formatPracticeTotal(practiceSummary.totalMs)}</strong>.
-            {' '}<strong>{practiceSummary.weekCount}</strong> música{practiceSummary.weekCount === 1 ? '' : 's'} praticada{practiceSummary.weekCount === 1 ? '' : 's'} nos últimos 7 dias.
+            <strong>{summary.totalSessions}</strong> sess{summary.totalSessions === 1 ? 'ão' : 'ões'} com o metrônomo ligado,
+            {' '}totalizando <strong>{formatPracticeTotal(summary.totalMs)}</strong>.
+            {' '}<strong>{summary.weekCount}</strong> música{summary.weekCount === 1 ? '' : 's'} praticada{summary.weekCount === 1 ? '' : 's'} nos últimos 7 dias.
           </p>
         </section>
       )}
