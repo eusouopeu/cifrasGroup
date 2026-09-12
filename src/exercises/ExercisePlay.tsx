@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { useEffect, useState } from 'react'
+import { ArrowLeftIcon, StopIcon } from '@heroicons/react/24/outline'
+import { stopPlayback } from './audioEffects'
 import { applyRoundResult, loadGameProgress, saveGameProgress, type GameProgress } from './progress'
 import { isWithinTolerance } from './scoring'
 import type { ExerciseDef, Round } from './types'
@@ -11,7 +12,11 @@ export function ExercisePlay({ def, onBack }: { def: ExerciseDef; onBack: () => 
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null)
   const answered = feedback !== null
 
+  // trecho de música dura 20 s: sair da tela não pode deixá-lo tocando
+  useEffect(() => stopPlayback, [])
+
   const nextRound = (level: number) => {
+    stopPlayback()
     const r = def.generateRound(level)
     setRound(r)
     setSliderValue(r.sliderMin ?? 0)
@@ -38,6 +43,9 @@ export function ExercisePlay({ def, onBack }: { def: ExerciseDef; onBack: () => 
         {round.sounds.map((s) => (
           <button key={s.id} className="btn" onClick={s.play}>{s.label}</button>
         ))}
+        {round.credit && (
+          <button className="icon" onClick={stopPlayback} aria-label="Parar" title="Parar"><StopIcon /></button>
+        )}
       </div>
 
       {round.answerMode === 'choice' && (
@@ -90,6 +98,8 @@ export function ExercisePlay({ def, onBack }: { def: ExerciseDef; onBack: () => 
       {answered && (
         <button className="btn primary wide" onClick={() => nextRound(progress.level)}>Próxima</button>
       )}
+
+      {round.credit && <p className="hint mt-3 text-xs">Trecho: {round.credit}</p>}
     </div>
   )
 }

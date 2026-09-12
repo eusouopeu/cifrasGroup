@@ -204,6 +204,19 @@ Antes eram cinco botões idênticos que só diferiam no número do nível — n�
 para saber o que cada um cobrava nem por onde começar. Exercício novo entra com
 `description` preenchida.
 
+### Exercícios de EQ/pan/delay/compressão usam música real
+
+O loop sintético (tríade em pluck) soava artificial demais para treinar
+ouvido. Agora os quatro jogos tocam trechos de 20 s de faixas de Kevin MacLeod
+(incompetech.com, **CC BY 4.0** — exige crédito, mostrado no rodapé da rodada),
+catalogados em `exercises/samples.ts` e guardados em `public/exercise-samples/`
+(AAC 128 kbps, ~330 KB cada). `audioEffects.ts#playSample` normaliza volume
+por RMS, corta o que estava tocando antes (A e B nunca se sobrepõem), aceita
+cadeia de efeito `{ input, output }` e cai no loop sintético se o arquivo
+falhar. Pan soma a música em mono antes do panner; delay soma seco + eco;
+compressão tem ganho de compensação para não ser julgada só pelo volume.
+Trecho novo: só com licença que permita uso em app (CC0/CC BY) e com crédito.
+
 ### Aba "Voz" mora em Afinação, não em Acordes
 
 VoiceLab (retrato de timbre por microfone) foi movido do painel Acordes da

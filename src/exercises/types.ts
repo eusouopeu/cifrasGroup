@@ -16,6 +16,8 @@ export interface RoundChoice {
 export interface Round {
   sounds: RoundSound[]
   answerMode: AnswerMode
+  /** crédito do trecho musical tocado (exigido pela licença CC BY) */
+  credit?: string
   // modo 'choice'
   choices?: RoundChoice[]
   correctChoiceId?: string

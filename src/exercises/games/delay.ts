@@ -1,5 +1,6 @@
 import { ClockIcon } from '@heroicons/react/24/outline'
-import { playLoop } from '../audioEffects'
+import { playSample, preloadSample, type EffectBuilder } from '../audioEffects'
+import { pickSample } from '../samples'
 import type { ExerciseDef, Round } from '../types'
 
 interface DelayOption {
@@ -22,19 +23,31 @@ const OPTIONS_LEVEL_3: DelayOption[] = [
   { id: '500', label: '~500ms', ms: 500 },
 ]
 
+const WET_LEVEL = 0.5
+
 function optionsForLevel(level: number): DelayOption[] {
   return level >= 3 ? OPTIONS_LEVEL_3 : OPTIONS_LEVEL_1
 }
 
-function buildDelayEffect(ms: number, feedbackAmount: number) {
-  return (ctx: AudioContext): AudioNode => {
+function buildDelayEffect(ms: number, feedbackAmount: number): EffectBuilder {
+  return (ctx) => {
+    // som seco + eco somados: só o sinal atrasado, sem o seco, soaria
+    // igual ao original e não haveria repetição nenhuma para ouvir
+    const input = ctx.createGain()
+    const output = ctx.createGain()
     const delay = ctx.createDelay(1)
     delay.delayTime.value = ms / 1000
     const feedback = ctx.createGain()
     feedback.gain.value = feedbackAmount
+    const wet = ctx.createGain()
+    wet.gain.value = WET_LEVEL
+    input.connect(output)
+    input.connect(delay)
     delay.connect(feedback)
     feedback.connect(delay)
-    return delay
+    delay.connect(wet)
+    wet.connect(output)
+    return { input, output }
   }
 }
 
@@ -47,12 +60,15 @@ export const delayGame: ExerciseDef = {
     const options = optionsForLevel(level)
     const correct = options[Math.floor(Math.random() * options.length)]
     const feedbackAmount = level >= 3 ? 0.2 : 0.35
+    const sample = pickSample()
+    preloadSample(sample)
     return {
       answerMode: 'choice',
       sounds: [
-        { id: 'dry', label: 'Tocar A (original)', play: () => playLoop() },
-        { id: 'wet', label: 'Tocar B (com delay)', play: () => playLoop(buildDelayEffect(correct.ms, feedbackAmount)) },
+        { id: 'dry', label: 'Tocar A (original)', play: () => playSample(sample) },
+        { id: 'wet', label: 'Tocar B (com delay)', play: () => playSample(sample, buildDelayEffect(correct.ms, feedbackAmount)) },
       ],
+      credit: sample.credit,
       choices: options.map((o) => ({ id: o.id, label: o.label })),
       correctChoiceId: correct.id,
     }

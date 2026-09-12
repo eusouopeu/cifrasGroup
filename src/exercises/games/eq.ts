@@ -1,5 +1,6 @@
 import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline'
-import { playLoop } from '../audioEffects'
+import { playSample, preloadSample, type EffectBuilder } from '../audioEffects'
+import { pickSample } from '../samples'
 import type { ExerciseDef, Round } from '../types'
 
 export const EQ_FREQ_MIN = 20
@@ -26,14 +27,14 @@ export function pickEqRound(level: number, rng: () => number = Math.random): EqR
   return { freqHz, gainDb: GAIN_DB_BY_LEVEL[l], tolerance: TOLERANCE_OCTAVES_BY_LEVEL[l] }
 }
 
-function buildEqEffect(freqHz: number, gainDb: number) {
-  return (ctx: AudioContext): AudioNode => {
+function buildEqEffect(freqHz: number, gainDb: number): EffectBuilder {
+  return (ctx) => {
     const filter = ctx.createBiquadFilter()
     filter.type = 'peaking'
     filter.frequency.value = freqHz
     filter.Q.value = 1
     filter.gain.value = gainDb
-    return filter
+    return { input: filter, output: filter }
   }
 }
 
@@ -44,12 +45,15 @@ export const eqGame: ExerciseDef = {
   icon: AdjustmentsHorizontalIcon,
   generateRound(level): Round {
     const { freqHz, gainDb, tolerance } = pickEqRound(level)
+    const sample = pickSample()
+    preloadSample(sample)
     return {
       answerMode: 'slider',
       sounds: [
-        { id: 'dry', label: 'Tocar A (original)', play: () => playLoop() },
-        { id: 'wet', label: 'Tocar B (com EQ)', play: () => playLoop(buildEqEffect(freqHz, gainDb)) },
+        { id: 'dry', label: 'Tocar A (original)', play: () => playSample(sample) },
+        { id: 'wet', label: 'Tocar B (com EQ)', play: () => playSample(sample, buildEqEffect(freqHz, gainDb)) },
       ],
+      credit: sample.credit,
       sliderMin: Math.log2(EQ_FREQ_MIN),
       sliderMax: Math.log2(EQ_FREQ_MAX),
       sliderLabel: (v) => `${Math.round(Math.pow(2, v))} Hz`,
