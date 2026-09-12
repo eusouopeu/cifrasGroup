@@ -225,7 +225,7 @@ export function Recorder({ songId, songTitle, mode, onModeChange }: {
   }
 
   return (
-    <div className="fixed right-[1.1rem] bottom-[calc(4.6rem+env(safe-area-inset-bottom))] z-[15] flex flex-col items-end gap-2">
+    <div className="fixed right-[1.1rem] bottom-[calc(5.6rem+env(safe-area-inset-bottom))] z-[15] flex flex-col items-end gap-2">
       {mode === 'video' && (
         <video
           ref={videoPreviewRef}

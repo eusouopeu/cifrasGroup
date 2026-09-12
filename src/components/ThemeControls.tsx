@@ -49,25 +49,22 @@ export function ThemeToggleButton() {
   )
 }
 
+/** controle segmentado de largura total, com o nome escrito em cada opção */
 export function ThemePillPicker() {
   const [theme, setThemeVal] = useTheme()
   return (
-    <div className="toggle flex w-full max-w-[220px] [&>button]:flex-1 [&>button]:flex [&>button]:items-center [&>button]:justify-center [&>button]:py-2 [&_svg]:w-[18px] [&_svg]:h-[18px]">
-      {THEME_OPTIONS.map((t) => {
-        const Icon = THEME_ICON[t]
-        return (
-          <button
-            key={t}
-            className={theme === t ? 'on' : ''}
-            onClick={() => setThemeVal(t)}
-            aria-pressed={theme === t}
-            aria-label={`Tema ${THEME_LABEL[t]}`}
-            title={`Tema ${THEME_LABEL[t]}`}
-          >
-            <Icon />
-          </button>
-        )
-      })}
+    <div className="segmented">
+      {THEME_OPTIONS.map((t) => (
+        <button
+          key={t}
+          className={theme === t ? 'on' : ''}
+          onClick={() => setThemeVal(t)}
+          aria-pressed={theme === t}
+          aria-label={`Tema ${THEME_LABEL[t]}`}
+        >
+          {THEME_LABEL[t][0].toUpperCase() + THEME_LABEL[t].slice(1)}
+        </button>
+      ))}
     </div>
   )
 }

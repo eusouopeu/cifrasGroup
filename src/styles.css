@@ -148,18 +148,36 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .newlist input { flex: 1; padding: .5rem .7rem; border-radius: 8px; border: 1px solid var(--line); background: var(--bg2); color: var(--fg); }
 
 /* ---------- estrutura de abas ---------- */
-.app-shell { display: flex; flex-direction: column; height: 100%; }
-.app-content { flex: 1; overflow-y: auto; }
+.app-shell { display: flex; flex-direction: column; height: 100%; position: relative; }
+/* a barra de abas flutua por cima: o conteúdo rola por trás dela (é o que dá
+   o efeito de vidro) e precisa de folga no fim para o último item não sumir */
+.app-content { flex: 1; overflow-y: auto; padding-bottom: calc(5.2rem + env(safe-area-inset-bottom)); }
 .tabbar {
-  display: flex; border-top: 1px solid var(--line); background: var(--bg2);
-  padding-bottom: env(safe-area-inset-bottom); flex: 0 0 auto;
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 10;
+  display: flex; align-items: center; gap: .6rem;
+  padding: 0 .9rem calc(.7rem + env(safe-area-inset-bottom));
+  pointer-events: none;
 }
+.tabbar-glass {
+  pointer-events: auto;
+  background: color-mix(in srgb, var(--bg2) 62%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  backdrop-filter: blur(18px) saturate(1.6);
+  border: 1px solid color-mix(in srgb, var(--fg) 12%, transparent);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .16), inset 0 1px 0 color-mix(in srgb, #fff 35%, transparent);
+  border-radius: 999px;
+}
+.tabbar-pill { flex: 1; display: flex; padding: .3rem; max-width: 520px; margin-left: auto; }
+.tabbar-solo { display: flex; padding: .3rem; margin-right: auto; }
 .tabbar-item {
   flex: 1; display: flex; align-items: center; justify-content: center;
-  padding: .7rem 0; background: none; border: none; color: var(--dim);
+  height: 2.9rem; min-width: 2.9rem; border-radius: 999px;
+  background: none; border: none; color: var(--dim);
+  transition: background-color .2s, color .2s;
 }
-.tabbar-item svg { width: 26px; height: 26px; }
-.tabbar-item.on { color: var(--accent); }
+.tabbar-item svg { width: 24px; height: 24px; }
+.tabbar-item.on { color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, transparent); }
+.tabbar-item:active { transform: scale(.94); }
 
 /* ---------- importação ---------- */
 .field { display: flex; flex-direction: column; gap: .3rem; font-size: .8rem; color: var(--dim); }
@@ -244,6 +262,23 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .subrow .to { color: var(--accent); font-weight: 600; }
 .subrow .score { color: var(--accent2); font-size: .72rem; }
 .subrow .reason { color: var(--dim); font-size: .72rem; }
+
+/* controle segmentado de largura total (aba Configurações): opções escritas,
+   a escolhida em cor sólida de destaque */
+.segmented { display: flex; width: 100%; border: 1.5px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--bg2); }
+.segmented button { flex: 1; min-height: 44px; background: none; border: none; font-size: .9rem; color: var(--fg); }
+.segmented button.on { background: var(--accent); color: #14161a; font-weight: 600; }
+
+/* card recolhível das seções de Configurações */
+.fold { background: var(--bg2); border: 1.5px solid var(--line); border-radius: 14px; }
+.fold > summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+  min-height: 52px; padding: 0 1rem; font-size: .92rem; letter-spacing: .04em; color: var(--dim);
+}
+.fold > summary::-webkit-details-marker { display: none; }
+.fold > summary svg { width: 20px; height: 20px; transition: transform .2s; }
+.fold[open] > summary svg { transform: rotate(180deg); }
+.fold-body { padding: .2rem 1rem 1.1rem; }
 
 .toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .toggle button { background: var(--bg3); border: none; padding: .35rem .8rem; font-size: .8rem; }

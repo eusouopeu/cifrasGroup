@@ -213,7 +213,7 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
       </div>
 
       <button
-        className="fixed right-[1.1rem] bottom-[calc(4.6rem+env(safe-area-inset-bottom))] z-[6] w-14 h-14 rounded-full bg-accent text-[#14161a] border-0 grid place-items-center shadow-[0_4px_14px_rgba(0,0,0,.3)] [&>svg]:w-[26px] [&>svg]:h-[26px]"
+        className="fixed right-[1.1rem] bottom-[calc(5.6rem+env(safe-area-inset-bottom))] z-[6] w-14 h-14 rounded-full bg-accent text-[#14161a] border-0 grid place-items-center shadow-[0_4px_14px_rgba(0,0,0,.3)] [&>svg]:w-[26px] [&>svg]:h-[26px]"
         onClick={onNew}
         aria-label="Importar cifra"
         title="Importar cifra"

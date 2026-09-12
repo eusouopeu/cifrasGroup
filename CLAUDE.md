@@ -132,6 +132,32 @@ de cards que precise do mesmo tipo de ação secundária.
 vazado pelo preenchido na aba ativa. São cinco abas fixas nas mesmas posições;
 o texto de 10px embaixo do ícone só apertava a barra.
 
+Visual vítreo (12/09/2026, pedido do usuário): a barra flutua sobre o conteúdo
+(`position: absolute` dentro de `.app-shell`, `backdrop-filter: blur`), com as
+quatro abas de conteúdo numa pílula e Configurações num círculo à parte. Aba
+ativa ganha fundo translúcido de destaque. `.app-content` tem folga embaixo e
+os botões flutuantes (importar, gravador) ficam em `bottom: 5.6rem` para não
+cair em cima dela. É uma exceção deliberada à regra "sem sombra".
+
+### Configurações
+
+Cabeçalho grande com linha embaixo, tema como controle segmentado de largura
+total (`.segmented`, opções escritas), busca que filtra seções por título e
+palavras-chave, e cada seção num card recolhível (`.fold`, `<details>`) que
+abre sozinho quando a busca casa. Seção nova entra no array `sections` de
+`SettingsTab.tsx` com `keywords` preenchidas.
+
+### Painel Ritmo compacto
+
+O bloco do metrônomo é uma linha só: tocar/parar, bpm, ícone de alto-falante
+(no lugar do rótulo "Tocar") e os chips batida/metrônomo.
+
+### Ícone do app
+
+Fundo branco (`public/icon.svg` e `ic_launcher_background` = `#FFFFFF`), com
+traços escuros. Os PNGs de `android/app/src/main/res/mipmap-*` são gerados do
+SVG com `rsvg-convert` (foreground sem fundo, 108dp; legado quadrado e redondo).
+
 ### O que sai no alto-falante (painel Ritmo)
 
 Batida (`playPattern`) e clique do metrônomo (`playClick`) são independentes no

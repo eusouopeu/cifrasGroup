@@ -4,7 +4,7 @@
  * painel arriscar os outros.
  */
 import { useState } from 'react'
-import { ArrowPathIcon, ArrowRightIcon, MinusIcon, PlayIcon, PlusIcon, StopIcon } from '@heroicons/react/24/outline'
+import { ArrowPathIcon, ArrowRightIcon, MinusIcon, PlayIcon, PlusIcon, SpeakerWaveIcon, StopIcon } from '@heroicons/react/24/outline'
 import { guessKeyModeFromSymbols } from '../../cifra/parse'
 import type { CifraView } from '../../cifra/view'
 import { RHYTHMS, type Rhythm } from '../../data/rhythms'
@@ -308,17 +308,13 @@ export function RhythmPanel({ s, rhythm, dispatch, metronome, onPlay }: {
 }) {
   return (
     <Panel title="Ritmo">
-      <div className="bg-bg3 border border-line rounded-[10px] p-[.6rem_.7rem] mb-3 [&_input[type=range]]:w-full [&_input[type=range]]:my-2 [&_input[type=range]]:mb-[.4rem]">
-        <div className="row tight">
-          {/* o bpm se ajusta no rodapé da tela da música (−1/+1) e ao escolher
-              uma batida, que já traz o andamento sugerido dela */}
-          <div className="flex-1 text-center flex items-baseline justify-center gap-1 [&>strong]:text-2xl [&>span]:text-[.7rem] [&>span]:text-dim">
-            <strong>{s.bpm}</strong><span>bpm</span>
-          </div>
-        </div>
-        <div className="row tight center">
+      {/* tudo numa linha só: tocar/parar, andamento, e o que sai no alto-falante.
+          O bpm se ajusta no rodapé da tela da música (−1/+1) e ao escolher uma
+          batida, que já traz o andamento sugerido dela. */}
+      <div className="bg-bg3 border border-line rounded-[10px] p-[.45rem_.6rem] mb-3">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
-            className={`icon w-9 h-9 rounded-full border border-line bg-bg2 [&>svg]:w-[15px] [&>svg]:h-[15px] ${
+            className={`icon !min-w-0 !min-h-0 w-9 h-9 flex-none rounded-full border border-line bg-bg2 [&>svg]:w-[15px] [&>svg]:h-[15px] ${
               metronome.running ? 'bg-accent border-accent text-[#14161a]' : ''
             }`}
             onClick={onPlay}
@@ -327,15 +323,15 @@ export function RhythmPanel({ s, rhythm, dispatch, metronome, onPlay }: {
           >
             {metronome.running ? <StopIcon /> : <PlayIcon />}
           </button>
-        </div>
-        {/* o que sai no alto-falante: a batida e o clique são independentes, dá
-            para tocar só a batida (sem o "tec-tec" do metrônomo por cima), só o
-            clique, ou os dois. Antes eram dois ícones sem rótulo, e ninguém
-            descobria que dava para desligar o metrônomo e manter a batida */}
-        <div className="row tight center mt-2 flex-wrap">
-          <span className="text-[.72rem] uppercase tracking-[.05em] text-dim">Tocar</span>
+          <div className="flex items-baseline gap-1 mr-auto">
+            <strong className="text-xl">{s.bpm}</strong><span className="text-[.7rem] text-dim">bpm</span>
+          </div>
+          {/* o que sai no alto-falante: a batida e o clique são independentes, dá
+              para tocar só a batida (sem o "tec-tec" do metrônomo por cima), só o
+              clique, ou os dois. O alto-falante substitui o rótulo "Tocar". */}
+          <SpeakerWaveIcon className="w-[18px] h-[18px] text-dim flex-none" aria-label="Sai no alto-falante" />
           <button
-            className={`chip${s.playPattern ? ' on' : ''}`}
+            className={`chip !min-h-[32px] !py-1${s.playPattern ? ' on' : ''}`}
             aria-pressed={s.playPattern}
             disabled={!rhythm}
             title={rhythm ? 'Tocar os golpes da batida' : 'Escolha uma batida abaixo'}
@@ -344,7 +340,7 @@ export function RhythmPanel({ s, rhythm, dispatch, metronome, onPlay }: {
             batida
           </button>
           <button
-            className={`chip${s.playClick ? ' on' : ''}`}
+            className={`chip !min-h-[32px] !py-1${s.playClick ? ' on' : ''}`}
             aria-pressed={s.playClick}
             title="Clique do metrônomo"
             onClick={() => dispatch({ type: 'toggleClick' })}
