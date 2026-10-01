@@ -6,6 +6,7 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { analyzeVoiceFrame, getEssentia, type VoiceReading } from '../../audio/analysis'
+import { Ajuda } from '../Ajuda'
 
 const ANALYSIS_INTERVAL_MS = 180
 
@@ -64,7 +65,10 @@ export function VoiceLabTab() {
 
   return (
     <div className="panel-section">
-      <p className="hint small">Cante uma nota sustentada, num ambiente silencioso, e observe o retrato do timbre em tempo real.</p>
+      <p className="hint small flex items-center gap-1 !mt-0">
+        Retrato do timbre
+        <Ajuda label="Como usar">Cante uma nota sustentada, num ambiente silencioso, e observe o retrato do timbre em tempo real.</Ajuda>
+      </p>
 
       {(status === 'idle' || status === 'starting') && (
         <button className="btn primary wide" disabled={status === 'starting'} onClick={() => void startListening()}>

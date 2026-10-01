@@ -5,6 +5,7 @@ import { ImportCancelledError, importFromCifraClubUrl, isCifraClubUrl, nativeImp
 import { nameOf } from '../theory/notes'
 import { allVoicings } from '../theory/voicings'
 import { useToast } from './Toast'
+import { Ajuda } from './Ajuda'
 
 export function ImportView({ onImport, onCancel, initialUrl }: {
   onImport: (data: { title: string; artist: string; source: string | null; raw: string }) => void
@@ -120,12 +121,15 @@ export function ImportView({ onImport, onCancel, initialUrl }: {
       </header>
 
       {nativeOk && (
-        <div className="bg-[color-mix(in_srgb,var(--accent)_10%,var(--bg2))] border border-accent rounded-[10px] p-[.8rem_1rem] mb-4 text-[.85rem]">
-          <strong>Importar por link do CifraClub</strong>
-          <p className="hint small">
-            Cole o link de uma música, ou use "Compartilhar" no Chrome / no app do CifraClub e escolha o cifrasGroup.
-            O app abre a página como se você a estivesse visitando e lê a cifra sozinho — não precisa copiar nada.
-          </p>
+        <div className="bg-[color-mix(in_srgb,var(--accent)_10%,var(--bg2))] rounded-[10px] p-[.8rem_1rem] mb-4 text-[.85rem]">
+          <strong className="flex items-center gap-1 mb-2">
+            Importar por link do CifraClub
+            <Ajuda label="Como importar por link">
+              Cole o link de uma música, ou use “Compartilhar” no Chrome / no app do CifraClub e escolha o cifrasGroup.
+              O app abre a página como se você a estivesse visitando e lê a cifra sozinho — não precisa copiar nada.
+              🔍 mostra a prévia antes de salvar; ⚡ importa direto.
+            </Ajuda>
+          </strong>
           <div className="row tight">
             <input
               className="flex-1 min-w-0 bg-bg2 border border-line rounded-lg text-fg p-[.55rem_.7rem] text-[.85rem]"

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { newTuningId } from '../../store/customTunings'
 import { nameOf } from '../../theory/notes'
 import { transposeTuningShape, type Tuning } from '../../theory/tunings'
+import { Ajuda } from '../Ajuda'
 
 /**
  * Criador de afinações personalizadas, em dois modos:
@@ -38,15 +39,19 @@ export function TuningBuilder({ allTunings, onSave }: { allTunings: Tuning[]; on
   }
 
   return (
-    <div className="bg-bg3 border border-line rounded-[10px] p-[.7rem_.8rem] my-[.6rem]">
+    <div className="bg-bg3 rounded-[10px] p-[.7rem_.8rem] my-[.6rem]">
       <div className="toggle">
         <button className={mode === 'transpose' ? 'on' : ''} onClick={() => setMode('transpose')}>Transpor afinação existente</button>
         <button className={mode === 'manual' ? 'on' : ''} onClick={() => setMode('manual')}>Afinação livre</button>
       </div>
+      <Ajuda className="ml-1" label="Diferença entre os modos">
+        {mode === 'transpose'
+          ? 'Mantém a relação entre as cordas de uma afinação e só muda o tom geral — ex.: a afinação padrão, mas em Ré.'
+          : 'Escolha a nota de cada corda, da mais grave (6ª) para a mais aguda (1ª) — cobre qualquer instrumento ou afinação aberta fora do catálogo.'}
+      </Ajuda>
 
       {mode === 'transpose' && (
         <>
-          <p className="hint small">Mantém a relação entre as cordas de uma afinação e só muda o tom geral — ex.: a afinação padrão, mas em Ré.</p>
           <label className="field wide">
             Afinação de base
             <select value={baseId} onChange={(e) => setBaseId(e.target.value)}>
@@ -64,10 +69,6 @@ export function TuningBuilder({ allTunings, onSave }: { allTunings: Tuning[]; on
 
       {mode === 'manual' && (
         <>
-          <p className="hint small">
-            Escolha a nota de cada corda, da mais grave (6ª) para a mais aguda (1ª) — cobre qualquer instrumento ou
-            afinação aberta fora do catálogo.
-          </p>
           <div className="flex flex-wrap gap-2 my-[.4rem]">
             {manualPcs.map((pc, i) => (
               <label key={i} className="field w-[76px]">

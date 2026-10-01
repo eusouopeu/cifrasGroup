@@ -2,6 +2,7 @@
 import { useRef, useState } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { FONT_SIZES, fontSizeLabelFor, type FontSizeLabel } from '../../store/songActions'
+import type { CifraSection } from '../../cifra/sections'
 
 /** Tamanho do texto em quatro passos (P/M/G/GG) em vez de um valor livre em px. */
 export function SizePicker({ value, onChange }: { value: number; onChange: (px: number) => void }) {
@@ -151,7 +152,7 @@ export function TagEditor({ tags, onChange }: { tags: string[]; onChange: (tags:
     <div className="mb-3 [&_input]:flex-1 [&_input]:bg-bg2 [&_input]:border [&_input]:border-line [&_input]:rounded-lg [&_input]:text-fg [&_input]:p-[.45rem_.6rem] [&_input]:text-[.85rem]">
       <div className="flex flex-wrap gap-1.5 mb-1.5">
         {tags.map((t) => (
-          <span key={t} className="inline-flex items-center gap-1 bg-bg3 border border-line rounded-full p-[.2rem_.3rem_.2rem_.6rem] text-[.78rem]">
+          <span key={t} className="inline-flex items-center gap-1 bg-bg3 rounded-full p-[.2rem_.3rem_.2rem_.6rem] text-[.78rem]">
             {t}
             <button
               className="bg-none border-0 text-dim text-[.9rem] px-[.3rem] leading-none inline-flex items-center hover:text-danger [&>svg]:w-3 [&>svg]:h-3"
@@ -196,5 +197,72 @@ export function EditTitle({ title, artist, onDone }: {
       <input className="mono" aria-label="Título" value={t} onChange={(e) => setT(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && commit()} autoFocus placeholder="título" />
       <input aria-label="Artista" value={a} onChange={(e) => setA(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && commit()} placeholder="artista" />
     </div>
+  )
+}
+
+const SECTION_HINT_KEY = 'cifrasgroup:sectionLongPressHinted'
+const LONG_PRESS_MS = 450
+
+/**
+ * Atalhos para as seções da cifra ([Intro], [Refrão]…): tocar pula até a
+ * seção; segurar repete a seção em loop. O chip da seção em loop fica aceso.
+ *
+ * Segurar não é descobrível pelo ícone, então o primeiro toque simples mostra
+ * uma dica uma única vez (minimalismo.md, "Presunção de aprendizado
+ * intuitivo"). Sem gesto, o mesmo loop sai pelo botão de loop da barra de
+ * rolagem, que repete a seção que estiver no topo da tela.
+ */
+export function SectionChips({ sections, loopStart, onJump, onLoop, onHint }: {
+  sections: CifraSection[]
+  /** linha inicial da seção em loop, se houver */
+  loopStart: number | null
+  onJump: (section: CifraSection) => void
+  onLoop: (section: CifraSection) => void
+  onHint: (message: string) => void
+}) {
+  const timer = useRef<number | null>(null)
+  const fired = useRef(false)
+  const cancel = () => {
+    if (timer.current !== null) window.clearTimeout(timer.current)
+    timer.current = null
+  }
+
+  return (
+    <nav className="flex gap-1.5 overflow-x-auto px-[.6rem] py-1.5 bg-bg2 border-b border-line [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Seções da cifra">
+      {sections.map((sec) => (
+        <button
+          key={sec.start}
+          className={`chip flex-none !min-h-[30px] !py-1 !px-3 select-none [-webkit-touch-callout:none]${loopStart === sec.start ? ' on' : ''}`}
+          aria-label={loopStart === sec.start ? `${sec.label} (em loop)` : sec.label}
+          title="Toque para ir · segure para repetir"
+          onPointerDown={() => {
+            fired.current = false
+            cancel()
+            timer.current = window.setTimeout(() => {
+              fired.current = true
+              timer.current = null
+              navigator.vibrate?.(15)
+              onLoop(sec)
+            }, LONG_PRESS_MS)
+          }}
+          onPointerUp={cancel}
+          onPointerLeave={cancel}
+          onPointerCancel={cancel}
+          onContextMenu={(e) => e.preventDefault()}
+          onClick={() => {
+            if (fired.current) { fired.current = false; return }
+            onJump(sec)
+            try {
+              if (!localStorage.getItem(SECTION_HINT_KEY)) {
+                localStorage.setItem(SECTION_HINT_KEY, '1')
+                onHint('Dica: segure o nome de uma seção para repeti-la em loop.')
+              }
+            } catch { /* sem storage: só não mostra a dica */ }
+          }}
+        >
+          {sec.label}
+        </button>
+      ))}
+    </nav>
   )
 }

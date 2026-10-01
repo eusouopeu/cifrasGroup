@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react'
-import { ChevronDownIcon, ChevronUpIcon, DocumentDuplicateIcon, EllipsisVerticalIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { useRef, useState, type ReactNode } from 'react'
+import { DocumentDuplicateIcon, EllipsisVerticalIcon, TrashIcon } from '@heroicons/react/24/outline'
 import type { Song } from '../store/db'
 
 /** largura da faixa de ações (duplicar/apagar) escondida atrás do card */
@@ -7,14 +7,14 @@ const REVEAL_WIDTH = 88
 /** arrasto mínimo para considerar "abrir" ao soltar, em vez de voltar pro lugar */
 const SWIPE_THRESHOLD = 36
 
-export function SongCard({ song, onOpen, onDelete, onDuplicate, deleteLabel = 'apagar', onMoveUp, onMoveDown, showChords = true }: {
+export function SongCard({ song, onOpen, onDelete, onDuplicate, deleteLabel = 'apagar', actions, showChords = true }: {
   song: Song
   onOpen: () => void
   onDelete: () => void
   onDuplicate: () => void
   deleteLabel?: string
-  onMoveUp?: () => void
-  onMoveDown?: () => void
+  /** controles extras ao lado do "⋮" — a alça de reordenar da tela Listas */
+  actions?: ReactNode
   /** prévia dos acordes mais usados — só faz sentido onde o repertório importa (Listas), não na busca geral (Início) */
   showChords?: boolean
 }) {
@@ -113,21 +113,16 @@ export function SongCard({ song, onOpen, onDelete, onDuplicate, deleteLabel = 'a
           {song.artist && <span className="text-dim text-[.8rem]">{song.artist}</span>}
           {showChords && <span className="mono text-accent2 text-[.78rem]">{chords.join(' ')}</span>}
           <span className="flex flex-wrap gap-1">
-            {visibleBadges.map((b) => <i key={b} className="not-italic text-[.68rem] bg-bg3 border border-line rounded text-dim px-1.5">{b}</i>)}
+            {visibleBadges.map((b) => <i key={b} className="not-italic text-[.68rem] bg-bg3 rounded text-dim px-1.5">{b}</i>)}
             {hiddenCount > 0 && (
-              <i className="not-italic text-[.68rem] bg-bg3 border border-line rounded px-1.5 text-accent2 border-accent2 cursor-default" title={badges.slice(VISIBLE_BADGES).join(', ')}>
+              <i className="not-italic text-[.68rem] bg-bg3 rounded px-1.5 text-accent2 border-accent2 cursor-default" title={badges.slice(VISIBLE_BADGES).join(', ')}>
                 +{hiddenCount}
               </i>
             )}
           </span>
         </button>
         <div className="flex gap-2 self-end items-center">
-          {(onMoveUp || onMoveDown) && (
-            <span className="flex [&_.icon:disabled]:opacity-30">
-              <button className="icon small" disabled={!onMoveUp} onClick={onMoveUp} aria-label="Mover para cima"><ChevronUpIcon /></button>
-              <button className="icon small" disabled={!onMoveDown} onClick={onMoveDown} aria-label="Mover para baixo"><ChevronDownIcon /></button>
-            </span>
-          )}
+          {actions}
           <button
             className="icon small"
             aria-label="Mais opções (duplicar, apagar)"

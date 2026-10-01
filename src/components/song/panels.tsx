@@ -23,6 +23,7 @@ import { TuningPicker } from '../TuningPicker'
 import { LevelButton, Panel, TagEditor } from './parts'
 import { ChordConferenceTab } from './ChordConference'
 import type { SongDispatch } from './hooks'
+import { Ajuda } from '../Ajuda'
 
 /** Nome do tom (ex.: "D#m") a partir dos acordes já transpostos de uma opção de tom — em vez de mostrar só o deslocamento em semitons ("+1"). */
 function keyOptionName(chords: string[]): string {
@@ -119,7 +120,7 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
           </div>
 
           <div className="panel-section">
-            <h4>5 tons mais fáceis</h4>
+            <h4 className="flex items-center gap-1">5 tons mais fáceis <Ajuda label="O que é a coluna capo">“Capo” é a casa do capotraste que mantém o tom original tocando a forma fácil.</Ajuda></h4>
             <div className="flex flex-col gap-[2px]">
               {view.keyRanking.slice(0, 5).map((k) => (
                 <button
@@ -137,7 +138,6 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
                 </button>
               ))}
             </div>
-            <p className="hint small">“Capo” = casa que mantém o tom original tocando a forma fácil.</p>
           </div>
 
           {modulations.length > 0 && (
@@ -161,8 +161,10 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
 
       {tab === 'analise' && (
         <div className="panel-section">
-          <p className="hint small">Toque numa nota pra mudar a tônica, ou detecte pelo microfone.</p>
-          <KeyDetectButton onDetected={onAnalysisKey} />
+          <div className="flex items-center gap-1">
+            <KeyDetectButton onDetected={onAnalysisKey} />
+            <Ajuda label="Como mudar a tônica">Toque numa nota abaixo para mudar a tônica da análise, ou detecte o tom pelo microfone.</Ajuda>
+          </div>
           <div className="rootrow">
             {Array.from({ length: 12 }, (_, i) => (
               <button
@@ -178,7 +180,7 @@ export function KeyPanel({ s, view, dispatch, analysisKeyPc, guessedAnalysisKey,
           <h4 style={{ marginTop: '.9rem' }}>Grau de cada acorde na tonalidade</h4>
           <div className="grid grid-cols-[repeat(auto-fill,minmax(76px,1fr))] gap-1.5">
             {view.displayedChords.map((c) => (
-              <div key={c.symbol} className="flex flex-col items-center gap-0.5 bg-bg3 border border-line rounded-lg py-1.5">
+              <div key={c.symbol} className="flex flex-col items-center gap-0.5 bg-bg3 rounded-lg py-1.5">
                 <span className="mono text-[.82rem] font-semibold">{c.symbol}</span>
                 <span className="mono text-[.72rem] text-accent font-bold">{romanNumeral(c.symbol, analysisKeyPc) ?? '?'}</span>
               </div>
@@ -231,7 +233,7 @@ export function SimplifyPanel({ s, view, dispatch, mapSymbol }: {
       {view.substitutions.size === 0 && <p className="hint">Nenhuma troca: os acordes já estão simples o bastante para o limiar escolhido.</p>}
       <div className="flex flex-col gap-1.5">
         {[...view.substitutions.values()].map((sub) => (
-          <div key={sub.from} className="bg-bg3 border border-line rounded-lg px-2.5 py-2">
+          <div key={sub.from} className="bg-bg3 rounded-lg px-2.5 py-2">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="mono text-dim line-through text-[.82rem]">{sub.from}</span>
               <ArrowRightIcon className="w-3.5 h-3.5 text-dim flex-shrink-0" />
@@ -311,7 +313,7 @@ export function RhythmPanel({ s, rhythm, dispatch, metronome, onPlay }: {
       {/* tudo numa linha só: tocar/parar, andamento, e o que sai no alto-falante.
           O bpm se ajusta no rodapé da tela da música (−1/+1) e ao escolher uma
           batida, que já traz o andamento sugerido dela. */}
-      <div className="bg-bg3 border border-line rounded-[10px] p-[.45rem_.6rem] mb-3">
+      <div className="bg-bg3 rounded-[10px] p-[.45rem_.6rem] mb-3">
         <div className="flex items-center gap-2 flex-wrap">
           <button
             className={`icon !min-w-0 !min-h-0 w-9 h-9 flex-none rounded-full border border-line bg-bg2 [&>svg]:w-[15px] [&>svg]:h-[15px] ${
@@ -356,16 +358,14 @@ export function RhythmPanel({ s, rhythm, dispatch, metronome, onPlay }: {
         )}
       </div>
 
-      <p className="hint small">↓ para baixo · ↑ para cima · × abafado · P polegar · ≡ acorde</p>
-      <h4>Batidas</h4>
+      <h4 className="flex items-center gap-1">Batidas <Ajuda label="Legenda das batidas">↓ para baixo · ↑ para cima · × abafado · P polegar · ≡ acorde</Ajuda></h4>
       <div className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(215px,1fr))] max-[620px]:grid-cols-1">
         {RHYTHMS.filter((r) => r.kind === 'batida').map((r) => (
           <RhythmCard key={r.id} rhythm={r} selected={s.rhythmId === r.id} playing={metronome.running && s.rhythmId === r.id}
             onSelect={() => dispatch(s.rhythmId === r.id ? { type: 'setRhythm', id: null } : { type: 'setRhythm', id: r.id, bpm: r.bpmSuggested })} />
         ))}
       </div>
-      <h4>Dedilhados</h4>
-      <p className="hint small">p = polegar · i = indicador · m = médio · a = anelar</p>
+      <h4 className="flex items-center gap-1">Dedilhados <Ajuda label="Legenda dos dedilhados">p = polegar · i = indicador · m = médio · a = anelar</Ajuda></h4>
       <div className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(215px,1fr))] max-[620px]:grid-cols-1">
         {RHYTHMS.filter((r) => r.kind === 'dedilhado').map((r) => (
           <RhythmCard key={r.id} rhythm={r} selected={s.rhythmId === r.id} playing={metronome.running && s.rhythmId === r.id}
@@ -435,10 +435,10 @@ export function ChordsPanel({ s, view, dispatch, customTunings, onSaveCustomTuni
                 </div>
               ))}
             </div>
-            <p className="hint small">
+            <Ajuda label="Sobre os acordes">
               Toque em um acorde para ver todas as digitações e a construção nota a nota.{' '}
-              <span className="inline-block align-middle mx-[.15rem] w-[9px] h-[9px] rounded-full bg-accent2 border border-bg2" /> marca acordes trocados manualmente.
-            </p>
+              <span className="inline-block align-middle mx-[.15rem] w-[9px] h-[9px] rounded-full bg-accent2" /> marca acordes trocados manualmente.
+            </Ajuda>
             {s.capo > 0 && <p className="hint small">Diagramas relativos ao capotraste na {s.capo}ª casa.</p>}
             {overriddenSymbols.size > 0 && (
               <button className="btn ghost wide" onClick={onRestoreAllOverrides}>

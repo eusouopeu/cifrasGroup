@@ -67,25 +67,21 @@ paralelizar em vez de fazer tudo sequencialmente. Reserve isso para tarefas
 simples e desacopladas — não delegar partes de uma mesma feature/mudança que
 precisam ficar coerentes entre si.
 
-## Skill obrigatória
+## Padrões compartilhados
 
-SEMPRE usar a skill `/caveman` (modo de comunicação ultra-comprimido) em toda resposta neste projeto.
+Este projeto segue os padrões comuns aos apps do Pedro, documentados em
+`../_shared/tech-standards.md` (stack, testes, commit/push/release, skill
+`/caveman` obrigatória, subagentes, leitura de dependências) e
+`../_shared/design-standards.md` + `../_shared/minimalismo.md` (visual,
+ícones, estética minimalista, "ajuda recolhida"). Ícones já usam Heroicons,
+alinhado ao padrão compartilhado; o app foi migrado de `lucide-react` em
+05/09/2026 (pacote desinstalado de vez em 08/09/2026) — não reintroduzir.
 
+### Particularidade técnica de ícones
 
-## Padrões técnicos e visuais obrigatórios
-
-- Sempre usar **TypeScript**, **Tailwind CSS**, ícones **Heroicons**
-  (`@heroicons/react/24/outline`; a variante `/24/solid` só para marcar estado ativo,
-  como na barra de abas) e fonte **Montserrat** com espaçamento entrelinhas
-  (line-height) de 1.5 em textos corridos.
-- **Não usar Lucide** (nem qualquer outra biblioteca de ícones): o app foi migrado
-  de `lucide-react` para `@heroicons/react` em 05/09/2026 e não deve voltar atrás.
-  O pacote `lucide-react` foi desinstalado de vez em 08/09/2026 (estava no
-  `package.json` sem nenhum import).
-  Heroicons não trazem largura/altura intrínsecas — o tamanho vem sempre do CSS
-  (`.icon svg`, `.tabbar-item svg` em `styles.css`, ou `[&>svg]:w-…` na classe do
-  botão). Ícone novo sem regra de tamanho renderiza gigante.
-- Dar preferência a **botões-ícone** em vez de botões com texto.
+Heroicons não trazem largura/altura intrínsecas — o tamanho vem sempre do CSS
+(`.icon svg`, `.tabbar-item svg` em `styles.css`, ou `[&>svg]:w-…` na classe do
+botão). Ícone novo sem regra de tamanho renderiza gigante.
 
 ### Migração Tailwind + Lucide (concluída, 2026-08-30)
 
@@ -230,6 +226,11 @@ Antes eram cinco botões idênticos que só diferiam no número do nível — n�
 para saber o que cada um cobrava nem por onde começar. Exercício novo entra com
 `description` preenchida.
 
+Desde 01/10/2026 a `description` fica atrás do ⓘ (`Ajuda`) no card, não
+impressa: o card mostra ícone, título, pontinhos de nível e % de acerto. Ordem
+da lista: ouvido musical (intervalos, acordes, campo harmônico, ditado rítmico)
+e depois mixagem (EQ, pan, delay, compressão).
+
 ### Exercícios de EQ/pan/delay/compressão usam música real
 
 O loop sintético (tríade em pluck) soava artificial demais para treinar
@@ -250,23 +251,43 @@ tela da música para dentro da aba raiz Afinação (toggle Afinação/Voz), porq
 não é uma função de acorde — ficava enterrada no 3º nível de navegação sem
 necessidade.
 
-## Testes
+Testes, commit/push, atualização do CLAUDE.md e leitura de dependências: ver
+`../_shared/tech-standards.md`.
 
-- Por rodada de alterações, realizar apenas os **2 ou 3 testes mais essenciais** — não mais que isso.
-- Esses testes devem ser **elaborados ANTES** da implementação das mudanças de código, para que não
-  sejam enviesados pelo resultado da implementação.
+### Ajuda recolhida (ⓘ) e tokens de estado
 
+`components/Ajuda.tsx` é o balão de explicação do padrão compartilhado (portal,
+preso a 12px da tela, fecha com toque fora/Esc/rolagem). Texto de "como usar"
+não fica mais impresso embaixo de controles — vai para um `Ajuda` ao lado do
+título/rótulo. Mensagens de estado (erro de microfone, "ouvindo…") continuam
+visíveis. Cores de estado: `--ok` (verde: meta batida, sequência, acerto),
+`--warn` (aviso), `--danger`, `--blue` só para foco de campo. `--line` ficou
+mais suave e botões/chips sobre `bg3` não têm borda.
 
-## Commit, push e atualização do CLAUDE.md
+### Seções da cifra
 
-- A cada rodada em que o código do app/site for alterado, deve ser feito o **commit** e o **push**
-  para o repositório remoto no GitHub.
-- Nessa mesma rodada, atualizar o conteúdo deste **CLAUDE.md** no que couber (novas convenções,
-  decisões, mudanças de stack, etc.), mantendo-o coerente com o estado atual do projeto.
+`cifra/sections.ts` lista as seções ([Intro], [Refrão]…; repetidas ganham
+número). Na tela da música viram chips (`SectionChips` em `song/parts.tsx`):
+tocar pula, segurar liga o loop da seção. O botão de loop da barra de rolagem,
+sem texto selecionado, repete a seção que está no topo da tela (equivalente
+sem gesto).
 
-## Proibição de leitura de dependências
+### Ordem das listas
 
-- NUNCA ler arquivos de dependências (ex.: `node_modules/`, `dist/`, `build/`, pastas de vendor
-  ou qualquer artefato gerado/instalado) para obter contexto. Usar apenas o código-fonte do
-  próprio projeto.
+Arrastar pela alça ≡ do card reordena (`useDragReorder` em `ListsView.tsx`,
+ouvintes na janela porque a troca move o card no DOM e derruba a captura do
+ponteiro). Tocar na alça sem arrastar mostra ↑/↓; teclado usa as setas na alça.
+
+### Meta semanal e "para praticar"
+
+`DB.practiceDays` (ms por dia local) e `DB.weeklyGoalMin` alimentam
+`store/practiceGoals.ts` (semana de segunda a hoje, sequência de dias,
+`songsToPractice`). O cartão do Início (`PracticeCard`) substituiu o trio de
+números; a meta se escolhe tocando nele ou em Configurações → Prática.
+
+### Comparar gravações
+
+Na aba Gravações, com 2+ tomadas do mesmo tipo, o ícone de balança abre
+`RecordingCompare`: A (mais antiga) × B (mais recente) por padrão, um player
+com chave A|B que mantém o ponto ao trocar.
 

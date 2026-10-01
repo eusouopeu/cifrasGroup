@@ -6,6 +6,7 @@ import { stringFrequencies, tuningById, type Tuning } from '../theory/tunings'
 import { pluckNote } from '../audio/pluck'
 import { getEssentia, pitchFromBuffer } from '../audio/analysis'
 import { stabilizeCents } from '../audio/pitchDisplay'
+import { Ajuda } from './Ajuda'
 
 const STANDARD_TUNING = tuningById('standard')
 
@@ -188,7 +189,10 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
 
       <p className="hint small">
         Afinação alvo: <strong>{tuning.name}</strong>
-        {tuning.id !== 'standard' && ' — a última usada nesta música'}.
+        {tuning.id !== 'standard' && ' — a última usada nesta música'}
+        <Ajuda className="ml-1" label="Sobre o afinador">
+          O microfone só liga quando você toca em “começar a escutar”, para não reagir a conversa ou TV. Referência: A4 = 440 Hz.
+        </Ajuda>
       </p>
       <div className="flex justify-center gap-1.5 my-2">
         {tuning.stringNames.map((name, i) => {
@@ -222,7 +226,6 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
         </button>
       </div>
 
-      {status === 'off' && <p className="hint center">O microfone fica desligado até você tocar em "começar a escutar".</p>}
       {status === 'unsupported' && <p className="hint danger">Este navegador não dá acesso ao microfone.</p>}
       {status === 'denied' && (
         <div>
@@ -244,7 +247,6 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
           <p className="hint">Toque uma corda ou nota isolada, num ambiente silencioso.</p>
         )
       )}
-      <p className="hint small">Referência: A4 = 440 Hz.</p>
     </>
   )
 

@@ -20,7 +20,8 @@ import { useToast } from './Toast'
 import { ChordMarker } from './song/ChordMarker'
 import { ChordSheet } from './song/ChordSheet'
 import { ChordStrip } from './song/ChordStrip'
-import { BottomBar, EditTitle, StripBar, ToolButton, TransportButton } from './song/parts'
+import { BottomBar, EditTitle, SectionChips, StripBar, ToolButton, TransportButton } from './song/parts'
+import { listSections } from '../cifra/sections'
 import {
   ChordsPanel,
   KeyPanel,
@@ -33,6 +34,7 @@ import {
   useAutoScroll,
   useCifraLineHeight,
   usePracticeTracking,
+  scrollToLine,
   useSectionLoop,
   useSongSettings,
   useSongShortcuts,
@@ -126,7 +128,8 @@ export function SongView({
   const rhythm = rhythmById(s.rhythmId)
   const metronome = useMetronome(rhythm, s.bpm, s.playPattern, s.playClick)
   const play = metronome.toggle
-  const loop = useSectionLoop(scrollRef, showToast)
+  const sections = useMemo(() => listSections(view.parsed), [view.parsed])
+  const loop = useSectionLoop(scrollRef, showToast, sections)
 
   // rolagem sincronizada com o metrônomo: uma linha da cifra por compasso.
   // Depende de medir a linha renderizada, então refaz a medida quando muda o
@@ -360,6 +363,20 @@ export function SongView({
         </div>
       )}
 
+      {sections.length >= 2 && !editingRaw && (
+        <SectionChips
+          sections={sections}
+          loopStart={loop.active ? loop.startLine : null}
+          onJump={(sec) => { if (scrollRef.current) scrollToLine(scrollRef.current, sec.start) }}
+          onLoop={(sec) => {
+            if (loop.active && loop.startLine === sec.start) { loop.toggle(); showToast(`Loop de ${sec.label} desligado.`); return }
+            loop.loopRange(sec.start, sec.end)
+            showToast(`Repetindo ${sec.label}.`)
+          }}
+          onHint={showToast}
+        />
+      )}
+
       <div className="relative flex-1 min-h-0 flex">
         <div
           className="flex-1 overflow-y-auto p-[.8rem_1rem_6rem] [scroll-behavior:auto] max-[620px]:p-[.7rem_.8rem_2rem] max-[620px]:overflow-x-auto"
@@ -447,8 +464,8 @@ export function SongView({
             size="sm"
             active={loop.active}
             onClick={loop.toggle}
-            label={loop.active ? 'Desativar loop do trecho' : 'Ativar loop do trecho selecionado na cifra'}
-            title={loop.active ? 'Loop ativo — toque para desativar' : 'Selecione um trecho da letra e toque para repeti-lo em loop'}
+            label={loop.active ? 'Desativar loop do trecho' : 'Repetir em loop o trecho selecionado ou a seção no topo da tela'}
+            title={loop.active ? 'Loop ativo — toque para desativar' : 'Repetir em loop: o trecho selecionado, ou a seção no topo da tela'}
           >
             <ArrowPathIcon />
           </TransportButton>

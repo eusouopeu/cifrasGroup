@@ -7,6 +7,8 @@ import { SizePicker } from './song/parts'
 import { useDisplayDefaults } from './DisplayControls'
 import type { Song } from '../store/db'
 import { formatPracticeTotal, practiceSummary } from '../store/practiceSummary'
+import { WeeklyGoalPicker } from './PracticeCard'
+import { Ajuda } from './Ajuda'
 import type { Tuning } from '../theory/tunings'
 
 function normalize(text: string): string {
@@ -30,8 +32,10 @@ function Fold({ title, forceOpen, children }: { title: string; forceOpen: boolea
   )
 }
 
-export function SettingsTab({ songs, customTunings, onExport, onImport }: {
+export function SettingsTab({ songs, weeklyGoalMin, onSetGoal, customTunings, onExport, onImport }: {
   songs: Record<string, Song>
+  weeklyGoalMin: number
+  onSetGoal: (minutes: number) => void
   customTunings: Tuning[]
   /** o backup embute o áudio das gravações, então pode demorar alguns segundos */
   onExport: () => void | Promise<void>
@@ -85,32 +89,38 @@ export function SettingsTab({ songs, customTunings, onExport, onImport }: {
         />
       ),
     },
-    ...(summary.totalSessions > 0
-      ? [{
-          id: 'pratica',
-          title: 'Prática',
-          keywords: 'sessoes tempo metronomo estatistica',
-          body: (
-            <p className="hint small leading-[1.5] !m-0">
+    {
+      id: 'pratica',
+      title: 'Prática',
+      keywords: 'sessoes tempo metronomo estatistica meta semana sequencia dias objetivo',
+      body: (
+        <div className="flex flex-col gap-4">
+          <div>
+            <span className="fieldlabel">Meta da semana</span>
+            <WeeklyGoalPicker value={weeklyGoalMin} onChange={onSetGoal} />
+          </div>
+          {summary.totalSessions > 0 && (
+            <p className="hint small !m-0">
               <strong>{summary.totalSessions}</strong> sess{summary.totalSessions === 1 ? 'ão' : 'ões'} com o metrônomo ligado,
               {' '}totalizando <strong>{formatPracticeTotal(summary.totalMs)}</strong>.
               {' '}<strong>{summary.weekCount}</strong> música{summary.weekCount === 1 ? '' : 's'} praticada{summary.weekCount === 1 ? '' : 's'} nos últimos 7 dias.
             </p>
-          ),
-        }]
-      : []),
+          )}
+        </div>
+      ),
+    },
     {
       id: 'backup',
       title: 'Backup',
       keywords: 'exportar importar arquivo copia seguranca documentos',
       body: (
         <>
-          <p className="hint small leading-[1.5] !mt-0 mb-4">
-            O arquivo leva músicas, listas, configurações de cada música e também as gravações de prática —
-            por isso pode ficar grande e demorar alguns segundos para ser gerado. No celular ele é salvo direto em
-            <strong> Documentos/CifrasGroup/Backups</strong>, junto com o backup automático semanal.
-          </p>
           <div className="row tight">
+            <Ajuda label="Sobre o backup">
+              O arquivo leva músicas, listas, metas, configurações de cada música e as gravações de prática —
+              por isso pode ficar grande e demorar alguns segundos. No celular ele vai para
+              <strong> Documentos/CifrasGroup/Backups</strong>, junto com o backup automático semanal.
+            </Ajuda>
             <button
               className="btn ghost"
               disabled={exporting}
@@ -156,7 +166,7 @@ export function SettingsTab({ songs, customTunings, onExport, onImport }: {
         <ThemePillPicker />
       </section>
 
-      <label className="flex items-center gap-2 mb-5 px-4 min-h-[52px] rounded-[14px] border-[1.5px] border-line bg-bg2 text-dim focus-within:border-accent">
+      <label className="flex items-center gap-2 mb-5 px-4 min-h-[52px] rounded-[14px] border border-line bg-bg2 text-dim focus-within:border-blue">
         <MagnifyingGlassIcon className="w-5 h-5 flex-none" />
         <input
           type="search"

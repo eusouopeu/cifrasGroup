@@ -3,15 +3,16 @@ import { FunnelIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import type { DB } from '../store/db'
 import type { Difficulty } from '../cifra/meta'
 import { loadLibraryPrefs, saveLibraryPrefs, type SortBy } from '../store/libraryPrefs'
-import { formatPracticeTotal, practiceSummary } from '../store/practiceSummary'
 import { songMatchesQuery } from '../store/songSearch'
 import { rhythmById } from '../data/rhythms'
 import { SongCard } from './SongCard'
+import { PracticeCard } from './PracticeCard'
 import { FontSizeToggleButton, InstrumentToggleButton } from './DisplayControls'
 import { ThemeToggleButton } from './ThemeControls'
 
-export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }: {
+export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong, onSetGoal }: {
   db: DB
+  onSetGoal: (minutes: number) => void
   onOpen: (id: string, listId?: string) => void
   onNew: () => void
   onDeleteSong: (id: string) => void
@@ -64,10 +65,6 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
 
   const hasActiveFilters = tagFilter !== null || maxChordsFilter !== '' || difficultyFilter !== null || genreFilter.size > 0
 
-  // o resumo de prática também aparece em Configurações: aqui ele fica onde o
-  // usuário passa todo dia, que é onde motiva a praticar
-  const summary = useMemo(() => practiceSummary(db.songs), [db.songs])
-
   const filtered = songs.filter((s) => {
     if (!songMatchesQuery(s, query)) return false
     if (tagFilter !== null && !s.tags.includes(tagFilter)) return false
@@ -102,7 +99,7 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
         <input className="search flex-1" aria-label="Buscar por título, artista, letra ou tag" placeholder="Buscar por título, letra, tag…" value={query} onChange={(e) => setQuery(e.target.value)} />
         {songs.length > 1 && (
           <select
-            className="bg-bg2 border border-line rounded-lg text-fg px-2 py-1.5 text-[.8rem] flex-shrink-0"
+            className="bg-bg2 border border-line rounded-lg text-fg px-2 py-1.5 text-[.8rem] flex-shrink-0 max-w-[9.5rem]"
             aria-label="Ordenar biblioteca"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortBy)}
@@ -191,13 +188,8 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
         </>
       )}
 
-      {summary.totalSessions > 0 && (
-        <div className="flex items-stretch gap-2 mt-3 rounded-xl border border-line bg-bg2 px-3 py-2.5">
-          <PracticeStat value={String(summary.totalSessions)} label={summary.totalSessions === 1 ? 'sessão' : 'sessões'} />
-          <PracticeStat value={formatPracticeTotal(summary.totalMs)} label="praticando" />
-          <PracticeStat value={String(summary.weekCount)} label="nos 7 dias" />
-        </div>
-      )}
+      {/* fica onde o usuário passa todo dia, que é onde motiva a praticar */}
+      <PracticeCard db={db} onOpen={(id) => onOpen(id)} onSetGoal={onSetGoal} />
 
       {songs.length === 0 && <p className="hint">Nada aqui ainda. Importe uma cifra para começar.</p>}
       {songs.length > 0 && filtered.length === 0 && (
@@ -220,16 +212,6 @@ export function LibraryHome({ db, onOpen, onNew, onDeleteSong, onDuplicateSong }
       >
         <PlusIcon />
       </button>
-    </div>
-  )
-}
-
-/** um número do resumo de prática — trio na mesma linha, sem virar tabela */
-function PracticeStat({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="flex-1 min-w-0 text-center">
-      <div className="text-fg font-semibold text-[1.05rem] leading-none">{value}</div>
-      <div className="hint small !m-0 mt-1 truncate">{label}</div>
     </div>
   )
 }

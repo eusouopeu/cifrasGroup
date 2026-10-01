@@ -24,7 +24,7 @@ import { GuitarDiagram, PianoDiagram } from '../ChordDiagram'
 const MAX_VOICINGS = 12
 
 const ALT_BTN =
-  'bg-bg3 border border-line rounded-lg p-[.35rem_.6rem] flex flex-col items-start w-[116px] box-border max-[620px]:min-h-9 ' +
+  'bg-bg3 rounded-lg p-[.35rem_.6rem] flex flex-col items-start w-[116px] box-border max-[620px]:min-h-9 ' +
   '[&>span:first-child]:text-accent [&>span:first-child]:font-bold [&>span:first-child]:text-[.85rem] ' +
   '[&>span:not(:first-child)]:text-[.66rem] [&>span:not(:first-child)]:text-dim'
 
@@ -233,7 +233,7 @@ function ManualPicker({ current, isOverridden, onPick, onReset }: {
         {sameNature.map((sym) => (
           <button
             key={sym}
-            className="mono bg-bg3 border border-line rounded-md p-[.18rem_.4rem] text-[.74rem] text-accent2 hover:border-accent2 max-[620px]:min-h-9"
+            className="mono bg-bg3 rounded-md p-[.18rem_.4rem] text-[.74rem] text-accent2 hover:border-accent2 max-[620px]:min-h-9"
             onClick={() => onPick(sym)}
           >
             {sym}
@@ -242,7 +242,7 @@ function ManualPicker({ current, isOverridden, onPick, onReset }: {
         {otherNature.map((sym) => (
           <button
             key={sym}
-            className="mono bg-bg3 border border-line rounded-md p-[.18rem_.4rem] text-[.74rem] text-danger hover:border-danger max-[620px]:min-h-9"
+            className="mono bg-bg3 rounded-md p-[.18rem_.4rem] text-[.74rem] text-danger hover:border-danger max-[620px]:min-h-9"
             onClick={() => onPick(sym)}
           >
             {sym}

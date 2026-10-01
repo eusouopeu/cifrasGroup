@@ -84,6 +84,14 @@ export interface DB {
   version: 1
   songs: Record<string, Song>
   lists: SongList[]
+  /**
+   * Tempo praticado por dia ("AAAA-MM-DD" local -> ms), somando todas as
+   * músicas. É o que permite meta semanal e sequência de dias
+   * (store/practiceGoals.ts) — `Song.practice` só guarda totais e o último dia.
+   */
+  practiceDays: Record<string, number>
+  /** meta de prática da semana, em minutos; 0 = sem meta */
+  weeklyGoalMin: number
 }
 
 const KEY = 'cifrasgroup:v1'
@@ -112,10 +120,13 @@ export const DEFAULT_PRACTICE: PracticeStats = { count: 0, totalMs: 0, lastPlaye
 // ser preenchida (não existe botão de favoritar em lugar nenhum do app) e ainda
 // era protegida contra apagar, então ficava para sempre vazia na tela de Listas
 function emptyDB(): DB {
-  return { version: 1, songs: {}, lists: [] }
+  return { version: 1, songs: {}, lists: [], practiceDays: {}, weeklyGoalMin: 0 }
 }
 
 function normalize(db: DB): DB {
+  // backfill para bancos salvos antes da meta semanal existir
+  if (typeof db.practiceDays !== 'object' || db.practiceDays === null) db.practiceDays = {}
+  if (typeof db.weeklyGoalMin !== 'number' || !Number.isFinite(db.weeklyGoalMin)) db.weeklyGoalMin = 0
   for (const s of Object.values(db.songs)) {
     s.settings = { ...DEFAULT_SETTINGS, ...s.settings }
     s.notes ??= ''
@@ -210,7 +221,11 @@ export function mergeDB(current: DB, incoming: DB): { db: DB; idMap: Map<string,
   }
 
   const lists = current.lists.map((l) => ({ ...l, songIds: [...l.songIds] }))
-  return { db: { ...current, songs, lists: mergeLists(lists, incoming.lists, idMap) }, idMap }
+  // o mesmo dia pode estar nos dois (backup feito deste aparelho): fica o maior,
+  // para reimportar não dobrar o tempo praticado
+  const practiceDays = { ...current.practiceDays }
+  for (const [day, ms] of Object.entries(incoming.practiceDays ?? {})) practiceDays[day] = Math.max(practiceDays[day] ?? 0, ms)
+  return { db: { ...current, songs, lists: mergeLists(lists, incoming.lists, idMap), practiceDays }, idMap }
 }
 
 function mergeLists(lists: SongList[], incomingLists: SongList[], idMap: Map<string, string>): SongList[] {

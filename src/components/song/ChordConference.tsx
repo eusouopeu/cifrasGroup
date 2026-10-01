@@ -15,6 +15,7 @@ import { scalesContaining } from '../../theory/scaleFit'
 import { bestVoicing, voicingDegrees, type Voicing } from '../../theory/voicings'
 import type { Tuning } from '../../theory/tunings'
 import { GuitarDiagram } from '../ChordDiagram'
+import { Ajuda } from '../Ajuda'
 
 /** confiança mínima do casamento de template para considerar o resultado confiável */
 const MIN_CONFIDENCE = 0.55
@@ -60,9 +61,12 @@ export function ChordConferenceTab({ tuning }: { tuning: Tuning }) {
 
   return (
     <div className="panel-section">
-      <p className="hint small">
-        Toque um acorde no violão perto do microfone e toque em "ouvir" — o app identifica o acorde, mostra a
-        digitação mais fácil com a nota e o grau de cada corda, e lista as escalas em que ele se encaixa.
+      <p className="hint small flex items-center gap-1 !mt-0">
+        Conferir acorde pelo microfone
+        <Ajuda label="Como usar">
+          Toque um acorde no violão perto do microfone e toque em “ouvir acorde” — o app identifica o acorde, mostra a
+          digitação mais fácil com a nota e o grau de cada corda, e lista as escalas em que ele se encaixa.
+        </Ajuda>
       </p>
 
       <button className="btn primary wide" disabled={status === 'listening' || status === 'analyzing'} onClick={() => void listen()}>

@@ -5,11 +5,12 @@
  * uma tomada antiga.
  */
 import { useEffect, useState } from 'react'
-import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
+import { ChevronDownIcon, ChevronRightIcon, ScaleIcon } from '@heroicons/react/24/outline'
 import { deleteRecording, listAllRecordings, renameRecording, togglePinned, type Recording } from '../store/recordings'
 import type { Song } from '../store/db'
 import { FontSizeToggleButton, InstrumentToggleButton } from './DisplayControls'
 import { RecordingRow } from './song/RecordingRow'
+import { RecordingCompare } from './song/RecordingCompare'
 import { ThemeToggleButton } from './ThemeControls'
 
 type Kind = 'audio' | 'video'
@@ -19,6 +20,8 @@ export function RecordingsTab({ songs }: { songs: Record<string, Song> }) {
   const [openSongs, setOpenSongs] = useState<Set<string>>(new Set())
   const [kindTab, setKindTab] = useState<Record<string, Kind>>({})
   const [expanded, setExpanded] = useState<string | null>(null)
+  // "songId:kind" da comparação aberta — uma por vez, como o player expandido
+  const [comparing, setComparing] = useState<string | null>(null)
 
   // recarrega quando o conjunto de músicas muda (apagou uma, importou backup) e
   // quando o app volta do segundo plano — antes a lista era lida uma única vez
@@ -96,6 +99,7 @@ export function RecordingsTab({ songs }: { songs: Record<string, Song> }) {
 
               {open && (
                 <div className="p-[0_.8rem_.8rem] flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
                   <div className="toggle">
                     <button className={kind === 'audio' ? 'on' : ''} onClick={() => setKindTab((c) => ({ ...c, [id]: 'audio' }))}>
                       Áudio ({audio.length})
@@ -104,6 +108,23 @@ export function RecordingsTab({ songs }: { songs: Record<string, Song> }) {
                       Vídeo ({video.length})
                     </button>
                   </div>
+                  <span className="flex-1" />
+                  {shown.length >= 2 && (
+                    <button
+                      className={`icon small${comparing === `${id}:${kind}` ? ' active' : ''}`}
+                      aria-label="Comparar duas tomadas"
+                      title="Comparar duas tomadas"
+                      aria-pressed={comparing === `${id}:${kind}`}
+                      onClick={() => { setExpanded(null); setComparing((c) => (c === `${id}:${kind}` ? null : `${id}:${kind}`)) }}
+                    >
+                      <ScaleIcon />
+                    </button>
+                  )}
+                  </div>
+
+                  {comparing === `${id}:${kind}` && shown.length >= 2 && (
+                    <RecordingCompare key={`${id}:${kind}`} recordings={shown} onClose={() => setComparing(null)} />
+                  )}
 
                   {shown.length === 0 && <p className="hint small">Nenhuma gravação de {kind === 'audio' ? 'áudio' : 'vídeo'} nesta música.</p>}
 

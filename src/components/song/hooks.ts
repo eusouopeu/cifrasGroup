@@ -5,6 +5,7 @@
  * Estavam todos dentro de SongView.tsx, misturados com o JSX de sete painéis.
  * Separados, cada um pode ser lido (e mudado) sem esbarrar nos outros.
  */
+import { sectionAt, type CifraSection } from '../../cifra/sections'
 import { useEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import type { SongSettings } from '../../store/db'
@@ -103,7 +104,28 @@ export function useCifraLineHeight(scrollRef: RefObject<HTMLDivElement | null>, 
 
 export interface SectionLoop {
   active: boolean
+  /** linhas do trecho em loop (válido só com `active`) */
+  startLine: number | null
+  endLine: number | null
   toggle: () => void
+  /** liga o loop num trecho já conhecido (chip de seção) e leva a rolagem até o início dele */
+  loopRange: (start: number, end: number) => void
+}
+
+/** Rola a cifra até a linha `index`, deixando um respiro em cima. */
+export function scrollToLine(el: HTMLElement, index: number): void {
+  const line = el.querySelector<HTMLElement>(`[data-line-index="${index}"]`)
+  if (!line) return
+  el.scrollTop = Math.max(0, line.getBoundingClientRect().top - el.getBoundingClientRect().top + el.scrollTop - 8)
+}
+
+/** Índice da primeira linha visível no topo da área da cifra. */
+function topVisibleLine(el: HTMLElement): number | null {
+  const top = el.getBoundingClientRect().top
+  for (const line of el.querySelectorAll<HTMLElement>('[data-line-index]')) {
+    if (line.getBoundingClientRect().bottom > top + 4) return Number(line.dataset.lineIndex)
+  }
+  return null
 }
 
 /**
@@ -114,6 +136,7 @@ export interface SectionLoop {
 export function useSectionLoop(
   scrollRef: RefObject<HTMLDivElement | null>,
   warn: (message: string) => void,
+  sections: CifraSection[] = [],
 ): SectionLoop {
   const [startLine, setStartLine] = useState<number | null>(null)
   const [endLine, setEndLine] = useState<number | null>(null)
@@ -137,14 +160,31 @@ export function useSectionLoop(
     return () => el.removeEventListener('scroll', onScroll)
   }, [scrollRef, active, startLine, endLine])
 
+  const loopRange = (start: number, end: number) => {
+    setStartLine(start)
+    setEndLine(end)
+    setActive(true)
+    if (scrollRef.current) scrollToLine(scrollRef.current, start)
+  }
+
   // 1º toque usa o texto selecionado na cifra como início/fim, 2º desativa —
-  // sem precisar de um passo separado de "marcar"
+  // sem precisar de um passo separado de "marcar". Sem seleção, repete a seção
+  // ([Refrão], [Verso]…) que está no topo da tela, se a cifra tiver seções
   const toggle = () => {
     if (active) { setActive(false); return }
     const el = scrollRef.current
     const sel = window.getSelection()
     const range = sel && sel.rangeCount > 0 && !sel.isCollapsed ? sel.getRangeAt(0) : null
     const pick = 'Selecione o trecho da letra que quer repetir antes de tocar neste botão.'
+    if (el && !range && sections.length > 0) {
+      const top = topVisibleLine(el)
+      const section = top === null ? null : sectionAt(sections, top) ?? sections[0]
+      if (section && section.end > section.start) {
+        loopRange(section.start, section.end)
+        warn(`Repetindo ${section.label}.`)
+        return
+      }
+    }
     if (!el || !range || !el.contains(range.commonAncestorContainer)) { warn(pick); return }
     const lineOf = (node: Node): HTMLElement | null =>
       (node instanceof Element ? node : node.parentElement)?.closest<HTMLElement>('[data-line-index]') ?? null
@@ -160,7 +200,7 @@ export function useSectionLoop(
     sel?.removeAllRanges()
   }
 
-  return { active, toggle }
+  return { active, startLine, endLine, toggle, loopRange }
 }
 
 

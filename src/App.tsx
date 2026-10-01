@@ -18,6 +18,7 @@ import { deleteCustomTuning, loadCustomTunings, saveCustomTuning } from './store
 import { getDisplayDefaults } from './store/defaults'
 import { deleteAllRecordings } from './store/recordings'
 import { maybeRunAutoBackup } from './store/autoBackup'
+import { addPracticeDay } from './store/practiceGoals'
 import { computeSongMeta } from './cifra/meta'
 import type { Tuning } from './theory/tunings'
 
@@ -201,12 +202,13 @@ export default function App() {
       if (!prev) return prev
       const song = prev.songs[id]
       if (!song) return prev
+      const now = Date.now()
       const practice = {
         count: song.practice.count + 1,
         totalMs: song.practice.totalMs + ms,
-        lastPlayedAt: Date.now(),
+        lastPlayedAt: now,
       }
-      return { ...prev, songs: { ...prev.songs, [id]: { ...song, practice } } }
+      return { ...prev, songs: { ...prev.songs, [id]: { ...song, practice } }, practiceDays: addPracticeDay(prev.practiceDays, now, ms) }
     })
   }
 
@@ -355,6 +357,7 @@ export default function App() {
             onNew={() => setRoute({ view: 'import' })}
             onDeleteSong={onDeleteSong}
             onDuplicateSong={onDuplicateSong}
+            onSetGoal={(weeklyGoalMin) => setDb({ ...db, weeklyGoalMin })}
           />
         )}
         {libraryTab === 'listas' && (
@@ -373,16 +376,16 @@ export default function App() {
             onRemoveFromList={(listId, songId) =>
               setDb({ ...db, lists: db.lists.map((l) => (l.id === listId ? { ...l, songIds: l.songIds.filter((x) => x !== songId) } : l)) })
             }
-            onReorderSong={(listId, songId, dir) => {
-              setDb({
-                ...db,
-                lists: db.lists.map((l) => {
+            onMoveSong={(listId, songId, toIndex) => {
+              setDb((prev) => prev && {
+                ...prev,
+                lists: prev.lists.map((l) => {
                   if (l.id !== listId) return l
-                  const i = l.songIds.indexOf(songId)
-                  const j = dir === 'up' ? i - 1 : i + 1
-                  if (i < 0 || j < 0 || j >= l.songIds.length) return l
-                  const songIds = [...l.songIds]
-                  ;[songIds[i], songIds[j]] = [songIds[j], songIds[i]]
+                  // o índice vem da lista exibida, que já ignora ids de músicas apagadas
+                  const songIds = l.songIds.filter((id) => prev.songs[id])
+                  const from = songIds.indexOf(songId)
+                  if (from < 0 || toIndex < 0 || toIndex >= songIds.length || from === toIndex) return l
+                  songIds.splice(toIndex, 0, ...songIds.splice(from, 1))
                   return { ...l, songIds }
                 }),
               })
@@ -400,6 +403,8 @@ export default function App() {
         {libraryTab === 'config' && (
           <SettingsTab
             songs={db.songs}
+            weeklyGoalMin={db.weeklyGoalMin}
+            onSetGoal={(weeklyGoalMin) => setDb({ ...db, weeklyGoalMin })}
             customTunings={customTunings}
             onExport={() =>
               saveFullBackup(db, `cifrasgroup-backup-${new Date().toISOString().slice(0, 10)}.json`).then((res) => {
