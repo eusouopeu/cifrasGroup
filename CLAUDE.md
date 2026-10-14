@@ -1,293 +1,101 @@
-# Instruções para o Claude neste projeto
+# cifrasGroup — instruções permanentes
 
-## Commit, push e APK automáticos
+Leitor de cifras para violão com análise harmônica, metrônomo, afinador,
+gravações e exercícios de ouvido. Sem servidor e sem conta (IndexedDB).
+React + TypeScript + Tailwind v4, Capacitor (Android).
 
-Sempre que uma mudança de código for implementada neste app (uma feature, correção
-de bug, ajuste de UI, etc.) e o trabalho estiver validado (typecheck, testes e
-`npm run check` passando), faça automaticamente, sem precisar que o usuário peça
-de novo a cada vez:
-
-1. `git add` dos arquivos alterados relevantes, `git commit` com mensagem descritiva
-   (em português, explicando o "porquê") e `git push origin main`.
-2. Gerar o APK de debug atualizado:
-   ```bash
-   npm run build
-   npx cap sync android
-   export JAVA_HOME="/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"
-   cd android && ./gradlew assembleDebug --console=plain
-   ```
-   O APK fica em `android/app/build/outputs/apk/debug/app-debug.apk`. Envie-o ao
-   usuário (SendUserFile) ao final.
-
-Notas:
-- O projeto exige JDK 21 para compilar o módulo Android (`capacitor.build.gradle`
-  define `sourceCompatibility`/`targetCompatibility` como `VERSION_21`), mas o
-  `java_home` do sistema pode apontar para o JDK 17. Use o `openjdk@21` do
-  Homebrew via `JAVA_HOME` explícito no comando do Gradle, como acima.
-- É um build de **debug**, assinado com a chave de debug padrão — serve para
-  testar no aparelho, não para publicar na Play Store. Não existe keystore de
-  release configurado; se um dia for necessário gerar build de release, isso
-  exige um keystore próprio do usuário (não gerar isso sozinho sem o usuário
-  participar, já que é uma chave sensível que precisa ficar guardada por ele).
-- Só pule o passo de commit/push se o usuário pedir explicitamente para não
-  commitar, ou se as mudanças ainda estiverem incompletas/quebradas.
-- Sempre revise `git status`/`git diff` antes de commitar para não incluir
-  arquivos indesejados (ex.: artefatos de build, `.env`, etc.).
-
-## Cuidado com UX/UI ao implementar telas novas
-
-Feedback direto do usuário (29/08/2026): uma leva de mudanças de UI (reorganização
-da tela de música, gravador flutuante, abas novas) saiu com cores/formas fora do
-padrão visual do resto do app e sem cuidado básico com funções de microfone. Antes
-de desenhar uma tela nova ou componente novo:
-
-- **Acione a skill `identidade-visual-apps`** antes de estilizar qualquer tela ou
-  componente novo (e ao revisar algo que "não bate com o resto do app"). Não
-  invente linguagem visual nova (sombras, formas, paleta) sem antes checar essa
-  skill e os padrões já existentes em `src/styles.css` — reaproveite classes e
-  variáveis (`--bg2`, `--bg3`, `--line`, `--accent`, `--accent2`, `.icon`, `.btn`,
-  `.chip`, `.sheet`, `.panel-section`, `.sublist`/`.subrow` etc.) em vez de criar
-  padrões paralelos.
-- **Toda função que escuta o microfone continuamente** (não é uma captura única
-  disparada por um toque, tipo "ouvir acorde") precisa de um botão explícito de
-  "começar a escutar/parar", nunca pode ligar o microfone e já ficar reagindo a
-  qualquer som assim que a tela abre — isso pega ruído de fundo, TV, conversa
-  etc. como se fosse entrada válida. Pense como o usuário final: o que aconteceria
-  se essa tela ficasse aberta sem ninguém tocando/cantando de propósito?
-- De modo geral, antes de considerar uma feature de UI pronta, revise mentalmente
-  pela perspectiva de quem vai usar no dia a dia — não só se compila e funciona,
-  mas se o comportamento e a aparência fazem sentido no contexto do app.
-
-## Uso de agentes em segundo plano
-
-Para tarefas independentes e bem simples (ex.: investigar um arquivo específico,
-rodar uma busca no código, verificar algo pontual que não depende do restante do
-trabalho em andamento), pode usar agentes em segundo plano (Agent tool) para
-paralelizar em vez de fazer tudo sequencialmente. Reserve isso para tarefas
-simples e desacopladas — não delegar partes de uma mesma feature/mudança que
-precisam ficar coerentes entre si.
+Leia somente os documentos pertinentes à tarefa; não carregue documentação ou
+arquivos grandes por padrão.
 
 ## Padrões compartilhados
 
-Este projeto segue os padrões comuns aos apps do Pedro, documentados em
-`../_shared/tech-standards.md` (stack, testes, commit/push/release, skill
-`/caveman` obrigatória, subagentes, leitura de dependências) e
-`../_shared/design-standards.md` + `../_shared/minimalismo.md` (visual,
-ícones, estética minimalista, "ajuda recolhida"). Ícones já usam Heroicons,
-alinhado ao padrão compartilhado; o app foi migrado de `lucide-react` em
-05/09/2026 (pacote desinstalado de vez em 08/09/2026) — não reintroduzir.
+Segue `../_shared/tech-standards.md` (stack, testes, commit/push/release,
+`/caveman`, subagentes, dependências), `../_shared/design-standards.md`,
+`../_shared/minimalismo.md` e `../_shared/docs-standards.md`.
+Exceções e particularidades:
 
-### Particularidade técnica de ícones
+- Ícones em Heroicons; o app saiu do `lucide-react` em 05/09/2026 (pacote
+  desinstalado em 08/09/2026) — não reintroduzir.
+- Barra de abas vítrea é exceção deliberada à regra "sem sombra" (pedido do
+  Pedro, 12/09/2026).
 
-Heroicons não trazem largura/altura intrínsecas — o tamanho vem sempre do CSS
-(`.icon svg`, `.tabbar-item svg` em `styles.css`, ou `[&>svg]:w-…` na classe do
-botão). Ícone novo sem regra de tamanho renderiza gigante.
+## Regras invioláveis
 
-### Migração Tailwind + Lucide (concluída, 2026-08-30)
+- **Antes de estilizar tela ou componente novo**, acione a skill
+  `identidade-visual-apps` e reaproveite classes e variáveis de
+  `src/styles.css` (`--bg2`, `--bg3`, `--line`, `--accent`, `.icon`, `.btn`,
+  `.chip`, `.sheet`, `.panel-section`…); não invente sombras, formas ou paleta
+  (feedback do Pedro, 29/08/2026).
+- **Microfone contínuo** só liga por botão explícito "começar/parar de
+  escutar"; nunca ao abrir a tela. Captura única disparada por toque (ex.:
+  "ouvir acorde") não precisa.
+- Antes de dar uma feature de UI por pronta, revise pela perspectiva de quem
+  usa no dia a dia, não só se compila.
+- CSS novo em `src/styles.css` fica **dentro** do bloco
+  `@layer components { ... }`; fora dele, vence qualquer utility Tailwind em
+  silêncio.
+- Heroicons não têm tamanho intrínseco: todo ícone novo precisa de regra de
+  tamanho (`.icon svg`, `[&>svg]:w-…`), senão renderiza gigante.
+- Toda ação por gesto tem equivalente por toque/teclado (ex.: "⋮" no
+  `SongCard`, ↑/↓ na alça das listas).
+- Arquivo gerado pelo app passa por `native/fileStorage.ts#saveAppFile`;
+  nunca `<a download>` direto (no WebView o arquivo some).
+- Fontes únicas: busca de música por texto usa
+  `store/songSearch.ts#songMatchesQuery`; resumo de prática usa
+  `store/practiceSummary.ts`; velocidade de rolagem vem de
+  `store/songActions.ts`, com altura de linha **medida no DOM**.
+- Botão novo do rodapé da tela da música usa `TransportButton`/`BottomBar`/
+  `StripBar` (`src/components/song/parts.tsx`).
+- Seção nova de Configurações entra em `sections` de `SettingsTab.tsx` com
+  `keywords`; exercício novo entra com `description` (exibida atrás do ⓘ).
+- Trecho de áudio novo para exercícios: só licença que permita uso em app
+  (CC0/CC BY) e com crédito.
 
-O app usava CSS por classe (`src/styles.css`, 814 linhas) e `@heroicons/react`.
-Migrado para Tailwind v4 (`@tailwindcss/vite`) e `lucide-react` em 10 rodadas
-incrementais (3 telas por rodada, decisão do usuário), com build/typecheck/teste
-e verificação visual no browser a cada rodada, commit+push por rodada. Paleta
-atual (`--bg`, `--fg`, `--accent` etc.) foi mantida (sem unificar com outro
-design system) e mapeada em `src/styles.css` via bloco `@theme inline` —
-continua funcionando com os dois temas (claro/escuro) exatamente como antes,
-só que como tokens Tailwind (`bg-bg2`, `text-fg`, `border-line`...).
+## Segurança e dados
 
-`styles.css` caiu de 814 para ~350 linhas: o que sobrou é CSS genuinamente
-compartilhado entre várias telas (`.btn`, `.icon`, `.hint`, `.chip`, `.sheet*`,
-`.field`, `.toggle`, `.panel`, resets globais, `@font-face`) ou efeitos que
-Tailwind não expressa bem em utility (gradiente de sombra de scroll da
-`.toolbar`). Todo esse CSS customizado vive dentro de `@layer components` —
-**isso é obrigatório**: sem `@layer`, CSS solto sempre vence qualquer utility
-Tailwind por causa de cascade layers, não importa a especificidade, e overrides
-tipo `flex-nowrap` em cima de uma classe antiga simplesmente não fazem efeito
-nenhum, silenciosamente. Foi um bug real descoberto e corrigido no meio da
-migração (rodada 8) — qualquer CSS novo adicionado a este arquivo deve ficar
-dentro do bloco `@layer components { ... }` existente.
+- Build é de **debug**, com a chave de debug. Não existe keystore de release;
+  se um dia for preciso, o Pedro participa e guarda a chave — não gerar
+  sozinho.
+- Revise `git status`/`git diff` antes de commitar (sem artefatos de build ou
+  `.env`).
 
-Ao adicionar uma tela/componente novo agora: usar utilities Tailwind direto,
-reaproveitando as classes de `styles.css` (`.btn`, `.icon`, `.chip`, `.sheet`,
-`.panel-section` etc.) para os padrões de design system em vez de duplicá-los
-com utilities soltas.
+## Fluxo de trabalho
 
-### Cards com ações escondidas (swipe)
+- Faça a menor alteração completa; não faça refactor não relacionado.
+- Antes de propor melhorias ou recriar algo, consulte
+  `docs/feature-status.md` ("Não reimplementar") e `docs/aprimoramentos.md`
+  ("Recomendações refutadas").
+- Validação antes do commit: typecheck, testes e `npm run check`.
+- Build do APK (o restante segue o fluxo global):
+  ```bash
+  npm run build
+  npx cap sync android
+  export JAVA_HOME="/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"
+  cd android && ./gradlew assembleDebug --console=plain
+  ```
+  Saída: `android/app/build/outputs/apk/debug/app-debug.apk`. Push para
+  `origin main`.
 
-`SongCard` (usado em Início e Listas) esconde duplicar/apagar atrás do card,
-revelados arrastando horizontalmente (pointer events com captura só após um
-deslocamento mínimo — capturar o ponteiro no `pointerdown` cru quebra o clique
-de botões internos, foi tentado e falhou) ou pelo botão "⋮" (alternativa sem
-gesto, exigida pelas diretrizes de acessibilidade: toda ação por gesto precisa
-de equivalente por toque/teclado). Painel de ações fica com `aria-hidden` e
-`tabIndex={-1}` quando fechado. Reaproveitar esse padrão para qualquer lista
-de cards que precise do mesmo tipo de ação secundária.
+## Fim de sessão
 
-### Barra de abas sem rótulo
+Antes do commit, atualizar: `docs/decisoes.md` (decisão nova no topo),
+`docs/pendencias.md`, `docs/feature-status.md` se uma funcionalidade visível
+mudou, `docs/aprimoramentos.md` se uma melhoria foi entregue ou recusada e o
+documento temático tocado (`interface`, `musica-e-pratica`).
 
-`TabBar` mostra só o ícone (nome fica em `aria-label`/`title`) e troca o ícone
-vazado pelo preenchido na aba ativa. São cinco abas fixas nas mesmas posições;
-o texto de 10px embaixo do ícone só apertava a barra.
+## Atualização desta documentação
 
-Visual vítreo (12/09/2026, pedido do usuário): a barra flutua sobre o conteúdo
-(`position: absolute` dentro de `.app-shell`, `backdrop-filter: blur`), com as
-quatro abas de conteúdo numa pílula e Configurações num círculo à parte. Aba
-ativa ganha fundo translúcido de destaque. `.app-content` tem folga embaixo e
-os botões flutuantes (importar, gravador) ficam em `bottom: 5.6rem` para não
-cair em cima dela. É uma exceção deliberada à regra "sem sombra".
+- `CLAUDE.md` só muda quando uma regra global do projeto muda.
+- Detalhe de tela, componente ou funcionalidade vai para o `docs/<tema>.md`.
 
-### Configurações
+## Navegação
 
-Cabeçalho grande com linha embaixo, tema como controle segmentado de largura
-total (`.segmented`, opções escritas), busca que filtra seções por título e
-palavras-chave, e cada seção num card recolhível (`.fold`, `<details>`) que
-abre sozinho quando a busca casa. Seção nova entra no array `sections` de
-`SettingsTab.tsx` com `keywords` preenchidas.
-
-### Painel Ritmo compacto
-
-O bloco do metrônomo é uma linha só: tocar/parar, bpm, ícone de alto-falante
-(no lugar do rótulo "Tocar") e os chips batida/metrônomo.
-
-### Ícone do app
-
-Fundo branco (`public/icon.svg` e `ic_launcher_background` = `#FFFFFF`), com
-traços escuros. Os PNGs de `android/app/src/main/res/mipmap-*` são gerados do
-SVG com `rsvg-convert` (foreground sem fundo, 108dp; legado quadrado e redondo).
-
-### O que sai no alto-falante (painel Ritmo)
-
-Batida (`playPattern`) e clique do metrônomo (`playClick`) são independentes no
-motor (`audio/metronome.ts`) desde sempre, mas viviam em dois ícones sem rótulo
-e ninguém descobria que dava para tocar **só a batida**. Agora são dois chips
-rotulados ("Tocar: batida / metrônomo"), com aviso quando os dois estão
-desligados. O ajuste fino de bpm (−5/−1/+1/+5 e "usar N bpm") saiu do painel:
-o rodapé da tela da música já tem −1/+1 e escolher uma batida traz o andamento
-sugerido dela.
-
-### Barra de transporte da tela da música
-
-Os botões redondos do rodapé e as barras fixas vivem em `src/components/song/parts.tsx`
-(`TransportButton` com tamanhos `sm`/`md`/`lg`, `BottomBar`, `StripBar`). Antes cada
-botão repetia as mesmas ~10 utilities Tailwind com todas as variantes `max-[620px]:`
-dentro de `SongView.tsx`, e um ajuste de tamanho tinha de ser refeito em cinco cópias.
-Qualquer botão novo do rodapé usa esses componentes.
-
-### Rolagem automática
-
-Duas fontes de velocidade, ambas em px/s e calculadas em `store/songActions.ts`
-(`manualScrollPxPerSecond`, `bpmScrollPxPerSecond`): o slider manual e a sincronia
-com o metrônomo (`SongSettings.scrollSyncBpm`), que desce uma linha da cifra por
-compasso. A altura da linha é **medida no DOM** (`useCifraLineHeight`), nunca
-calculada a partir do tamanho da fonte. `useAutoScroll` só recebe o resultado.
-
-### Arquivos que o app gera
-
-Tudo o que o app grava (cifra em .txt, gravações, backup manual e o automático
-semanal) passa por `native/fileStorage.ts#saveAppFile`, que escreve em
-`Documentos/CifrasGroup/<subpasta>` no app nativo e cai no download comum no
-navegador. Não usar `<a download>` direto: no WebView do Android o arquivo não
-fica em lugar nenhum que o usuário ache depois.
-
-### Preferências de tela lembradas
-
-Filtros e ordenação da biblioteca ficam em `store/libraryPrefs.ts` (localStorage,
-lido campo a campo para um valor estranho não quebrar a tela). A busca por texto
-fica de fora de propósito. Telas são desmontadas ao trocar de aba, então estado
-de filtro que o usuário escolheu precisa morar fora do componente.
-
-### Busca da biblioteca
-
-`store/songSearch.ts#songMatchesQuery` compara o termo com título, artista, tags
-**e o texto da cifra**, tudo normalizado sem acento e sem caixa. Quem não lembra
-o nome procura por um trecho da letra — antes isso não achava nada. Qualquer
-lista nova que filtre músicas por texto usa essa função, não um `includes` local.
-
-### Resumo de prática aparece em duas telas
-
-`store/practiceSummary.ts` (`practiceSummary` + `formatPracticeTotal`) é a conta
-única usada por Início e por Configurações. Início mostra o trio de números logo
-abaixo da busca, que é onde o usuário passa todo dia; Configurações mantém a
-versão em prosa. Não duplicar a conta numa terceira tela — importar daqui.
-
-### Afinador só escuta quando mandam
-
-`Tuner` abre com o microfone **desligado** (`listenOn`, botão "começar a
-escutar" / "parar de escutar"), nas duas formas de uso (aba Afinação e folha
-aberta pela música). Com a escuta sempre ligada, o ponteiro reagia a TV, conversa
-e ruído ambiente sem ninguém ter tocado uma corda — é a regra geral de microfone
-contínuo deste CLAUDE.md aplicada aqui.
-
-### Cards dos exercícios
-
-Cada `ExerciseDef` tem `description`: uma linha dizendo o que o ouvido treina.
-A lista (`exercises/ExercisesTab.tsx`) mostra ícone, título, essa descrição,
-nível em pontinhos (`MAX_LEVEL` vem de `exercises/progress.ts`) e % de acerto.
-Antes eram cinco botões idênticos que só diferiam no número do nível — não dava
-para saber o que cada um cobrava nem por onde começar. Exercício novo entra com
-`description` preenchida.
-
-Desde 01/10/2026 a `description` fica atrás do ⓘ (`Ajuda`) no card, não
-impressa: o card mostra ícone, título, pontinhos de nível e % de acerto. Ordem
-da lista: ouvido musical (intervalos, acordes, campo harmônico, ditado rítmico)
-e depois mixagem (EQ, pan, delay, compressão).
-
-### Exercícios de EQ/pan/delay/compressão usam música real
-
-O loop sintético (tríade em pluck) soava artificial demais para treinar
-ouvido. Agora os quatro jogos tocam trechos de 20 s de faixas de Kevin MacLeod
-(incompetech.com, **CC BY 4.0** — exige crédito, mostrado no rodapé da rodada),
-catalogados em `exercises/samples.ts` e guardados em `public/exercise-samples/`
-(AAC 128 kbps, ~330 KB cada). `audioEffects.ts#playSample` normaliza volume
-por RMS, corta o que estava tocando antes (A e B nunca se sobrepõem), aceita
-cadeia de efeito `{ input, output }` e cai no loop sintético se o arquivo
-falhar. Pan soma a música em mono antes do panner; delay soma seco + eco;
-compressão tem ganho de compensação para não ser julgada só pelo volume.
-Trecho novo: só com licença que permita uso em app (CC0/CC BY) e com crédito.
-
-### Aba "Voz" mora em Afinação, não em Acordes
-
-VoiceLab (retrato de timbre por microfone) foi movido do painel Acordes da
-tela da música para dentro da aba raiz Afinação (toggle Afinação/Voz), porque
-não é uma função de acorde — ficava enterrada no 3º nível de navegação sem
-necessidade.
-
-Testes, commit/push, atualização do CLAUDE.md e leitura de dependências: ver
-`../_shared/tech-standards.md`.
-
-### Ajuda recolhida (ⓘ) e tokens de estado
-
-`components/Ajuda.tsx` é o balão de explicação do padrão compartilhado (portal,
-preso a 12px da tela, fecha com toque fora/Esc/rolagem). Texto de "como usar"
-não fica mais impresso embaixo de controles — vai para um `Ajuda` ao lado do
-título/rótulo. Mensagens de estado (erro de microfone, "ouvindo…") continuam
-visíveis. Cores de estado: `--ok` (verde: meta batida, sequência, acerto),
-`--warn` (aviso), `--danger`, `--blue` só para foco de campo. `--line` ficou
-mais suave e botões/chips sobre `bg3` não têm borda.
-
-### Seções da cifra
-
-`cifra/sections.ts` lista as seções ([Intro], [Refrão]…; repetidas ganham
-número). Na tela da música viram chips (`SectionChips` em `song/parts.tsx`):
-tocar pula, segurar liga o loop da seção. O botão de loop da barra de rolagem,
-sem texto selecionado, repete a seção que está no topo da tela (equivalente
-sem gesto).
-
-### Ordem das listas
-
-Arrastar pela alça ≡ do card reordena (`useDragReorder` em `ListsView.tsx`,
-ouvintes na janela porque a troca move o card no DOM e derruba a captura do
-ponteiro). Tocar na alça sem arrastar mostra ↑/↓; teclado usa as setas na alça.
-
-### Meta semanal e "para praticar"
-
-`DB.practiceDays` (ms por dia local) e `DB.weeklyGoalMin` alimentam
-`store/practiceGoals.ts` (semana de segunda a hoje, sequência de dias,
-`songsToPractice`). O cartão do Início (`PracticeCard`) substituiu o trio de
-números; a meta se escolhe tocando nele ou em Configurações → Prática.
-
-### Comparar gravações
-
-Na aba Gravações, com 2+ tomadas do mesmo tipo, o ícone de balança abre
-`RecordingCompare`: A (mais antiga) × B (mais recente) por padrão, um player
-com chave A|B que mantém o ponto ao trocar.
-
+| Arquivo | Quando ler |
+|---|---|
+| `docs/interface.md` | Ícones, CSS/Tailwind, abas, cards, Configurações, busca, listas, arquivos gerados, ⓘ e tokens de estado |
+| `docs/musica-e-pratica.md` | Ritmo e metrônomo, rolagem, afinador, voz, exercícios, seções da cifra, gravações, metas de prática |
+| `docs/superpowers/specs/`, `plans/` | Desenho e plano de features grandes |
+| `docs/decisoes.md` | Antes de mudar comportamento já decidido |
+| `docs/pendencias.md` | Ao retomar o projeto ou propor próximos passos |
+| `docs/feature-status.md` | Antes de criar ou remover funcionalidade |
+| `docs/aprimoramentos.md` | Antes de sugerir melhorias |
