@@ -14,8 +14,9 @@ Segue `../_shared/tech-standards.md` (stack, testes, commit/push/release,
 `../_shared/minimalismo.md` e `../_shared/docs-standards.md`.
 Exceções e particularidades:
 
-- Ícones em Heroicons; o app saiu do `lucide-react` em 05/09/2026 (pacote
-  desinstalado em 08/09/2026) — não reintroduzir.
+- Ícones: **sempre Heroicons** (`@heroicons/react`), em todo ícone novo ou
+  tocado. Nunca `lucide-react` nem outra biblioteca (saiu em 05/09/2026,
+  pacote desinstalado em 08/09/2026).
 - Barra de abas vítrea é exceção deliberada à regra "sem sombra" (pedido do
   Pedro, 12/09/2026).
 

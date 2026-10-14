@@ -10,10 +10,14 @@ Heroicons não trazem largura/altura intrínsecas — o tamanho vem sempre do CS
 (`.icon svg`, `.tabbar-item svg` em `styles.css`, ou `[&>svg]:w-…` na classe do
 botão). Ícone novo sem regra de tamanho renderiza gigante.
 
-## Migração Tailwind + Lucide (concluída, 2026-08-30)
+## Migração para Tailwind (concluída, 2026-08-30)
+
+Ícones: **sempre Heroicons** (`@heroicons/react`). A migração de 2026-08-30
+também tinha trocado os ícones para `lucide-react`; em 05/09/2026 o app voltou
+para Heroicons e o `lucide-react` foi desinstalado (08/09/2026).
 
 O app usava CSS por classe (`src/styles.css`, 814 linhas) e `@heroicons/react`.
-Migrado para Tailwind v4 (`@tailwindcss/vite`) e `lucide-react` em 10 rodadas
+Migrado para Tailwind v4 (`@tailwindcss/vite`) em 10 rodadas
 incrementais (3 telas por rodada, decisão do usuário), com build/typecheck/teste
 e verificação visual no browser a cada rodada, commit+push por rodada. Paleta
 atual (`--bg`, `--fg`, `--accent` etc.) foi mantida (sem unificar com outro

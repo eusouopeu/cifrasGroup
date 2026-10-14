@@ -11,6 +11,5 @@ adotada vira tarefa ou entra no código.
 
 ## Dúvidas
 
-- Divergência em `docs/interface.md`: a seção "Migração Tailwind + Lucide (concluída, 2026-08-30)" diz que o app foi para `lucide-react`; a regra atual (05/09/2026) diz Heroicons. Atualizar o texto histórico quando o Pedro confirmar.
 
 ## Ideias

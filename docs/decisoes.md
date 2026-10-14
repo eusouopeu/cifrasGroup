@@ -9,4 +9,5 @@ aberto fica em [pendencias.md](pendencias.md).
 
 | Data | Decisão | Detalhe em |
 |---|---|---|
+| 14/10/2026 | Ícones sempre em Heroicons; nunca `lucide-react` | `CLAUDE.md`, `docs/interface.md` |
 | 14/10/2026 | Documentação segue `../_shared/docs-standards.md` | `CLAUDE.md` |
