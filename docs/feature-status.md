@@ -2,11 +2,16 @@
 
 Quando ler: antes de criar, remover ou recriar funcionalidade.
 Fonte de verdade para: o que foi removido e não deve voltar; contratos visíveis.
-Atualizado em: 14/10/2026.
+Atualizado em: 31/10/2026.
 
 ## Não reimplementar
 
 Funcionalidade removida ou substituída, com data e o que cobre o uso agora.
+
+- Contagem visual de 4 tempos antes do metrônomo (`useCountIn`) – removida em 29/08/2026.
+- Botão de baixar a cifra em .txt – removido em 31/08/2026; a gravação automática em Documentos/CifrasGroup cobre o uso.
+- Botões separados de gravar áudio e vídeo – unidos em 31/08/2026; o modo se escolhe no gravador flutuante.
+- Acordes nos cards do Início – removidos em 31/08/2026; ficam só em Listas.
 
 - `lucide-react`: substituído por Heroicons em 05/09/2026; pacote desinstalado em 08/09/2026.
 - Rótulo de texto embaixo dos ícones da barra de abas: removido (nome em `aria-label`/`title`).
@@ -18,3 +23,7 @@ Funcionalidade removida ou substituída, com data e o que cobre o uso agora.
 ## Contratos visuais e funcionais
 
 Comportamentos visíveis que parecem estranhos mas são intencionais.
+
+- A barra da batida só aparece com o metrônomo tocando.
+- Desfazer da edição da cifra tem um nível só; o botão some depois de usado.
+- Títulos e abas dos painéis de Tom e Simplificação ficam embaixo, para não pularem quando o conteúdo muda de altura.
