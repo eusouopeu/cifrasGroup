@@ -27,6 +27,16 @@ com o metrônomo (`SongSettings.scrollSyncBpm`), que desce uma linha da cifra po
 compasso. A altura da linha é **medida no DOM** (`useCifraLineHeight`), nunca
 calculada a partir do tamanho da fonte. `useAutoScroll` só recebe o resultado.
 
+### Rolagem inteligente
+
+Terceira forma de rolar (botão ✦ no controle de rolagem): o microfone liga só
+por esse botão e, a cada 0,5 s, `identifyChord` reconhece o acorde tocado.
+`store/chordFollow.ts` decide o destino: compara só a tríade, leva o som de
+volta à forma do braço (capo + afinação uniforme, ex.: meio tom abaixo; Drop D
+não desloca) e procura até 8 acordes à frente. Duas leituras iguais seguidas
+antes de mexer na tela; se a pessoa rolou à mão para longe, recomeça da linha
+visível. Ligada, a rolagem por velocidade fica parada.
+
 ## Resumo de prática aparece em duas telas
 
 `store/practiceSummary.ts` (`practiceSummary` + `formatPracticeTotal`) é a conta
@@ -41,6 +51,14 @@ escutar" / "parar de escutar"), nas duas formas de uso (aba Afinação e folha
 aberta pela música). Com a escuta sempre ligada, o ponteiro reagia a TV, conversa
 e ruído ambiente sem ninguém ter tocado uma corda — é a regra geral de microfone
 contínuo deste CLAUDE.md aplicada aqui.
+
+### Modos do afinador
+
+Automático (corda mais próxima da afinação escolhida), corda a corda (mede
+contra a corda tocada no chip, mesmo muito longe do tom; dobra erro de oitava)
+e cromático (nota mais próxima). Nos modos com corda-alvo aparece "aperte" ou
+"afrouxe". Conta em `audio/tunerTarget.ts`; o modo fica em
+`localStorage` (`cifrasgroup:tunerMode`).
 
 ## Cards dos exercícios
 

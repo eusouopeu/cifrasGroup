@@ -6,9 +6,23 @@ import { stringFrequencies, tuningById, type Tuning } from '../theory/tunings'
 import { pluckNote } from '../audio/pluck'
 import { getEssentia, pitchFromBuffer } from '../audio/analysis'
 import { stabilizeCents } from '../audio/pitchDisplay'
+import { tunerTarget, type TunerMode } from '../audio/tunerTarget'
 import { Ajuda } from './Ajuda'
 
 const STANDARD_TUNING = tuningById('standard')
+const MODE_KEY = 'cifrasgroup:tunerMode'
+const MODES: { id: TunerMode; label: string }[] = [
+  { id: 'auto', label: 'Automático' },
+  { id: 'string', label: 'Corda a corda' },
+  { id: 'chromatic', label: 'Cromático' },
+]
+
+function loadMode(): TunerMode {
+  try {
+    const v = localStorage.getItem(MODE_KEY)
+    return v === 'string' || v === 'chromatic' ? v : 'auto'
+  } catch { return 'auto' }
+}
 
 /** abaixo disso, a confiança do PitchYin é fraca/ambígua demais pra confiar */
 const CLARITY_THRESHOLD = 0.4
@@ -72,6 +86,12 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
   const [reading, setReading] = useState<Reading | null>(null)
   const [permHelpOpen, setPermHelpOpen] = useState(false)
   const [attempt, setAttempt] = useState(0)
+  const [mode, setModeState] = useState<TunerMode>(loadMode)
+  const [selected, setSelected] = useState(0)
+  const setMode = (m: TunerMode) => {
+    setModeState(m)
+    try { localStorage.setItem(MODE_KEY, m) } catch { /* sem armazenamento: só não lembra */ }
+  }
   const streamRef = useRef<MediaStream | null>(null)
   const audioCtxRef = useRef<AudioContext | null>(null)
   const rafRef = useRef(0)
@@ -175,8 +195,16 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
 
   // altura real de cada corda solta desta afinação, para tocar a nota-alvo
   const targetFreqs = stringFrequencies(tuning.strings)
-  const inTune = reading !== null && Math.abs(reading.cents) <= 5
-  const clampedCents = reading ? Math.max(-50, Math.min(50, reading.cents)) : 0
+  // no automático e no corda a corda, o desvio é contra a corda-alvo (pode
+  // passar de ±50 cents numa corda muito frouxa); no cromático, contra a nota
+  // mais próxima — que é a leitura estabilizada de sempre
+  const target = reading ? tunerTarget(reading.freq, targetFreqs, mode, selected) : null
+  const deviation = reading && target ? (mode === 'chromatic' ? reading.cents : target.cents) : 0
+  const inTune = reading !== null && Math.abs(deviation) <= 5
+  const clampedCents = Math.max(-50, Math.min(50, deviation))
+  const targetLabel = target?.stringIndex != null
+    ? `${6 - target.stringIndex}ª corda (${tuning.stringNames[target.stringIndex]})`
+    : null
 
   const content = (
     <>
@@ -191,12 +219,18 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
         Afinação alvo: <strong>{tuning.name}</strong>
         {tuning.id !== 'standard' && ' — a última usada nesta música'}
         <Ajuda className="ml-1" label="Sobre o afinador">
-          O microfone só liga quando você toca em “começar a escutar”, para não reagir a conversa ou TV. Referência: A4 = 440 Hz.
+          O microfone só liga quando você toca em “começar a escutar”, para não reagir a conversa ou TV. Referência: A4 = 440 Hz. Automático descobre a corda tocada; corda a corda mede só a corda escolhida, mesmo longe do tom; cromático mostra a nota mais próxima de qualquer som.
         </Ajuda>
       </p>
+      <div className="toggle flex w-full my-2 [&>button]:flex-1" role="group" aria-label="Modo do afinador">
+        {MODES.map((m) => (
+          <button key={m.id} className={mode === m.id ? 'on' : ''} aria-pressed={mode === m.id} onClick={() => setMode(m.id)}>{m.label}</button>
+        ))}
+      </div>
+      {mode === 'string' && <p className="hint small center">Toque na corda que vai afinar. Serve para corda nova ou para descer a afinação.</p>}
       <div className="flex justify-center gap-1.5 my-2">
         {tuning.stringNames.map((name, i) => {
-          const match = reading?.pc === tuning.strings[i]
+          const match = mode === 'string' ? selected === i : mode === 'auto' && target?.stringIndex === i
           return (
             <button
               key={i}
@@ -206,8 +240,9 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
                   ? 'border-accent2 text-accent2 font-bold bg-[color-mix(in_srgb,var(--accent2)_16%,var(--bg3))]'
                   : 'bg-bg3 border-line text-dim hover:border-accent hover:text-fg'
               }`}
-              onClick={() => pluckNote(targetFreqs[i])}
-              aria-label={`Tocar a nota da ${6 - i}ª corda (${name})`}
+              onClick={() => { if (mode === 'string') setSelected(i); pluckNote(targetFreqs[i]) }}
+              aria-pressed={mode === 'string' ? selected === i : undefined}
+              aria-label={mode === 'string' ? `Afinar a ${6 - i}ª corda (${name}) e ouvir a nota` : `Tocar a nota da ${6 - i}ª corda (${name})`}
               title={`Ouvir ${name} — ${targetFreqs[i].toFixed(1)} Hz`}
             >
               {name}
@@ -242,7 +277,7 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
 
       {status === 'listening' && (
         reading ? (
-          <TunerGauge reading={reading} inTune={inTune} cents={clampedCents} embedded={embedded} />
+          <TunerGauge reading={reading} inTune={inTune} cents={clampedCents} deviation={deviation} targetLabel={targetLabel} embedded={embedded} />
         ) : (
           <p className="hint">Toque uma corda ou nota isolada, num ambiente silencioso.</p>
         )
@@ -302,7 +337,17 @@ export function Tuner({ onClose, tuning = STANDARD_TUNING, embedded = false }: {
  */
 const NEEDLE_SWEEP = 55 // graus para cada lado, correspondendo a ±50 cents
 
-function TunerGauge({ reading, inTune, cents, embedded }: { reading: Reading; inTune: boolean; cents: number; embedded: boolean }) {
+function TunerGauge({ reading, inTune, cents, deviation, targetLabel, embedded }: {
+  reading: Reading
+  inTune: boolean
+  /** desvio já limitado a ±50, para o ponteiro */
+  cents: number
+  /** desvio real em cents contra o alvo do modo */
+  deviation: number
+  /** "6ª corda (E)" nos modos com corda-alvo; null no cromático */
+  targetLabel: string | null
+  embedded: boolean
+}) {
   const angle = (cents / 50) * NEEDLE_SWEEP
   const pivotX = 150
   const pivotY = 118
@@ -320,7 +365,7 @@ function TunerGauge({ reading, inTune, cents, embedded }: { reading: Reading; in
         className={`w-full h-auto ${embedded ? 'max-w-[460px]' : 'max-w-[320px]'}`}
         viewBox="0 0 300 132"
         role="img"
-        aria-label={`${reading.note}${reading.octave}, ${reading.freq.toFixed(1)} hertz, ${reading.cents} cents`}
+        aria-label={`${reading.note}${reading.octave}, ${reading.freq.toFixed(1)} hertz, ${deviation} cents${targetLabel ? ` da ${targetLabel}` : ''}`}
       >
         {/* marcas: as três centrais delimitam a zona afinada (±5 cents) */}
         {[-50, -30, -15, -5, 0, 5, 15, 30, 50].map((c) => {
@@ -354,7 +399,14 @@ function TunerGauge({ reading, inTune, cents, embedded }: { reading: Reading; in
         <circle cx={pivotX} cy={pivotY} r={7} strokeWidth={2} className="fill-bg3 stroke-line" />
       </svg>
 
-      <div className="text-[.8rem] text-dim font-mono">{reading.cents > 0 ? '+' : ''}{reading.cents} cents</div>
+      <div className="text-[.8rem] text-dim font-mono">
+        {deviation > 0 ? '+' : ''}{deviation} cents{targetLabel && <> · {targetLabel}</>}
+      </div>
+      {!inTune && Math.abs(deviation) > 5 && targetLabel && (
+        <div className={`text-[.85rem] font-semibold ${Math.abs(deviation) > 50 ? 'text-accent' : 'text-dim'}`}>
+          {deviation < 0 ? 'aperte a corda ↑' : 'afrouxe a corda ↓'}
+        </div>
+      )}
       <div className="flex flex-wrap justify-center gap-1 mt-1.5">
         {SHARP_NAMES.map((n, pc) => (
           <span

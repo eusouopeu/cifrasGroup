@@ -20,6 +20,7 @@ import { deleteAllRecordings } from './store/recordings'
 import { maybeRunAutoBackup } from './store/autoBackup'
 import { addPracticeDay } from './store/practiceGoals'
 import { computeSongMeta } from './cifra/meta'
+import { addToList, orderedListSongIds } from './store/listOrder'
 import type { Tuning } from './theory/tunings'
 
 type Route = { view: 'library' } | { view: 'import' } | { view: 'song'; id: string; listId?: string }
@@ -261,7 +262,8 @@ export default function App() {
     if (!song) return <div className="empty">Música não encontrada. <button className="btn" onClick={() => setRoute({ view: 'library' })}>voltar</button></div>
     // modo setlist: navegar entre as músicas da lista de onde a música foi aberta
     const setlist = route.listId ? db.lists.find((l) => l.id === route.listId) : undefined
-    const setlistIds = setlist?.songIds.filter((id) => db.songs[id]) ?? []
+    // navega na ordem em que a lista está sendo exibida (repertório, A–Z…)
+    const setlistIds = setlist ? orderedListSongIds(setlist, db.songs) : []
     const setlistIndex = setlistIds.indexOf(route.id)
     const siblings = setlist && setlistIds.length > 1 && setlistIndex >= 0
       ? { listName: setlist.name, ids: setlistIds, index: setlistIndex }
@@ -292,15 +294,14 @@ export default function App() {
             onPick={(listId) => {
               setDb({
                 ...db,
-                lists: db.lists.map((l) =>
-                  l.id === listId && !l.songIds.includes(picker) ? { ...l, songIds: [...l.songIds, picker] } : l,
-                ),
+                lists: db.lists.map((l) => (l.id === listId ? addToList(l, picker) : l)),
               })
               setPicker(null)
             }}
             onCreate={(name) => {
               const id = newId()
-              setDb({ ...db, lists: [...db.lists, { id, name, description: '', songIds: [picker], createdAt: Date.now() }] })
+              const now = Date.now()
+              setDb({ ...db, lists: [...db.lists, { id, name, description: '', songIds: [picker], addedAt: { [picker]: now }, createdAt: now }] })
               setPicker(null)
             }}
           />
@@ -376,6 +377,24 @@ export default function App() {
             onRemoveFromList={(listId, songId) =>
               setDb({ ...db, lists: db.lists.map((l) => (l.id === listId ? { ...l, songIds: l.songIds.filter((x) => x !== songId) } : l)) })
             }
+            onSetSort={(listId, sort) => setDb({ ...db, lists: db.lists.map((l) => (l.id === listId ? { ...l, sort } : l)) })}
+            onCreateMedley={(listId, title, artist, raw) => {
+              const id = newId()
+              const now = Date.now()
+              setDb({
+                ...db,
+                songs: {
+                  ...db.songs,
+                  [id]: {
+                    id, title, artist, source: null, raw, notes: '', tags: ['medley'],
+                    createdAt: now, updatedAt: now, settings: newSongSettings(),
+                    meta: computeSongMeta(raw), practice: { ...DEFAULT_PRACTICE },
+                  },
+                },
+                lists: db.lists.map((l) => (l.id === listId ? addToList(l, id, now) : l)),
+              })
+              setRoute({ view: 'song', id, listId })
+            }}
             onMoveSong={(listId, songId, toIndex) => {
               setDb((prev) => prev && {
                 ...prev,

@@ -125,3 +125,17 @@ mais suave e botões/chips sobre `bg3` não têm borda.
 Arrastar pela alça ≡ do card reordena (`useDragReorder` em `ListsView.tsx`,
 ouvintes na janela porque a troca move o card no DOM e derruba a captura do
 ponteiro). Tocar na alça sem arrastar mostra ↑/↓; teclado usa as setas na alça.
+
+Acima dos cards, o seletor Repertório / Mais antigas / Mais recentes / A–Z
+(`store/listOrder.ts`, campo `SongList.sort`). Só "Repertório" mostra a alça;
+as outras ordens não mexem em `songIds`. "Mais antigas" usa `SongList.addedAt`
+(data de entrada); listas antigas sem a data caem na posição. Abrir uma música
+da lista navega anterior/próxima na ordem exibida.
+
+## Medley
+
+Ícone de pilha no título da lista (com 2+ músicas) abre `MedleySheet`: chips das
+seções de cada música, ou "música inteira" quando a cifra não tem seções.
+`cifra/medley.ts` monta a cifra com cabeçalhos `[Música — Seção]`, acordes no tom
+em que cada música está e capo devolvido ao som real. A música nova recebe a tag
+`medley`, entra no fim da lista e abre na hora.

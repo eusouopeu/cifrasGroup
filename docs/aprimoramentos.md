@@ -2,7 +2,7 @@
 
 Quando ler: antes de sugerir melhorias.
 Fonte de verdade para: melhorias entregues e recomendações recusadas.
-Atualizado em: 31/10/2026.
+Atualizado em: 07/11/2026.
 
 Ao gerar recomendações, não repita as implementadas nem as refutadas. Quando o
 Pedro escolher algumas, registre as não escolhidas em "Recomendações
@@ -24,7 +24,13 @@ Formato: "descrição – implementado em DD/MM/AAAA".
 - Exercícios de EQ, pan, delay e compressão com trechos de música real – implementado em 12/09/2026
 - Reordenar listas, seções da cifra em chips, meta semanal, Intervalos, Campo harmônico, Ditado rítmico e comparar gravações A|B – implementado em 01/10/2026
 - CI com tipos e testes no GitHub – implementado em 31/10/2026
+- Modos do afinador (automático, corda a corda, cromático), medley a partir de lista, ordem "mais antigas/recentes/A–Z" nas listas e rolagem inteligente por escuta dos acordes – implementado em 07/11/2026
 
 ## Recomendações refutadas
 
 Formato: "descrição – refutada em DD/MM/AAAA".
+
+- Pedal passador / atalhos de teclado para virar a cifra – refutada em 07/11/2026
+- Dividir a cifra em colunas – refutada em 07/11/2026
+- Imprimir/gerar PDF da cifra – refutada em 07/11/2026
+- Diagramas de ukulele, cavaquinho e baixo – refutada em 07/11/2026

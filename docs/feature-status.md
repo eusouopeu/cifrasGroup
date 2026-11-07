@@ -2,7 +2,7 @@
 
 Quando ler: antes de criar, remover ou recriar funcionalidade.
 Fonte de verdade para: o que foi removido e não deve voltar; contratos visíveis.
-Atualizado em: 31/10/2026.
+Atualizado em: 07/11/2026.
 
 ## Não reimplementar
 
@@ -25,5 +25,7 @@ Funcionalidade removida ou substituída, com data e o que cobre o uso agora.
 Comportamentos visíveis que parecem estranhos mas são intencionais.
 
 - A barra da batida só aparece com o metrônomo tocando.
+- Com ordem diferente de "Repertório", a lista não mostra a alça de reordenar.
+- Rolagem inteligente ligada pausa a rolagem por velocidade.
 - Desfazer da edição da cifra tem um nível só; o botão some depois de usado.
 - Títulos e abas dos painéis de Tom e Simplificação ficam embaixo, para não pularem quando o conteúdo muda de altura.

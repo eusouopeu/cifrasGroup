@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowDownIcon, ArrowLeftIcon, ArrowPathIcon, ArrowUturnLeftIcon, ChevronLeftIcon, ChevronRightIcon, ClockIcon, MicrophoneIcon, MinusIcon, MusicalNoteIcon, PauseIcon, PencilIcon, PencilSquareIcon, PlayIcon, PlusIcon, Squares2X2Icon, StopIcon, VideoCameraIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { ArrowDownIcon, ArrowLeftIcon, ArrowPathIcon, ArrowUturnLeftIcon, ChevronLeftIcon, ChevronRightIcon, ClockIcon, MicrophoneIcon, MinusIcon, MusicalNoteIcon, PauseIcon, PencilIcon, PencilSquareIcon, PlayIcon, PlusIcon, SparklesIcon, Squares2X2Icon, StopIcon, VideoCameraIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { chordSequence, guessKeyFromSymbols, guessKeyModeFromSymbols } from '../cifra/parse'
 import { buildView, viewToText } from '../cifra/view'
 import { rhythmById } from '../data/rhythms'
@@ -40,6 +40,8 @@ import {
   useSongShortcuts,
 } from './song/hooks'
 import type { RecordingKind } from '../store/recordings'
+import { chordEvents, soundingShift } from '../store/chordFollow'
+import { useChordFollow } from './song/useChordFollow'
 
 type Panel = null | 'tom' | 'simplificar' | 'cor' | 'ritmo' | 'acordes' | 'notas' | 'gravar'
 
@@ -89,6 +91,8 @@ export function SongView({
   // faixa de acordes deslizante: null = fechada; focus = símbolo em destaque
   const [chordStrip, setChordStrip] = useState<{ focus: string | null } | null>(null)
   const [scrollBarOpen, setScrollBarOpen] = useState(false)
+  // rolagem inteligente: segue o acorde ouvido no microfone (só liga por botão)
+  const [followOn, setFollowOn] = useState(false)
   const [level2JustOff, setLevel2JustOff] = useState(false)
   const [editingTitle, setEditingTitle] = useState(false)
   const [editingRaw, setEditingRaw] = useState(false)
@@ -140,11 +144,11 @@ export function SongView({
   // sem linha medida (cifra de uma linha só, ou ainda não renderizada) a
   // sincronia não tem como ser calculada: cai na velocidade manual
   const syncOn = s.scrollSyncBpm && syncedPxPerSecond > 0
-  useAutoScroll(scrollRef, s.scrollSpeed <= 0 ? 0 : syncOn ? syncedPxPerSecond : manualScrollPxPerSecond(s.scrollSpeed))
+  useAutoScroll(scrollRef, s.scrollSpeed <= 0 || followOn ? 0 : syncOn ? syncedPxPerSecond : manualScrollPxPerSecond(s.scrollSpeed))
   useSongShortcuts(play, dispatch)
   usePracticeTracking(metronome.running, onPracticeSession)
   // tocando, ninguém encosta no celular por minutos — sem isso a tela apaga
-  useWakeLock(s.scrollSpeed > 0 || metronome.running)
+  useWakeLock(s.scrollSpeed > 0 || metronome.running || followOn)
 
   // o botão do rodapé abre/fecha o controle de rolagem; pausar sem fechar é o
   // play/pause de dentro do próprio controle
@@ -152,6 +156,7 @@ export function SongView({
     if (scrollBarOpen) {
       if (s.scrollSpeed > 0) localStorage.setItem(LAST_SCROLL_SPEED_KEY, String(s.scrollSpeed))
       dispatch({ type: 'setScrollSpeed', value: 0 })
+      setFollowOn(false)
       setScrollBarOpen(false)
       return
     }
@@ -178,6 +183,8 @@ export function SongView({
   }
 
   const mapSymbol = (orig: string) => view.map.get(orig) ?? orig
+  const followEvents = useMemo(() => chordEvents(view.parsed.lines, mapSymbol), [view.parsed, view.map])
+  const follow = useChordFollow(scrollRef, followEvents, soundingShift(s.capo, tuningById(s.tuning, customTunings).strings), followOn && !editingRaw)
   const originalOf = (displayed: string) => [...view.map.entries()].find(([, v]) => v === displayed)?.[0]
   // símbolos exibidos que vieram de uma troca manual (para destacar nos grids)
   const overriddenSymbols = useMemo(
@@ -478,7 +485,27 @@ export function SongView({
           >
             <ClockIcon />
           </TransportButton>
-          {s.scrollSyncBpm ? (
+          <TransportButton
+            size="sm"
+            active={followOn}
+            onClick={() => {
+              if (!followOn) dispatch({ type: 'setScrollSpeed', value: 0 })
+              setFollowOn(!followOn)
+            }}
+            label={followOn ? 'Parar a rolagem inteligente (desliga o microfone)' : 'Rolagem inteligente: a cifra segue os acordes que você toca (usa o microfone)'}
+            title={followOn ? 'Escutando — toque para parar' : 'Rolagem inteligente: segue os acordes que você toca'}
+          >
+            <SparklesIcon />
+          </TransportButton>
+          {followOn ? (
+            <span className="flex-1 min-w-0 text-[.72rem] text-dim overflow-hidden text-ellipsis whitespace-nowrap" aria-live="polite">
+              {follow.status === 'denied' ? 'sem acesso ao microfone'
+                : follow.status === 'unsupported' ? 'microfone indisponível neste aparelho'
+                : follow.status === 'starting' ? 'ligando o microfone…'
+                : follow.heard ? <>ouvindo · <strong className="text-fg font-mono">{follow.heard}</strong></>
+                : 'ouvindo — toque os acordes da cifra'}
+            </span>
+          ) : s.scrollSyncBpm ? (
             <span className="flex-1 min-w-0 text-[.72rem] text-dim overflow-hidden text-ellipsis whitespace-nowrap">
               {syncOn
                 ? `${s.bpm} bpm · uma linha a cada ${beatsPerLine} tempos`
@@ -506,7 +533,7 @@ export function SongView({
           )}
           <TransportButton
             size="sm"
-            onClick={() => { dispatch({ type: 'setScrollSpeed', value: 0 }); setScrollBarOpen(false) }}
+            onClick={() => { dispatch({ type: 'setScrollSpeed', value: 0 }); setFollowOn(false); setScrollBarOpen(false) }}
             label="Fechar controle de rolagem"
           >
             <XMarkIcon />
@@ -575,8 +602,8 @@ export function SongView({
             <TransportButton active={panel === 'notas'} onClick={() => togglePanel('notas')} label="Notas">
               <PencilSquareIcon />
             </TransportButton>
-            <TransportButton active={s.scrollSpeed > 0} onClick={toggleScroll} label="Rolagem automática">
-              {s.scrollSpeed > 0 ? <PauseIcon /> : <ArrowDownIcon />}
+            <TransportButton active={s.scrollSpeed > 0 || followOn} onClick={toggleScroll} label="Rolagem automática">
+              {s.scrollSpeed > 0 || followOn ? <PauseIcon /> : <ArrowDownIcon />}
             </TransportButton>
           </div>
         </BottomBar>

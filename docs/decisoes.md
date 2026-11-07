@@ -2,13 +2,17 @@
 
 Quando ler: antes de mudar comportamento já decidido.
 Fonte de verdade para: o que já foi decidido no projeto (uma linha por decisão).
-Atualizado em: 31/10/2026.
+Atualizado em: 07/11/2026.
 
 Decisão nova entra no topo, com data e onde está detalhada. Decisão ainda em
 aberto fica em [pendencias.md](pendencias.md).
 
 | Data | Decisão | Detalhe em |
 |---|---|---|
+| 07/11/2026 | Rolagem inteligente compara só a tríade (fundamental + maior/menor), pede 2 leituras iguais e só avança até 8 acordes | `docs/musica-e-pratica.md` |
+| 07/11/2026 | Ordens "mais antigas/recentes/A–Z" das listas só mudam a exibição; a ordem do repertório (`songIds`) fica intacta | `docs/interface.md` |
+| 07/11/2026 | Medley nasce como música nova, com acordes no tom tocado e capo devolvido ao som real | `docs/interface.md` |
+| 07/11/2026 | Dependências instaladas com pnpm (`pnpm-lock.yaml`); `package-lock.json` saiu | `../_shared/tech-standards.md` |
 | 31/10/2026 | CI no GitHub roda tipos e testes em cada push e PR | `.github/workflows/ci.yml` |
 | 14/10/2026 | Ícones sempre em Heroicons; nunca `lucide-react` | `CLAUDE.md`, `docs/interface.md` |
 | 14/10/2026 | Documentação segue `../_shared/docs-standards.md` | `CLAUDE.md` |

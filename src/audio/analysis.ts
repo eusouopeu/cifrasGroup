@@ -55,7 +55,7 @@ export async function decodeToMono(blob: Blob, sampleRate = SR): Promise<Float32
   return rendered.getChannelData(0).slice()
 }
 
-const CAPTURE_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
+export const CAPTURE_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   echoCancellation: false,
   noiseSuppression: false,
   autoGainControl: false,

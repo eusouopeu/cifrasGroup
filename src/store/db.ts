@@ -78,6 +78,10 @@ export interface SongList {
   description: string
   songIds: string[]
   createdAt: number
+  /** quando cada música entrou na lista (id -> ms) — base da ordem "mais antigas" */
+  addedAt?: Record<string, number>
+  /** como a lista é exibida; a ordem manual de `songIds` não muda (store/listOrder.ts) */
+  sort?: 'manual' | 'oldest' | 'newest' | 'title'
 }
 
 export interface DB {
@@ -234,10 +238,20 @@ function mergeLists(lists: SongList[], incomingLists: SongList[], idMap: Map<str
   for (const incList of incomingLists) {
     const mappedIds = incList.songIds.map((id) => idMap.get(id)).filter((x): x is string => !!x)
     const existing = out.find((l) => norm(l.name) === norm(incList.name))
+    // datas de entrada na lista seguem as músicas para os ids novos
+    const mappedAdded: Record<string, number> = {}
+    for (const [oldId, t] of Object.entries(incList.addedAt ?? {})) {
+      const id = idMap.get(oldId)
+      if (id) mappedAdded[id] = t
+    }
     if (existing) {
-      for (const id of mappedIds) if (!existing.songIds.includes(id)) existing.songIds.push(id)
+      for (const id of mappedIds) {
+        if (existing.songIds.includes(id)) continue
+        existing.songIds.push(id)
+        existing.addedAt = { ...existing.addedAt, [id]: mappedAdded[id] ?? Date.now() }
+      }
     } else {
-      out.push({ ...incList, id: newId(), songIds: mappedIds })
+      out.push({ ...incList, id: newId(), songIds: mappedIds, addedAt: mappedAdded })
     }
   }
   return out

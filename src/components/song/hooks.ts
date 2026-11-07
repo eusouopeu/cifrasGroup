@@ -120,7 +120,7 @@ export function scrollToLine(el: HTMLElement, index: number): void {
 }
 
 /** Índice da primeira linha visível no topo da área da cifra. */
-function topVisibleLine(el: HTMLElement): number | null {
+export function topVisibleLine(el: HTMLElement): number | null {
   const top = el.getBoundingClientRect().top
   for (const line of el.querySelectorAll<HTMLElement>('[data-line-index]')) {
     if (line.getBoundingClientRect().bottom > top + 4) return Number(line.dataset.lineIndex)

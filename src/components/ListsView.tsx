@@ -1,12 +1,14 @@
 import { useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
-import { Bars2Icon, ChevronDownIcon, ChevronRightIcon, ChevronUpIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { Bars2Icon, ChevronDownIcon, ChevronRightIcon, ChevronUpIcon, PlusIcon, RectangleStackIcon, TrashIcon } from '@heroicons/react/24/outline'
 import type { DB, Song, SongList } from '../store/db'
+import { LIST_SORT_LABEL, orderedListSongIds, type ListSort } from '../store/listOrder'
 import { Ajuda } from './Ajuda'
+import { MedleySheet } from './MedleySheet'
 import { SongCard } from './SongCard'
 import { FontSizeToggleButton, InstrumentToggleButton } from './DisplayControls'
 import { ThemeToggleButton } from './ThemeControls'
 
-export function ListsView({ db, onOpen, onCreateList, onDeleteList, onRemoveFromList, onDuplicateSong, onMoveSong }: {
+export function ListsView({ db, onOpen, onCreateList, onDeleteList, onRemoveFromList, onDuplicateSong, onMoveSong, onSetSort, onCreateMedley }: {
   db: DB
   onOpen: (id: string, listId?: string) => void
   onCreateList: (name: string) => void
@@ -15,6 +17,9 @@ export function ListsView({ db, onOpen, onCreateList, onDeleteList, onRemoveFrom
   onDuplicateSong: (id: string) => void
   /** coloca a música na posição `toIndex` da lista (ordem do repertório) */
   onMoveSong: (listId: string, songId: string, toIndex: number) => void
+  onSetSort: (listId: string, sort: ListSort) => void
+  /** cria a música do medley e a acrescenta no fim da lista */
+  onCreateMedley: (listId: string, title: string, artist: string, raw: string) => void
 }) {
   const [newList, setNewList] = useState('')
 
@@ -37,6 +42,8 @@ export function ListsView({ db, onOpen, onCreateList, onDeleteList, onRemoveFrom
           onRemoveFromList={onRemoveFromList}
           onDuplicateSong={onDuplicateSong}
           onMoveSong={onMoveSong}
+          onSetSort={onSetSort}
+          onCreateMedley={onCreateMedley}
         />
       ))}
 
@@ -56,7 +63,9 @@ export function ListsView({ db, onOpen, onCreateList, onDeleteList, onRemoveFrom
   )
 }
 
-function ListSection({ list, db, onOpen, onDeleteList, onRemoveFromList, onDuplicateSong, onMoveSong }: {
+const SORTS: ListSort[] = ['manual', 'oldest', 'newest', 'title']
+
+function ListSection({ list, db, onOpen, onDeleteList, onRemoveFromList, onDuplicateSong, onMoveSong, onSetSort, onCreateMedley }: {
   list: SongList
   db: DB
   onOpen: (id: string, listId?: string) => void
@@ -64,9 +73,14 @@ function ListSection({ list, db, onOpen, onDeleteList, onRemoveFromList, onDupli
   onRemoveFromList: (listId: string, songId: string) => void
   onDuplicateSong: (id: string) => void
   onMoveSong: (listId: string, songId: string, toIndex: number) => void
+  onSetSort: (listId: string, sort: ListSort) => void
+  onCreateMedley: (listId: string, title: string, artist: string, raw: string) => void
 }) {
   const [open, setOpen] = useState(true)
-  const songs = list.songIds.map((id) => db.songs[id]).filter(Boolean)
+  const [medleyOpen, setMedleyOpen] = useState(false)
+  const sort = list.sort ?? 'manual'
+  const manual = sort === 'manual'
+  const songs = orderedListSongIds(list, db.songs).map((id) => db.songs[id])
   const drag = useDragReorder(songs, (id, to) => onMoveSong(list.id, id, to))
   // tocar na alça sem arrastar mostra ↑/↓ naquele card: alternativa de toque
   // simples ao gesto de arrastar (e o teclado usa as setas na própria alça)
@@ -84,15 +98,30 @@ function ListSection({ list, db, onOpen, onDeleteList, onRemoveFromList, onDupli
         </button>
         {songs.length > 1 && (
           <Ajuda label="Sobre a ordem da lista">
-            A ordem da lista é a do repertório. Arraste pela alça ≡ para reorganizar — ou toque nela e use ↑/↓.
-            Abrindo uma música daqui, dá para passar para a anterior e a próxima sem voltar.
+            “Repertório” é a ordem que você monta: arraste pela alça ≡ para reorganizar — ou toque nela e use ↑/↓.
+            As outras ordens só mudam a exibição, sem perder a do repertório.
+            Abrindo uma música daqui, dá para passar para a anterior e a próxima na ordem exibida.
           </Ajuda>
         )}
         <span className="flex-1" />
+        {songs.length > 1 && (
+          <button className="icon small" aria-label={`Criar medley com músicas de ${list.name}`} title="Criar medley" onClick={() => setMedleyOpen(true)}>
+            <RectangleStackIcon />
+          </button>
+        )}
         <button className="icon small danger" aria-label={`Apagar a lista ${list.name}`} title="Apagar lista" onClick={() => onDeleteList(list.id)}>
           <TrashIcon />
         </button>
       </div>
+      {open && songs.length > 1 && (
+        <div className="toggle flex w-full mt-1.5 [&>button]:flex-1 [&>button]:!px-1.5" role="group" aria-label={`Ordem da lista ${list.name}`}>
+          {SORTS.map((id) => (
+            <button key={id} className={sort === id ? 'on' : ''} aria-pressed={sort === id} onClick={() => onSetSort(list.id, id)}>
+              {LIST_SORT_LABEL[id]}
+            </button>
+          ))}
+        </div>
+      )}
       {open && songs.length > 0 && (
         <div ref={drag.containerRef} className="relative grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(230px,1fr))] mt-2 max-[620px]:grid-cols-1">
           {songs.map((s, i) => {
@@ -110,7 +139,7 @@ function ListSection({ list, db, onOpen, onDeleteList, onRemoveFromList, onDupli
                   onDelete={() => onRemoveFromList(list.id, s.id)}
                   deleteLabel="tirar da lista"
                   onDuplicate={() => onDuplicateSong(s.id)}
-                  actions={songs.length > 1 && (
+                  actions={manual && songs.length > 1 && (
                     <>
                       {pickedId === s.id && (
                         <span className="flex animate-surge [&_.icon:disabled]:opacity-30">
@@ -139,6 +168,13 @@ function ListSection({ list, db, onOpen, onDeleteList, onRemoveFromList, onDupli
             )
           })}
         </div>
+      )}
+      {medleyOpen && (
+        <MedleySheet
+          songs={songs}
+          onClose={() => setMedleyOpen(false)}
+          onCreate={(title, artist, raw) => { onCreateMedley(list.id, title, artist, raw); setMedleyOpen(false) }}
+        />
       )}
     </section>
   )
